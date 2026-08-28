@@ -14,6 +14,12 @@ a line of C++.
 
 This is a design/roadmap document. No production code is included.
 
+> **Revision 2**, incorporating review feedback on
+> [PR #1](https://github.com/RadicalZephyr/bwapi/pull/1). The largest change: the C ABI
+> lives in a **separate repository** that consumes BWAPI as a dependency, not in this tree.
+> Module mode is deferred indefinitely. All five open questions have been answered and are
+> recorded in §13. Reviewer decisions are marked **[Review]** throughout.
+
 ---
 
 ## 1. Ground truth: what the codebase actually looks like
@@ -105,7 +111,10 @@ effectively 64-bit-only and the default Rust Windows toolchain is `x86_64`. It m
   (`CMake/BWAPI/CMakeLists.txt`, `CMake/Client/CMakeLists.txt`). The BWAPI DLL target is
   commented out with the note *"Actually it doesn't. It freezes and never starts."* — the
   injected DLL must stay MSBuild.
-- The client static-lib CMake path is exactly where a new shared-library target belongs.
+- The CMake tree has **no client-only equivalent of `BWAPILIB`**: those sources are
+  compiled only as part of `BWAPI-Static`, which also drags in the injected-DLL sources and
+  a `cscript.exe`-generated `svnrev.h`. That shapes how an out-of-tree consumer has to
+  build — see §10.1.
 
 ### 1.6 Prior art in-tree
 
@@ -165,6 +174,10 @@ That number is the whole reason for §11: hand-writing 600 wrappers is a mistake
 5. **Complete enough to write a real bot** in v1 — not a demo subset.
 6. **No fork of the game logic.** Everything routes through `BWAPI::Game` /
    `bwapi/Shared/`. If a rule changes upstream, the ABI inherits it.
+7. **Purely additive.** **[Review]** The ABI lives in its own repository and *depends on*
+   BWAPI. Landing it must require no change to this tree — no fork, no vendored copy, no
+   upstream patch as a precondition. Any upstream improvement it wants (§10.1) is proposed
+   separately, on its own merits, and the ABI must build without it.
 
 ### Non-goals
 
@@ -178,33 +191,41 @@ That number is the whole reason for §11: hand-writing 600 wrappers is a mistake
 4. **Not** exposing `Interface<T>::registerEvent`, `get/setClientInfo`, or the
    `Broodwar << ...` stream. Host languages have closures and hash maps; these exist to
    paper over C++ ergonomics.
-5. **Not** exposing `std::function` filters as first-class composable objects. See §7.4.
+5. **Not** exposing `std::function` filters as first-class composable objects. See §5.4.
 
 ---
 
 ## 3. Recommended shape
 
-> **A new `BWAPI_C` project producing `bwapi_c.dll`, wrapping `BWAPI::Game` behind
-> `int32_t` handles, generated from a checked-in API spec, client-mode first, module mode
-> in a later phase.**
+> **A separate `bwapi-c` repository producing `bwapi_c.dll`, consuming BWAPI as a
+> dependency, wrapping `BWAPI::Game` behind `int32_t` handles, generated from a checked-in
+> API spec, client mode only.**
 
 Four decisions worth defending:
 
-**Client mode first.** It needs no injection, no C++ vtable interop, isolates crashes, and
-is what Rust/JS users actually want. Because both modes sit behind `BWAPI::Game`, ~95% of
-the wrapper source is mode-agnostic and gets reused when module mode lands.
+**Its own repository, BWAPI as a dependency.** **[Review]** The ABI is a strictly additive
+layer; nothing about it requires editing BWAPI, so nothing about it should. That also lets
+it version, release, and iterate on its own cadence, and pin a known-good BWAPI revision
+rather than chasing `main`. §7 covers the layout and §10.1 the mechanics.
+
+**Client mode only.** **[Review]** No injection, no C++ vtable interop, crashes stay
+isolated, and it is what Rust/JS users actually want. Module mode is deferred indefinitely
+(§8) — its design sketch is kept only so a future revival does not start from zero. Since
+both modes sit behind `BWAPI::Game`, ~95% of the wrapper source would be reusable if it
+ever is revived.
 
 **ID handles, not pointers.** §1.3. Also means the ABI is trivially usable from a language
 without raw-pointer types, and handles can be logged/replayed.
 
-**Generated, not hand-written.** §1.8 and §11.
+**Generated, not hand-written.** §1.8 and §9.
 
-**Naming.** ⚠️ Do **not** name the project `BWAPIC` — `namespace BWAPIC` already exists in
+**Naming.** ⚠️ Do **not** name it `BWAPIC` — `namespace BWAPIC` already exists in
 `bwapi/include/BWAPI/Client/*.h` for the shared-memory PODs. Proposal:
 
 | Thing | Name |
 |---|---|
-| VS project / CMake target | `BWAPI_C` |
+| Repository | `bwapi-c` |
+| CMake target | `BWAPI_C` |
 | Output | `bwapi_c.dll`, `bwapi_c.lib`, `bwapi_c.def` |
 | Public headers | `bwapi_c.h`, `bwapi_c_types.h` |
 | Symbol prefix | `bwapi_` |
@@ -221,19 +242,31 @@ These are the rules the generator enforces. Locking them down first is most of t
 default, since consumers (notably JNA-style loaders) guess. Export via a `.def` file so
 names are undecorated even in x86 builds.
 
-**Types.** Only `int32_t`, `uint32_t`, `double`, `char`, `void*`, function pointers, and
-PODs declared in `bwapi_c.h`. No `bool` (use `int32_t`, 0/1 — C++ `bool` is 1 byte but its
-ABI treatment across FFIs is a recurring footgun). No enums in signatures — `int32_t` with
+**Types.** Only `int32_t`, `uint32_t`, `uint8_t`, `double`, `char`, `void*`, function
+pointers, and PODs declared in `bwapi_c.h`. Never C++ `bool` — its width is 1 byte but its
+ABI treatment across FFIs is a recurring footgun. No enums in signatures — `int32_t` with
 `#define`d constants, so an unknown future value can't be UB in a strict-enum language.
 No structs by value in or out; pass `const T*` in, `T*` out.
+
+**Booleans, scalar vs. bulk.** **[Review]** These are two different rules and were
+previously conflated:
+
+- **Scalar** boolean parameters and return values are `int32_t`, 0 or 1. `int32_t` rather
+  than `int8_t` because a narrow integer return leaves the upper bits of the register
+  unspecified, and FFI layers disagree about whether the callee zero-extends — `ctypes`,
+  JNA, koffi and hand-written `extern` blocks all model an `int`-width return most
+  reliably. It also means the header has exactly one integer width for every value in the
+  ABI, since all `Type` ids are already `int32_t`.
+- **Bulk** boolean grids (§5.5) are `uint8_t` per element, 0 or 1. Four bytes per tile
+  would quadruple a 1 MB walkability copy for nothing, and the destination is a typed
+  array in the host language, not a call argument — so none of the register-width
+  reasoning applies.
 
 **Naming.** `bwapi_<subject>_<verb>[_<disambiguator>]`, snake_case:
 `bwapi_unit_get_hit_points`, `bwapi_unit_attack_position`, `bwapi_unit_attack_unit`,
 `bwapi_unittype_max_hit_points`. Overloads get an explicit type-suffixed name — no
 mangling, no defaulted arguments (C has none, so every parameter is explicit and the
 per-language wrapper re-adds defaults).
-
-**Booleans out.** `int32_t`, 0 or 1.
 
 **Strings out.** snprintf convention:
 ```c
@@ -366,14 +399,53 @@ Three tiers, in this order:
    (`getClosestUnitInRectangle`, `getBestUnit`, and the filtered rectangle query), because
    they early-exit:
    ```c
-   typedef int32_t (BWAPI_C_CALL *bwapi_unit_pred)(int32_t unit_id, void* user);
+   typedef int32_t (BWAPI_C_CALL *bwapi_unit_pred)(bwapi_unit unit, void* user);
    ```
-   Wrap every invocation in `try{}catch(...){ return false; }` — a foreign callback
-   throwing (a Rust panic unwinding across FFI, say) through BWAPI's stack would be
-   catastrophic. Document that the callback must not call back into the ABI.
+   Wrap every invocation in `try{}catch(...){ return 0; }` — a foreign callback throwing
+   (a Rust panic unwinding across FFI, say) through BWAPI's stack would be catastrophic.
 
 An enum-based mini-filter DSL (`BWAPI_FILTER_IS_WORKER`) is tempting and should be
 **declined**: it re-encodes upstream semantics in a switch statement that silently rots.
+
+#### What a predicate may call
+
+**[Review]** Revision 1 said only "the callback must not call back into the ABI". That was
+both unjustified and, as written, unusable: it would force the caller to pre-fetch state
+for every candidate unit *before* the query, which defeats the point of filtering inside.
+Reading the three call sites shows the real constraint is much narrower.
+
+All three queries — `GameImpl::getUnitsInRectangle`, `getClosestUnitInRectangle`,
+`getBestUnit` (`bwapi/BWAPIClient/Source/GameImpl.cpp:475-543`) — hold only
+**function-local** state: a local `Unitset`, a local `bestDistance`/`pBestUnit`. They
+delegate to `Templates::iterateUnitFinder` (`bwapi/Shared/Templates.h:69-152`), whose only
+scratch state is a **local** `std::unordered_map` and which iterates
+`data->xUnitSearch`/`yUnitSearch` — shared-memory arrays the server rewrites only during
+`update()`. There is no global or static scratch buffer, and no `GameImpl` member container
+is mutated. So re-entering the ABI is not inherently unsafe; only *specific* things are.
+
+| Class | Verdict | Reason |
+|---|---|---|
+| Every read-only accessor — `bwapi_unit_*` getters, `bwapi_player_*`, `bwapi_game_map_*`, static type data, scalar tile queries | **Allowed** | Touch only shared memory the server won't rewrite mid-frame, plus function-local state. This is the whole point of the callback and covers essentially every predicate anyone would write |
+| Unit commands (`bwapi_unit_attack_unit`, `train`, `move`, …) | **Forbidden** | Not a style rule. Client-mode `UnitImpl::issueCommand` runs `Command{command}.execute()` (`BWAPIClient/Source/UnitImpl.cpp:59`), and `CommandTemp::execute()` writes straight into `unit->self->order`, `->target`, `->isConstructing` … (`include/BWAPI/Client/CommandTemp.h:196-214`) — i.e. into the very `UnitData` the enclosing query is filtering on. The query's answer would depend on iteration order |
+| Drawing, `printf`, `sendText`, `enableFlag`, `setLocalSpeed` | **Forbidden** | Append to `data->shapes[]` / `commands[]` / `unitCommands[]`, bounded only by `assert` — no runtime check in release builds |
+| `bwapi_client_update` / `connect` / `disconnect` | **Forbidden** | `Client::disconnect()` deletes `BroodwarPtr` while the in-flight query still holds `this`. Immediate use-after-free |
+| Nested queries (`bwapi_game_get_units_in_rectangle` inside a predicate) | **Allowed, discouraged** | Memory-safe — each call builds fresh local state — but it is O(n) inside O(n) |
+| Anything that calls `setLastError` | **Allowed, with a caveat** | `GameImpl` holds a single `mutable Error lastError`; a predicate can clobber what the outer query would have left. Observable, not unsafe |
+
+**Enforce it, don't just document it.** The spec gains a `mutates: true` flag, and the
+generator emits a guard on every mutating wrapper:
+
+```c
+if (bwapi_capi_in_predicate()) {   /* thread-local depth counter */
+    bwapi_capi_set_error(BWAPI_ERR_REENTRANT_MUTATION);
+    return 0;                      /* no side effect */
+}
+```
+
+One thread-local read on mutating calls only, and none at all on the read-only calls a
+predicate actually uses. That converts an undefined-behaviour footgun into a deterministic,
+reportable error a binding author can hit in a unit test — which is the difference between
+a rule people follow and a rule people discover in a tournament.
 
 ### 5.5 Bulk map data
 
@@ -388,10 +460,14 @@ int32_t bwapi_game_is_walkable(int32_t wx, int32_t wy);                 /* scala
 int32_t bwapi_game_copy_walkability(uint8_t* out, int32_t cap,
                                     int32_t* out_w, int32_t* out_h);    /* bulk */
 ```
-In client mode a borrowed-pointer variant is possible (the data lives in mapped shared
-memory), but a **copy** is the right v1 default: it works identically in module mode, and
-a borrowed pointer's validity window across `update()` is a subtle contract to get wrong.
-Revisit only with a measured need.
+Boolean grids are `uint8_t` per element, one byte per tile, per the bulk half of the
+§4 boolean rule — the scalar `int32_t` convention deliberately does **not** apply here.
+`getGroundHeight` stays `int32_t` per element, matching its source array.
+
+A borrowed-pointer variant is possible (the data lives in mapped shared memory), but a
+**copy** is the right v1 default: a borrowed pointer's validity window across `update()`
+is a subtle contract to get wrong, and it would hand a foreign language a writable view of
+the server's own memory. Revisit only with a measured need.
 
 ### 5.6 Events
 
@@ -450,7 +526,7 @@ drift from upstream.
 | `get/setClientInfo` | Host hash maps do this better |
 | `GameWrapper` / `Broodwar << …` | C++ streams |
 | `Type::getType(string)` name lookup | Nice-to-have; add later as `bwapi_unittype_from_name` |
-| `TournamentModule` | Niche; module-mode-only; after §8 |
+| `TournamentModule` | Module-mode-only, and module mode is deferred indefinitely (§8) |
 | `getBestUnit` with `BestFilter` | Needs the §5.4 tier-3 callback |
 
 ---
@@ -503,15 +579,22 @@ Max 100 (`GameData::bullets[100]`), fully transient, no identity needed across f
 
 ---
 
-## 7. Directory layout
+## 7. Repository and layout
+
+**[Review]** The C ABI lives in its own repository, `bwapi-c`, and consumes BWAPI as a
+pinned dependency. It is a purely additive layer: nothing here requires a change to the
+BWAPI tree, so nothing here belongs in it. Practically, that also means it can pin a
+known-good BWAPI revision instead of tracking `main`, and release on its own cadence.
 
 ```
-bwapi/BWAPI_C/
+bwapi-c/                            # separate repository
+  third_party/bwapi/                # git submodule, pinned revision
   include/
     bwapi_c.h            # generated — the single public header
     bwapi_c_types.h      # generated — ~700 constants + PODs
-  Source/
-    abi.cpp              # version, thread-local error channel, log callback
+  src/
+    abi.cpp              # version, thread-local error channel, log callback,
+                         #   the in-predicate depth counter (§5.4)
     client.cpp           # connect / update / disconnect / is_connected
     handles.cpp          # resolve+validate helpers
     game.gen.cpp         # generated
@@ -521,35 +604,62 @@ bwapi/BWAPI_C/
     types.gen.cpp        # generated — static type data
     bulk.cpp             # hand-written — map data, collections, events
     commands.cpp         # hand-written — UnitCommand, unit-set broadcasts
-    module_shim.cpp      # phase 4 — AIModule -> C callback table
+  tools/abi/
+    spec/{game,unit,player,types,...}.yaml   # the source of truth
+    emit_header.py  emit_source.py  emit_json.py
+    check_coverage.py                        # libclang drift detector
+  api.json               # generated — for downstream binding generators
+  tests/
+    header_hygiene/      # C99 + C++ compile checks
+    layout_assert.cpp    # GameData offsets, x86 vs x64 (§10.2)
+    types_test.cpp       # ~500 static-type assertions, no game needed
+    mock_server/         # fake BWAPI server for CI (§11)
+  bindings/
+    rust/bwapi-sys/      # raw FFI only
+    node/                # raw FFI only
+  examples/{rust-example-bot,node-example-bot}/
+  CMakeLists.txt
   BWAPI_C.def
-  BWAPI_C.vcxproj
-tools/abi/
-  spec/{game,unit,player,types,...}.yaml   # the source of truth
-  emit_header.py  emit_source.py  emit_json.py
-  check_coverage.py                        # libclang drift detector
-  api.json                                 # generated — for downstream generators
-CMake/BWAPI_C/CMakeLists.txt
-bindings/rust/{bwapi-sys,bwapi}/
-bindings/node/
-examples/{rust-example-bot,node-example-bot}/
 ```
 
-`*.gen.cpp` are **checked in**, not built by a codegen step at compile time. Contributors
-without Python still get a buildable tree, diffs are reviewable, and CI verifies that
-regenerating produces no change.
+### What lives here, and what doesn't
+
+**[Review]** `bindings/` in this repo holds the **raw FFI layer only** — `bwapi-sys` in
+Rust terms: `extern` declarations, constants, build glue, nothing more. Keeping it here
+means it is generated from the same `api.json`, versioned with the ABI, and regression-
+tested in one CI run against the mock server.
+
+The **idiomatic, safe, host-language wrapper** for each language lives in its own
+repository, released on that ecosystem's cadence: a `bwapi` crate published from a Rust
+repo, an npm package published from a JS repo. Those are where `Unit` newtypes, `Result`,
+iterators, and async integration belong, and they should not be gated on this repo's
+release process.
+
+**Rust and JavaScript are the only two bindings in scope for in-tree `bindings/`.** Others
+are welcome downstream — `api.json` exists precisely so they need nothing from here.
+
+`*.gen.cpp` and `api.json` are **checked in**, not built by a codegen step at compile time.
+Contributors without Python still get a buildable tree, diffs are reviewable, and CI
+verifies that regenerating produces no change.
 
 ---
 
-## 8. Module mode (later phase)
+## 8. Module mode — deferred indefinitely
+
+**[Review] Not in scope.** Deferred until someone presents a concrete reason it is
+necessary. Client mode covers the non-C++ audience, and module mode carries real costs:
+x86-forever, no crash isolation, and a much harder test story. The sketch below is kept
+only so a future revival does not start from a blank page — nothing in the roadmap (§12)
+depends on it.
 
 Module mode requires the bot DLL to export `newAIModule()` returning a pointer to an object
 with an **MSVC C++ vtable** matching `BWAPI::AIModule`. A Rust `cdylib` *can* fake that, but
 it's a hand-laid vtable pinned to one compiler's ABI — exactly the fragility this project
 exists to remove.
 
-**Better: make `bwapi_c.dll` the loadable AI module.** It exports `newAIModule`/`gameInit`
-itself, and on `gameInit` loads a *host* DLL named by config, resolving pure-C entry points:
+The way out would be to **make `bwapi_c.dll` itself the loadable AI module**: it exports
+`newAIModule`/`gameInit`, and on `gameInit` loads a *host* DLL named by config, resolving
+pure-C entry points against a vtable of function pointers —
 
 ```c
 typedef struct bwapi_bot_vtable {
@@ -561,17 +671,16 @@ typedef struct bwapi_bot_vtable {
   void (BWAPI_C_CALL *destroy)(void* bot);
 } bwapi_bot_vtable;
 
-/* the host DLL exports exactly this: */
+/* the host DLL would export exactly this: */
 void* BWAPI_C_CALL bwapi_bot_create(const bwapi_bot_vtable** out_vtable);
 ```
 
-`module_shim.cpp` holds one C++ class deriving `BWAPI::AIModule` whose every override
-forwards to the table (guarded by `catch(...)`). There is precedent in-tree:
-`bwapi/AIModuleLoader/Source/AIModuleLoader.cpp:69` already does load-and-`GetProcAddress`
-indirection.
+— with one C++ class deriving `BWAPI::AIModule` forwarding every override to the table,
+each guarded by `catch(...)`. There is precedent for the indirection:
+`bwapi/AIModuleLoader/Source/AIModuleLoader.cpp:69` already does load-and-`GetProcAddress`.
 
-Deferred to phase 4 because it is x86-only, harder to test, and client mode covers the
-demand.
+Note that dropping module mode also removes this project's only dependency on
+`CMake/BWAPI` — see §10.1, where that turns out to matter more than expected.
 
 ---
 
@@ -629,18 +738,52 @@ of silent divergence. This inverts the usual binding-rot failure mode.
 
 ## 10. Build and packaging
 
-### 10.1 Targets
+### 10.1 Building against BWAPI from outside its tree
 
-1. **`BWAPI_C.vcxproj`** in `bwapi/bwapi.sln`, `Win32`, `v141_xp`, `stdcpp17`, matching the
-   existing projects. Links `BWAPIClient` + `BWAPILIB` + `Util` + `Shared` statically, so
-   consumers get exactly one DLL.
-2. **`CMake/BWAPI_C/CMakeLists.txt`**, mirroring `CMake/Client/CMakeLists.txt` but
-   `ADD_LIBRARY(... SHARED ...)`. This is the path non-MSBuild consumers (Rust `build.rs`,
-   `node-gyp`, CI) will actually use. Note the existing warning in
-   `CMake/BWAPI/CMakeLists.txt` about the *injected* DLL not working — that does not apply
-   here; the client-side link has no injection or code-patching.
-3. Statically link the CRT (`/MT`) so consumers don't need a matching VC++ redistributable.
-   Since no allocation crosses the boundary (§4), a private CRT is safe.
+**[Review]** No `.vcxproj` in `bwapi.sln`. **CMake is the only build system**, which is
+also what Rust `build.rs`, `node-gyp`, and CI actually want. BWAPI comes in as a pinned
+submodule at `third_party/bwapi`.
+
+`CMake/README.md` documents the supported consumption path — `ADD_SUBDIRECTORY` of
+`CMake/BWAPI/` and `CMake/Client/`, then link `BWAPI-Static` and `BWAPIClient`. Following
+it exactly is the obvious first move, and it has two frictions worth planning around
+rather than discovering in phase 3:
+
+**`CMake/Client` alone is not enough to link a client bot.** It builds only
+`BWAPIClient/Source` + `Util` + `Shared`. The type tables and the non-virtual convenience
+methods live in `BWAPILIB/Source/*.cpp` (`UnitType.cpp`, `Game.cpp`, `Unit.cpp`,
+`Position.cpp`, …), which the CMake tree compiles **only** as part of `BWAPI-Static`. The
+MSBuild path confirms the real dependency set: `ExampleAIClient.vcxproj` references both
+`BWAPIClient.vcxproj` *and* `BWAPILIB.vcxproj`. So a CMake client consumer is pushed into
+`BWAPI-Static`, which drags in `BW/*`, `Detours.cpp`, `CodePatch.cpp`, `Storm`, and the
+whole injected-DLL source set it will never call.
+
+**`BWAPI-Static` needs a generated `svnrev.h`.** `BWAPILIB/Source/BWAPI.cpp` includes it
+for `BWAPI_getRevision()`; it is gitignored (`.gitignore:4-5`) and produced by
+`CMake/BWAPI`'s `ADD_CUSTOM_COMMAND` running `cscript.exe revisionUpdate.vbs` — a Windows
+Script Host step in a build that otherwise needs only CMake and MSVC.
+
+Two options, and the second is better:
+
+1. Depend on `BWAPI-Static` as documented, and make the `bwapi-c` CMake generate a minimal
+   `svnrev.h` when one is absent. Works today, no upstream change, but links a large
+   amount of dead code into `bwapi_c.dll`.
+2. Define a **client-only static target inside `bwapi-c`'s own CMakeLists** — compiling
+   `BWAPILIB/Source/*.cpp` + `BWAPIClient/Source/*.cpp` + `Shared/*.cpp` + `Util/Source` +
+   `Storm` from the submodule, with a generated `svnrev.h`. That is the actual dependency
+   set, it needs nothing from upstream, and dropping module mode (§8) means `CMake/BWAPI`
+   is not needed at all.
+
+Take option 2, and *separately* offer upstream a small purely-additive
+`CMake/BWAPILIB/CMakeLists.txt` (or an option on `CMake/Client`) so any CMake client
+consumer gets the same thing without hand-rolling it. That is a genuine improvement to
+BWAPI on its own merits — but per the additive goal (§2), `bwapi-c` must build whether or
+not it is ever accepted.
+
+Two settings to carry over from the existing CMake: `ADD_DEFINITIONS(/DNOMINMAX=1)`, and
+`BWAPI_CUSTOM_COMPILE_FLAGS` as the documented hook for matching compile flags across the
+boundary. Statically link the CRT (`/MT`) so consumers don't need a matching VC++
+redistributable — safe precisely because no allocation crosses the boundary (§4).
 
 ### 10.2 The x64 question
 
@@ -657,15 +800,24 @@ toolchains, and it's cheap to test:
    independent of the x64 outcome, since a careless upstream edit to `GameData` silently
    breaks server/client compatibility today.
 
-Module mode stays x86-forever (it's injected into a 32-bit process).
+Module mode would have stayed x86-forever (it's injected into a 32-bit process); with it
+deferred (§8), x86 is no longer a floor the project has to respect — if x64 works, x64 can
+be the primary target.
 
 ### 10.3 Distribution
 
-- `Release_Binary/` gains `bwapi_c.dll` + headers, so the installer ships them.
-- A GitHub Release asset `bwapi-c-<version>-win32.zip` (`.dll`, `.lib`, `.def`, headers,
-  `api.json`) — the artifact a `bwapi-sys` `build.rs` or an npm postinstall downloads.
-- `bindings/rust/` published as `bwapi-sys` (raw) + `bwapi` (safe), following the
-  ecosystem's `-sys` convention.
+**[Review]** `bwapi-c` ships its own artifacts; it does not add anything to BWAPI's
+`Release_Binary/` or installer.
+
+- A `bwapi-c` GitHub Release asset per platform — `bwapi-c-<version>-win32.zip` and, if
+  §10.2 permits, `-win64.zip` — containing `.dll`, `.lib`, `.def`, headers, and
+  `api.json`. This is what a `bwapi-sys` `build.rs` or an npm postinstall downloads.
+- Each release records the **pinned BWAPI revision** it was built against, so a consumer
+  can tell at a glance which server versions a given `bwapi_c.dll` speaks to. Pair it with
+  `BWAPI::CLIENT_VERSION` (10003 today), which the server already version-checks at
+  connect time (`BWAPIClient/Source/Client.cpp`).
+- `bindings/rust/bwapi-sys` published to crates.io from this repo; the safe `bwapi` crate
+  is published from its own repo (§7), as is the idiomatic npm package.
 
 ---
 
@@ -683,7 +835,8 @@ Ordered by value per unit of effort.
 4. **Coverage check.** §9.
 5. **Static-type-data tests, no game required.** ~500 assertions
    (`bwapi_unittype_mineral_price(BWAPI_UNIT_TERRAN_MARINE) == 50`) validating the largest
-   generated block with zero infrastructure. Fits `bwapi/BWAPILIBTest`'s existing pattern.
+   generated block with zero infrastructure. `bwapi/BWAPILIBTest` is a good model for the
+   style, though the tests live in `bwapi-c/tests/`.
 6. **Mock server — the high-value one.** Client mode only needs a process that creates
    `Local\bwapi_shared_memory_game_list`, a `Local\bwapi_shared_memory_<pid>` mapping, and
    `\\.\pipe\bwapi_pipe_<pid>`, then drives the frame handshake
@@ -693,7 +846,15 @@ Ordered by value per unit of effort.
    a synthetic map and units and assert the ABI reports them. This is the difference
    between a binding that's tested and one that's merely compiled, and it's reusable by
    every future language binding.
-7. **End-to-end smoke.** The Rust and Node example bots run against real StarCraft as a
+7. **Re-entrancy tests.** Assert that a predicate calling a read-only function works and
+   returns correct results, and that one calling a mutating function gets
+   `BWAPI_ERR_REENTRANT_MUTATION` with no side effect (§5.4). The guard is only worth
+   having if it is covered.
+8. **Upstream-drift canary.** A scheduled CI job that bumps the `third_party/bwapi`
+   submodule to upstream `main` and runs the coverage check and layout asserts. It does not
+   gate merges — it just tells us early when BWAPI changes something the ABI cares about.
+   This is the tax for living in a separate repo, and it is small.
+9. **End-to-end smoke.** The Rust and Node example bots run against real StarCraft as a
    pre-release manual gate.
 
 ---
@@ -701,47 +862,51 @@ Ordered by value per unit of effort.
 ## 12. Roadmap
 
 Sizes are rough order-of-magnitude, assuming one developer with a Windows/MSVC setup.
+Module mode is gone (§8); the old phase 6 becomes phase 5.
 
 | Phase | Deliverable | Size |
 |---|---|---|
-| **0. Conventions** | This doc reviewed and agreed; `bwapi_c.h` skeleton with §4 conventions, version/error/log functions; `BWAPI_C.vcxproj` + CMake target building an empty DLL; layout asserts (§10.2) answering the x64 question | S |
+| **0. Bootstrap & conventions** | `bwapi-c` repo created with BWAPI pinned as a submodule; client-only CMake target per §10.1 building an empty DLL; `bwapi_c.h` skeleton with the §4 conventions, version/error/log functions; layout asserts (§10.2) answering the x64 question | S |
 | **1. Generator** | YAML spec format, `emit_*.py`, `check_coverage.py`, `api.json`; hand-written spec for `Player` (54 decls) as the proving ground; symbol golden file + header hygiene in CI | M |
 | **2. Static types** | Full `bwapi_c_types.h` (~700 constants) + all `*Type` static data (~150 functions); ~500 unit tests. **Independently useful even before the game layer** — a language can ship a complete type table now | M |
 | **3. Client mode, complete** | `Game` (~120 entry points after the §5.2 collapse), `Unit` (~250), `Force`/`Region`, commands, events, bulk map data, collections; the mock server and its test suite. **This is the milestone at which a real bot can be written in another language** | L |
-| **4. Consumers** | `bwapi-sys` + safe `bwapi` crate + example Rust bot; Node binding (koffi or N-API) + example JS bot, with the blocking-`update()` worker-thread pattern documented. Each one shakes out real ABI ergonomics — expect to revise phase 3 | M |
-| **5. Module mode** | `module_shim.cpp`, the `bwapi_bot_vtable` loader (§8), x86-only; `TournamentModule` if wanted | M |
-| **6. Filters & polish** | Callback predicates (§5.4 tier 3), `Type::getType` name lookup, borrowed-pointer bulk access if measurement justifies it | S |
+| **4. Consumers** | `bwapi-sys` crate + Node raw FFI in `bindings/`, plus example Rust and JS bots (with the blocking-`update()` worker-thread pattern documented). Safe/idiomatic wrappers get spun out to their own repos here. Each one shakes out real ABI ergonomics — expect to revise phase 3 | M |
+| **5. Filters & polish** | Callback predicates with the §5.4 safe subset and its re-entrancy guard, `Type::getType` name lookup, borrowed-pointer bulk access if measurement justifies it | S |
 
-Phases 0–3 are the real project. 4 is what makes it credible. 5–6 are follow-ons.
+Phases 0–3 are the real project. Phase 4 is what makes it credible. Phase 5 is a follow-on.
 
 ---
 
-## 13. Risks and open decisions
+## 13. Risks, and decisions taken
 
 | Risk | Mitigation |
 |---|---|
-| **x86-only shuts out Node and default Rust** | Settle §10.2 in phase 0. If x64 client mode works, this evaporates. If not, document `i686-pc-windows-msvc` / 32-bit Node as hard requirements, up front |
+| **x86-only shuts out Node and default Rust** | Settle §10.2 in phase 0. If x64 client mode works this evaporates — and with module mode dropped, x64 can be the primary target. If not, document `i686-pc-windows-msvc` / 32-bit Node as hard requirements, up front |
+| **Living in a separate repo means silently drifting from BWAPI** | The pinned submodule makes drift a deliberate act, not an accident; the scheduled drift canary (§11.8) reports it early; the coverage check names exactly which declarations changed |
 | **`unordered_set` iteration order leaks nondeterminism into bots** | Sort by ID at the boundary (§4). Decide once, document loudly |
-| **600 entry points is a lot of surface to keep correct** | Codegen + coverage check + symbol golden file. The generator is the deliverable; the wrappers are output |
-| **Foreign callback unwinds into BWAPI's stack** | `catch(...)` at every callback site; document "must not throw / must not panic across FFI"; defer callbacks to phase 6 |
-| **256-byte text truncation surprises users** | Document on every text function; consider an upstream fix separately |
-| **ABI drifts from BWAPI across releases** | `bwapi_abi_version()` + append-only policy + golden symbols + coverage check |
-| **Someone builds language bindings on the shared-memory layout instead** | The mock server and `api.json` make the C ABI the path of least resistance. Also worth saying plainly in the README: re-implementing `Templates.h` per language is a maintenance trap |
+| **~600 entry points is a lot of surface to keep correct** | Codegen + coverage check + symbol golden file. The generator is the deliverable; the wrappers are output |
+| **A predicate mutates the state the enclosing query is reading** | The §5.4 safe subset, enforced by a thread-local guard that fails mutating calls deterministically, plus tests that cover both sides of it |
+| **A foreign callback unwinds into BWAPI's stack** | `catch(...)` at every callback site; document "must not throw / must not panic across FFI"; callbacks are phase 5 regardless |
+| **256-byte text truncation surprises users** | Document on every text function; worth proposing upstream separately |
+| **The ABI drifts from its own past releases** | `bwapi_abi_version()` + append-only policy + golden symbols; every release records the BWAPI revision it was built against |
+| **Someone builds language bindings on the shared-memory layout instead** | The mock server and `api.json` make the C ABI the path of least resistance. Worth saying plainly in the README: re-implementing `Templates.h` per language is a maintenance trap |
 
-**Open questions for the maintainers:**
+### Decisions from the PR #1 review
 
-1. **x64 client mode: in scope?** Determines the Node story. (Phase 0 answers the technical
-   half; the shipping decision is yours.)
-2. **Is `bindings/` in-tree or separate repos?** In-tree keeps them versioned with the ABI
-   and testable in one CI run; separate repos suit the crates.io/npm release cadence better.
-   Recommendation: `bindings/rust` and `bindings/node` in-tree as the reference consumers,
-   published from here.
-3. **Is a Python dependency in CI acceptable** for the generator? (Generated sources are
-   checked in, so it's a CI-only dependency, not a contributor one.)
-4. **Does module mode matter enough** to justify phase 5, or is client mode sufficient for
-   the non-C++ audience?
-5. **Should `bwapi/include/swig.i` and `swig_lib/` be removed** once this lands? They are an
-   unfinished parallel attempt at the same goal; leaving both invites confusion.
+All five open questions from revision 1 are answered; they are recorded here rather than
+left open.
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Is x64 client mode in scope? | **Yes, if phase 0 shows it is technically feasible.** Settled by the layout asserts in §10.2 before anything else is built |
+| 2 | Is `bindings/` in-tree or in separate repos? | **Both, split by layer.** The raw FFI core — `bwapi-sys` in Rust terms — lives in `bindings/` in the `bwapi-c` repo. The idiomatic, safe, host-language package lives in its own repo per language. **Rust and JavaScript are the only two in scope** for in-tree bindings today (§7) |
+| 3 | Is a Python dependency in CI acceptable for the generator? | **Yes.** Generated sources stay checked in, so it remains a CI-only dependency and never a contributor one |
+| 4 | Does module mode justify a phase? | **No — deferred indefinitely**, until someone presents a compelling reason it is necessary. The design sketch is retained in §8; nothing in the roadmap depends on it |
+| 5 | Should `swig.i` / `swig_lib/` be removed from BWAPI? | **No.** `BWAPI_C` lives in a separate repository, so it does not displace anything in this tree and has no standing to propose removals here |
+
+The structural consequence of Q2 and Q5 together is goal 7 in §2: **the ABI is purely
+additive.** It depends on BWAPI, proposes improvements to BWAPI separately and on their own
+merits (§10.1), and must build regardless of whether any of them are accepted.
 
 ---
 
@@ -758,7 +923,8 @@ extern "C" {
     fn bwapi_unit_attack_unit(unit: i32, target: i32, queued: i32) -> i32;
 }
 ```
-…wrapped into a safe `bwapi` crate with `Unit(i32)` newtypes, `Result`, and iterators.
+…wrapped into a safe `bwapi` crate with `Unit(i32)` newtypes, `Result`, and iterators —
+published from its own repository, per §7.
 
 **JavaScript** (koffi, if x64 client mode lands):
 ```js
