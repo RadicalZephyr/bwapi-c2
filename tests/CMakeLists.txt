@@ -7,3 +7,4 @@ target_include_directories(bwapi_c2_headers INTERFACE "${CMAKE_SOURCE_DIR}/inclu
 add_subdirectory(header_hygiene)
 
 add_subdirectory(layout_dump)
+add_subdirectory(derive_closure)
