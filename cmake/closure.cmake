@@ -114,6 +114,12 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # CommandTemp.h:34 relies on MSVC's two-phase lookup semantics. Public, because anything that
   # includes BWAPIClient/Source/Command.h needs it too.
   target_compile_options(bwapi_c2_closure PUBLIC -fdelayed-template-parsing)
+elseif(NOT MSVC)
+  # GCC has no equivalent flag and stops at CommandTemp.h:34 ('Command' was not declared in this
+  # scope). Say so at configure rather than 45 objects into the build.
+  message(FATAL_ERROR
+    "The BWAPI closure compiles with MSVC or clang only: include/BWAPI/Client/CommandTemp.h:34 "
+    "needs -fdelayed-template-parsing (plan section 10.1). Configure with CXX=clang++.")
 endif()
 
 if(MSVC)

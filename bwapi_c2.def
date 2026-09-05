@@ -1,0 +1,6 @@
+; Exports of bwapi_c2.dll (plan section 4). Names only, never ordinals: binding is by name, so a
+; reordered list can never silently rebind a consumer. Hand-written in phase 0; from phase 1 on
+; emit_def.py writes this file and CI fails on any diff (implementation plan rule 2).
+LIBRARY bwapi_c2
+EXPORTS
+    bwapi_abi_version
