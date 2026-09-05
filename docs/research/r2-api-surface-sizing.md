@@ -159,10 +159,21 @@ Never used by anyone: every `*Mouse` variant, every `drawEllipse*`, every `drawT
 `drawDot{Screen,Mouse}`, `drawCircleScreen`, and all eight generic `draw*(CoordinateType, …)`
 forms.
 
-**Implication.** Ship 8 draw functions in Map and Screen space. That is a straight −82 against
-§1.8's ~90. The generic `CoordinateType`-taking forms can be dropped entirely: nobody passes a
-runtime coordinate space, and the `CoordinateType` enum itself has **0 of 4 constants
-referenced** anywhere in the corpus.
+**Implication — corrected.** *This recommendation is withdrawn; see
+[research-vs-rev4-review.md](research-vs-rev4-review.md) §4.* The original text argued for
+shipping 8 draw functions in Map and Screen space only, and dropping the generic
+`CoordinateType`-taking forms because nobody passes a runtime coordinate space.
+
+That was the wrong inference. §5.2 of the plan already collapses ~90 declarations to **8 functions
+by taking `ctype` as a parameter** — reaching the same count while keeping all three coordinate
+spaces and the runtime choice. Dropping the generic forms would have traded away Mouse space for
+nothing.
+
+**Draw calls are development and debugging tooling, so tournament-bot usage systematically
+undercounts them**: a bot author wants more drawing during development than survives into a
+submitted binary. The numbers above are therefore evidence that the §5.2 collapse is *safe* — no
+bot depends on the 90-way spelling — and not an argument for omitting anything. The general form
+of the correction: **usage frequency tells you what is safe to merge, not what is safe to omit.**
 
 ---
 
@@ -274,7 +285,7 @@ from the interface classes. Against usage:
 | Block | §1.8 / R1 sizing | Observed usage | Recommendation |
 |---|---|---|---|
 | `canXxx` family | ~130 (bwapi-c expands to 130) | 29 used, 9 hot | **Ship 10, defer ~120** |
-| Draw calls | ~90 | 8 used | **Ship 8, defer ~82** |
+| Draw calls | ~90 | 8 used | **Ship 8 via §5.2's `ctype` collapse — all three spaces kept, nothing omitted** |
 | `Filters.h` combinators | 134 | 26 used | **Ship ~26 as constants** |
 | Interface methods (Game/Unit/Player/…) | ~450 | 270 used, 201 in v1 cut | **Ship ~200, defer the rest** |
 | **Static type data (§5.8)** | **1,030 (0 in bwapi-c)** | **80 accessors + 279 constants used, 20% of traffic** | **Ship it all. This is the product.** |
