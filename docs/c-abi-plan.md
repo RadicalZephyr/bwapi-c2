@@ -72,6 +72,10 @@ This is a design/roadmap document. No production code is included.
 > callback, the capability macro, the version triple, the stability bound (all §4); §5.7 removed;
 > the audit's universe made explicit (§9, §12); `bwem_initialize` resets first (§8.2); the
 > general C-over-C++ prior art (§1.6.1).
+>
+> **Revision 4.2** adds §16, documentation: the ABI reference is emitted from the same spec as
+> the header, the site is Zola-only on GitHub Pages, structured by Diátaxis, built and deployed
+> from CI. Nothing else moved.
 
 ---
 
@@ -1238,6 +1242,9 @@ bwapi-c2/                           # separate repository, LGPL-3.0-only
     csharp/                # raw P/Invoke layer, generated from api.json
     rust/bwapi-c2-sys/     # raw FFI — the proof-of-concept consumer
   examples/{c-example-bot,python-example-bot,csharp-example-bot}/
+  site/                    # the Zola site (§16): landing, tutorials, how-to, explanation, and
+                           #   the reference stubs emit_docs.py writes at build time (gitignored)
+  .github/workflows/{ci,docs}.yml
   CMakeLists.txt
 ```
 
@@ -1465,8 +1472,10 @@ unusual carries an inline `body:`. **Every `skip:` names the rule that justifies
 how the coverage audit proves the §1.8 mapping.
 
 Emitters produce `bwapi_c2.h`, `bwapi_c2_bwem.h`, `bwapi_c2_types.h`, the `*.gen.cpp` files,
-`bwapi_c2.def`, and **`api.json`** — the machine-readable description that the Python, C# and
-Rust raw layers consume, so binding authors never re-parse C.
+`bwapi_c2.def`, **`api.json`** — the machine-readable description that the Python, C# and
+Rust raw layers consume, so binding authors never re-parse C — and the reference pages of the
+documentation site (§16), which read `api.json` rather than the spec so that they can only ever
+say what the bindings see.
 
 **Hand-written, and named as such so the coverage claim stays honest:** the bulk grids,
 collections, events and snapshots (`bulk.cpp`); `UnitCommand` and broadcasts (`commands.cpp`);
@@ -1785,6 +1794,7 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 16 | Test fixtures | **Synthetic by policy**; recorded buffers contributor-local; no mock server (§11) |
 | 17 | SWIG | **Rejected on five measured grounds**; clang drafts the spec (§9) |
 | 18 | The rev-4 review's fourteen findings and five prior-art gaps | **All applied** in revision 4.1 ([research/rev4-review.md](research/rev4-review.md)). Largest: invalid-vs-dead handles (§4, §6.2); retry over preflight (§4, §14); the error callback and thread check (§4) |
+| 19 | Documentation | **Reference emitted from `api.json`, no Doxygen; one Zola site, Diátaxis-structured, on GitHub Pages, deployed from CI; the design record linked, not rendered** (§16) |
 
 ---
 
@@ -1902,6 +1912,102 @@ on a response.
 |---|---|---|
 | `third_party/bwem` (`N00byEdge/BWEM-community`, MIT/X11) | Add `void Map::ResetInstance() { m_gInstance = nullptr; }` | **Upstream bug found in R11.6.** `MapImpl::Initialize` resets in place with `this->~MapImpl(); new (this) MapImpl();`, and `~Neutral` calls `RemoveFromTiles()` which reaches back into the Map's already-destroyed tile storage. Re-initialisation segfaults on any map with neutrals — every map — and the same root cause crashes at static destruction after the host releases its `GameData`. Stardust's vendored BWEM already carries exactly this method. `bwapi_bwem_reset()` depends on it |
 | `third_party/bwapi` (LGPL-3.0) | `BWAPIClient/Source/Convenience.h:33`: `va_list &ap` → `va_list ap` | MSVC's `va_list` is `char*`, so a reference binds; glibc's is an array type and cannot. One character; blocks `GameImpl.cpp` on every non-MSVC compiler (R6 §5). Needed only for the Linux-native test suite (§11), which is reason enough |
+
+---
+
+## 16. Documentation
+
+The plan has said what the ABI is and how it is tested, and until this revision said nothing
+about how anyone finds out. That is the gap a consumer notices first. Three decisions, each
+following from something already decided above.
+
+### 16.1 The reference is emitted, not extracted
+
+**Doxygen is not used.** The conventional shape for a C library — Doxygen over the public
+headers, a theme on top — is wrong here for the same reason §9 rejects parsing the headers to
+generate the ABI: **the headers are output.** Every fact a reference page needs is already in the
+spec and in `api.json`, and several of them Doxygen cannot express without inventing comment
+conventions to carry them: the return kind and its neutral value, `legit_none`, `reentrant`, the
+handle kind of `self`, struct layouts and flag bits, and the §15 row a function departs from
+upstream on. A second description of the ABI in header comments would be a second thing to keep
+in agreement, and the audit (§9) has no way to check it.
+
+So **`emit_docs.py` is the fifth emitter**, beside header, source, `.def` and `api.json`. It reads
+`api.json` — not the spec — so the reference can only ever describe what the raw bindings see.
+It writes, at build time and never checked in:
+
+- **one page per function**, with typed front matter (C name, handle kind, parameters, return
+  kind, neutral value, `legit_none`, `reentrant`, `since`, §15 rows) and the `doc:` text as the
+  body. Every symbol gets a stable URL, `/reference/unit/bwapi_unit_get_hit_points/`, and the
+  site's search index sees it — which it would not if the reference were rendered from
+  `api.json` by templates alone, because Zola indexes Markdown content, not template output;
+- **one table page per constant family**, per struct (fields, offsets, sizes, flag bits), and
+  for the error codes;
+- the **frame loop** (§4.1) as a normative page, hand-written, since it is the ABI's one protocol.
+
+The `doc:` field is one line in the header for IDE hover and the whole entry on the site, and it
+is **reference-shaped by rule**: what the function does, its parameters, its return, its neutral
+value, when it latches. Guidance does not go in it — a how-to sentence in a spec entry is
+duplicated across 770 pages — so an entry may carry `guides:` links and the prose lives in the
+guides. Layout is the templates' job; the emitter never formats anything.
+
+**Append-only means one reference, not versioned copies.** After 1.0 every entry carries `since`
+and the page renders it as a badge. A reader on 1.2 sees everything; a reader on 1.0 filters by
+badge. Versioned documentation trees exist for APIs whose functions change meaning, and §4 says
+these do not. Before 1.0 the site says *unstable*, once, at the top of the reference.
+
+**`api.json` is published**, at `/api.json`, because the third-party binding author it exists for
+(§7) needs a URL, not a repository path. `docs/api-json.md` becomes the reference page for its
+fields.
+
+### 16.2 One site, one tool, Diátaxis
+
+**The site is Zola, and only Zola.** An earlier draft paired a Zola landing page with an mdBook
+for the guides. Two generators means two themes, two navigation models and two search indexes,
+and the seam between them is the first thing a reader sees. Zola alone covers the landing page,
+the four Diátaxis sections and the generated reference with one set of templates; its built-in
+search index covers everything written as Markdown, which after 16.1 is everything; `load_data`
+reads `api.json` for cross-cutting tables; and `zola check` verifies internal links and anchors,
+so a tutorial cannot link to a function that no longer exists. What it does not give for free is
+a book-style sidebar and previous/next navigation, which is a template of a few dozen lines.
+**The templates are our own, not a third-party theme**: the reference pages need a layout no
+documentation theme ships, and a theme is a dependency with its own release cadence.
+
+The site follows **Diátaxis** — four sections, each with one job, and content that does not fit a
+section is rewritten until it does:
+
+| Section | Job | First contents |
+|---|---|---|
+| **Tutorials** | Learning by doing, one path, guaranteed to work | A first bot in C (the §14 loop, explained); a first bot in Python over the raw layer |
+| **How-to guides** | A task the reader already has | Consume the DLL from C, Python, C#, Rust; size buffers with the retry idiom; choose between the latch and the error callback; initialise BWEM and find the natural; run the differential test against a real installation; bump a pin |
+| **Reference** | The facts, generated (16.1) | Every function, constant family, struct and error code; the frame loop; `api.json`'s fields; the divergence register |
+| **Explanation** | Why it is the way it is | Why a C ABI over the real `Game` rather than another protocol port; why client mode; why integer handles; why the error channel is sticky; why positions pack; why the fixtures are synthetic; what the license asks of a bot author |
+
+**The design record is linked, not rendered.** This document, the research rounds and the
+reviews are 500 KB written for the people building the library, in the voice of a decision
+being made. Explanation pages are written for the people using it, in the voice of a decision
+already made, and are short. Each Explanation page links to the section and research round it
+condenses, on GitHub, as "the full argument".
+
+**The landing page** is the Purpose section of this document, rewritten for a reader who has not
+read it: what this is, the three-part answer to why a fourth attempt goes differently, downloads,
+license, and the four sections.
+
+### 16.3 Built and deployed from CI
+
+A `docs.yml` workflow, separate from `ci.yml` because it needs neither a compiler nor the
+closure: copy `api.json` into the site's static directory (this is also how `/api.json` is
+served); run `emit_docs.py`; `zola check` for internal links and anchors; `zola build`;
+`actions/upload-pages-artifact` and `actions/deploy-pages` on pushes to the default branch. Pull
+requests build and check without deploying. Zola's version is pinned in the workflow like every
+other tool. **External links are checked on a schedule, not on the merge path** — a dead upstream
+link must not block a deploy.
+
+There is no separate `gh-pages` branch: Pages is configured to deploy from Actions, so the
+published site is always the output of one commit of `main` and nothing is committed to publish.
+
+**Not done, and why:** no Doxygen, no versioned trees, no rendered design record (all above); no
+API-reference PDF or man pages (no measured demand); no localisation.
 
 ---
 
