@@ -13,7 +13,8 @@ implementation plan is
 [docs/implementation-plan.md](docs/implementation-plan.md).
 
 **Status: phase 0 (bootstrap) of the implementation plan is in progress.** There is no
-buildable code yet.
+buildable code yet. BWAPI and BWEM are pinned as submodules under `third_party/`; the commits,
+the patches carried on them and the pin-bump procedure are in [docs/pins.md](docs/pins.md).
 
 ## What a client-mode bot cannot do
 
