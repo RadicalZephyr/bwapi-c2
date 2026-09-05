@@ -1254,6 +1254,29 @@ a divergence here or asserts `divergence: none`.**
 | 9 | Bulk grids cropped to the live map | §5.5 | 16× less data on a 128×128 map; `out_w`/`out_h` report the extent |
 | 10 | Text truncated at 256 bytes | §5.1 | Inherited from `GameImpl::vPrintf`, not introduced — but surfaced here because callers cannot see it |
 
+### 15.1 BWEM divergences
+
+`bwapi_c2_bwem.h` (R11) departs from `BWEM::Map` semantics in the places below. Same rule: one
+normative table rather than prose.
+
+| # | Divergence | Where | Rationale |
+|---|---|---|---|
+| 11 | `Base` addressed by a **synthesised** flat `int32_t`, 0..`BaseCount()-1` | R11.3 | BWEM's `Base` has no identity of its own and is stored by value inside `Area::Bases()`. `Base::Location()` is the fourth most-used BWEM call (89 sites), so bases need a first-class handle. The ABI owns the mapping table and rebuilds it on reset |
+| 12 | Neutrals addressed by their **BWAPI unit id** — the one shared handle space | R11.3 | `Neutral::Unit()` *is* a BWAPI unit. Sharing the id makes the two headers join with no lookup table on either side, and makes `Map::GetMineral(Unit)` the identity function. Deliberate exception to §4's disjoint-handle-space rule, stated in both headers |
+| 13 | BWEM's three-phase init collapsed to one `bwapi_bwem_initialize(int32_t, int32_t)` | R11.3, R11.5 | `Initialize` → `EnableAutomaticPathAnalysis` → `FindBasesForStartingLocations` has an ordering dependency with no use case for the intermediate states. An ABI should make ordering errors impossible rather than diagnosable. Blocks ~450 ms; documented |
+| 14 | `on_*_destroyed` hooks are **filtered and idempotent**, never throwing | R11.5 | `MapImpl::OnMineralDestroyed` does `bwem_assert(found)` and therefore throws when handed a unit BWEM does not track — which is what a host forwarding every `onUnitDestroy` would do. Extends §4's neutral-value-and-latch rule to a third-party library's assertions |
+| 15 | Mutators, internals, and `Graph`/`GridMap`/`UserData`/`Markable`/`MapDrawer`/`MapPrinter` not exposed | R11.1, R11.2 | 42 mutators/internals and 49 declarations on non-bot-facing classes, with **zero** call sites across 119,000 lines of bot code. Not merely unused — unnecessary, since no host runs the analysis |
+| 16 | `Tile`/`MiniTile` exposed as scalar accessors first, bulk grids as an optional fast path | R11.1, R11.3 | Grid access is ~2% of BWEM traffic and no existing port exposes bulk grids. Inverts the emphasis §5.5 would suggest |
+
+### 15.2 Patches carried on pinned dependencies
+
+Not ABI-vs-library divergences but modifications to the pinned sources themselves. Each must be
+re-applied at a pin bump (§10.3).
+
+| Dependency | Patch | Reason |
+|---|---|---|
+| `third_party/bwem` (`N00byEdge/BWEM-community`, MIT/X11) | Add `void Map::ResetInstance() { m_gInstance = nullptr; }` | **Upstream bug found in R11.6.** `MapImpl::Initialize` resets in place with `this->~MapImpl(); new (this) MapImpl();`, and `~Neutral` calls `RemoveFromTiles()` which reaches back into the Map's already-destroyed tile storage. Re-initialisation therefore segfaults on any map with neutrals — i.e. every map — and the same root cause crashes at static destruction after the host releases its `GameData`. Stardust's vendored BWEM already carries exactly this method. `bwapi_bwem_reset()` depends on it. Offer upstream; do not gate on a dormant repository |
+
 ---
 
 ## Appendix A. Module mode

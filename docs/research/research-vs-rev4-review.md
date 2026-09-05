@@ -45,7 +45,7 @@ The usage data remains useful as evidence that the collapse is safe, not as a sc
 | **F** | Restate cross-platform non-goal | ✅ restatement correct; **three new costs** (§2F) |
 | **G** | Cut the ceremony | ✅ unopposed; two cheap checks want adding back (§2G) |
 | **H** | Re-scope surface, conditional generator | ⚠️ **trigger keys on the wrong number** (§2H) |
-| **I** | Collapse the roadmap | ✅ unaffected except via E and H |
+| **I** | Collapse the roadmap | ✅ unaffected except via E and H — **plus R11**: BWEM is not a phase, it is 14 more TUs in the same CMake target and 98 more generated wrappers (§3.1) |
 | **J** | Fix the names | ✅ delivered by R10; **premise half wrong** (§2J) |
 | **K** | Cite §5.10 corroboration | ⚠️ **corroboration is narrower than claimed** (§2K) |
 | **L** | What stands unchanged | ✅ §4 stands entirely. §0 and §10.1 need corrections (§2L) |
@@ -256,6 +256,10 @@ is why that Zig repo vendors unlicensed headers into an MIT project).
 
 Ordered by how much downstream work hangs on them.
 
+> **Updated after R11.** Fork 5 is closed (BWEM is in scope; BWTA2 is an explicit non-goal).
+> R11 also settled several things that were open when this list was written — see §3.1 — and
+> added two directives to §2I's roadmap rewrite.
+
 **1. Does §5.8 ship as exported functions, a generated lookup table, or both?**
 R2: 185 accessors, 848 constants; 80 accessors used at 1,671 sites (20% of all traffic). A table
 is one blob and zero per-call cost; functions are ~185 symbols and match §4's shape. **My
@@ -289,7 +293,9 @@ Decided: BWEM is wrapped, through a second header, under the same §4 convention
 is that a bot written against `bwapi-c2` without BWEM starts behind an equivalent C++ bot, and
 every host ecosystem would otherwise wrap or reimplement it separately — which is the same
 duplicated-effort trap §5.8 exists to close. Scoped as **R11**, a new research project:
-[r11-bwem-research-plan.md](r11-bwem-research-plan.md).
+[r11-bwem-research-plan.md](r11-bwem-research-plan.md) — **now executed**; see
+[R11.4](r11-4-bwem-link-closure.md) (ten symbols, all in the closure) and
+[R11.8](r11-8-bwta2.md) (BWTA2 closed). Outcomes summarised in §3.1.
 
 **6. Linux/OpenBW: closed or parked?**
 R9's missing license is a blocker today, R7's MPQ problem makes it untestable, R5's i386 layout
@@ -309,6 +315,37 @@ lacks latcom, `getBuildLocation`, `clientInfo` and `registerEvent` — all of wh
 free. **Recommend: Rust stays as the proof-of-concept test consumer** (it is the cheapest way to
 prove the ABI is bindable, and R2 gives a usage baseline from Styx2) **but is not shipped as a
 product competing with rsbwapi.** Rev-4 §B asks the question and does not answer it.
+
+---
+
+### 3.1 What R11 closed, and what it added
+
+**Closed:**
+
+| | Outcome |
+|---|---|
+| Fork 5 — BWEM in or out | **In.** R11.4: ten BWAPI symbols, all already in the closure, zero Storm/Util/Boost, 327 KB. One DLL, submodule-pinned. R11.8 closes BWTA2 as an explicit non-goal (no maintained repo since 2018; needs Boost **and** CGAL) |
+| Does §4 survive a second library? | **Yes, unmodified.** R11.3 mapped every BWEM shape onto an existing rule. Six BWEM divergences recorded in §15.1 — all of them *applications* of §4, not exceptions to it |
+| Is the synthetic-fixture substrate general? | **Yes.** R11.6 drove BWEM's full analysis from a hand-built `GameData`. R9's map-provenance question does not arise for BWEM either |
+
+**Added, and these are new constraints rather than open questions:**
+
+1. **The wrapper carries a patch on a pinned dependency.** R11.6 found an upstream BWEM crash on
+   re-initialisation; §15.2 records the `Map::ResetInstance` patch. §10.3's pin-bump procedure now
+   covers **two** dependencies and must re-apply it.
+2. **Teardown becomes explicit.** BWEM's singleton must be destroyed before the `GameData` mapping
+   goes away and before static destruction. `bwapi_client_disconnect()` grows a BWEM step — the
+   first thing in either header with a required shutdown order.
+3. **The first non-mechanical wrappers.** The three filtered `on_*_destroyed` hooks (§15.1 #14)
+   have real logic and are hand-written, not generated. Worth naming in §9 so the generator's
+   coverage claim stays honest.
+4. **`§4.1` needs no BWEM section.** R11.5: BWEM has nothing per-frame at all, only a ~450 ms
+   match-start call and three event hooks. A one-line note, not a subsection.
+5. **A shared fixture builder.** R11.6's two gotchas — neutrals arrive via the `UnitDiscover`
+   event stream, and `isNeutral()` reads a `PlayerData` flag rather than the player type — belong
+   in one helper used by both headers' tests, solved once.
+
+**Unchanged by R11:** forks 1, 2, 3, 4, 6, 7 and 8 below.
 
 ---
 
