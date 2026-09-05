@@ -27,7 +27,7 @@ order.
 
 ## Layout
 
-- `docs/c-abi-plan.md` — the plan, currently **revision 4.3**. ~2,000 lines, numbered sections
+- `docs/c-abi-plan.md` — the plan, currently **revision 4.4**. ~2,000 lines, numbered sections
   (`§0` licensing through `§15` divergence register, plus Appendices A and B). It is the source
   of truth for every design decision. Cross-references throughout the repo use `§N` notation
   against this file.
