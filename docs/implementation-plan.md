@@ -72,7 +72,7 @@ build system. The order is driven by what each later step needs to compile.
   what terms (§0). SPDX `LGPL-3.0-only` in the README.
 - README: one paragraph each on what this is, dynamic consumption only (§0 consequence 1), the
   grouped-command gap (Appendix A), and the names table from §3 so nobody invents `BWAPIC`.
-- Commit: *"Add license files and README"*.
+- Commit: *"Add license files and README"*. **Done.**
 
 ### 0.2 Pin the dependencies
 
@@ -85,12 +85,13 @@ build system. The order is driven by what each later step needs to compile.
   submodules are googletest and an unlicensed OpenBW (§10.1), and nothing may ever fetch them.
 - `docs/pins.md` is also where the §10.3 pin-bump checklist lives from now on, so it is beside
   the numbers it changes.
-- Commit: *"Pin BWAPI and BWEM as submodules"*.
+- Commit: *"Pin BWAPI and BWEM as submodules"*. **Done**, at BWAPI `d727fed` and BWEM `9a63141`.
 
 ### 0.3 Carried patches
 
-Two patches (§15.2): `patches/bwapi-convenience-valist.patch` (`Convenience.h:33`, `va_list&` →
-`va_list`) and `patches/bwem-reset-instance.patch` (`Map::ResetInstance()`).
+Two patches (§15.2): `patches/bwapi-convenience-va-list.patch` (`Convenience.h:33`, `va_list&` →
+`va_list`) and `patches/bwem-reset-instance.patch` (`Map::ResetInstance()`), named as `NOTICE`
+already names them.
 
 - Generate each as a `git diff` against the pinned commit, with a header comment naming the
   §15.2 row and the upstream issue once filed.
@@ -123,7 +124,9 @@ This is the step everything else links against. Transcribe R6, do not rederive i
   `BroodwarOutputDevice.cpp`, `Shared/*.cpp`, `BWAPIClient/Source/*.cpp`, BWEM's 14
   `src/*.cpp` — written out file by file, never globbed (§10.1). A new upstream file is a link
   error, which is the intended behaviour.
-- Include directories exactly as §10.1 lists them, `include/BWAPI/Client` included. Definitions:
+- Include directories exactly as §10.1 lists them, `include/BWAPI/Client` included, and all of
+  them relative to the **inner** roots `third_party/bwapi/bwapi/` and `third_party/bwem/BWEM/`
+  (`docs/pins.md`). Definitions:
   `NOMINMAX=1`. Flags: `-fdelayed-template-parsing` on clang, `/MT` on MSVC,
   `-fvisibility=hidden` everywhere non-MSVC. `BWAPI_CUSTOM_COMPILE_FLAGS` as the documented hook.
 - Two targets: `bwapi_c2_closure` (an `OBJECT` library — the 44 + 14 TUs) and `BWAPI_C2` (the
