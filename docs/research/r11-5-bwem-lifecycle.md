@@ -44,7 +44,16 @@ Where it goes, from `MapImpl::Initialize`: resize the tile and minitile vectors 
 
 ---
 
-## 2. Re-initialisation works, and JBWAPI #51 was a port bug
+## 2. Re-initialisation — CORRECTED BY R11.6
+
+> **This section was wrong when first written and is corrected here.** The measurement below was
+> taken on a fixture with **no neutral units**. R11.6 added synthetic minerals and found that
+> re-`Initialize` then **segfaults inside BWEM** — `Neutral::~Neutral` → `RemoveFromTiles` →
+> `MapImpl::GetTile_`, reached from `~MapImpl` during `Initialize`'s in-place reset. Since every
+> real map has neutrals, **re-initialisation is broken upstream**, JBWAPI #51 is plausibly
+> inherited rather than a port bug, and `bwapi_bwem_reset()` must use the `ResetInstance`
+> approach instead. See [R11.6 §3](r11-6-bwem-test-substrate.md). The original text follows for
+> the record.
 
 ```cpp
 void MapImpl::Initialize(BWAPI::Game *game)
@@ -58,14 +67,15 @@ void MapImpl::Initialize(BWAPI::Game *game)
 placement-news the implementation before rebuilding. Measured: the second call produced the same
 two areas and one chokepoint, in 475 ms.
 
-So JBWAPI #51 — `IllegalStateException` when playing consecutive games without restarting — is a
-divergence bug in JBWAPI's port, not a defect inherited from BWEM. **That is a point in favour of
-wrapping the real thing**, and belongs alongside R11.2's #27 finding.
+~~So JBWAPI #51 is a divergence bug in JBWAPI's port, not a defect inherited from BWEM.~~
+**Retracted — see the note at the head of this section.** With neutrals present the same path
+crashes upstream, so JBWAPI may well have inherited the defect.
 
-One wrinkle worth recording: **`Map::ResetInstance()` does not exist in `BWEM-community`.**
-Stardust calls it, and it is present in the BWEM variant Stardust vendors (`3rdparty/BWEM`). If
-we ever want an explicit teardown separate from re-`Initialize`, it is a small upstream addition —
-but `bwapi_bwem_reset()` can simply be "re-run `Initialize`", which is what the sketch should say.
+One wrinkle worth recording, **which R11.6 turned into the answer**: `Map::ResetInstance()` does
+not exist in `BWEM-community`. Stardust calls it, and it *is* present in the BWEM variant Stardust
+vendors — `void Map::ResetInstance() { m_gInstance = nullptr; }`. That is not a convenience; it is
+the workaround for the crash above, dropping the whole `unique_ptr` so members destroy in a defined
+order. **`bwapi_bwem_reset()` must do that, not re-run `Initialize`.**
 
 ---
 
@@ -163,6 +173,6 @@ statement applies unchanged.
 | To | Finding |
 |---|---|
 | **R11.3 sketch** | Make the three `on_*_destroyed` entry points filtered and idempotent; document `bwapi_bwem_initialize` as blocking for ~half a second; state the id-stability window |
-| **R11.6** | The fixture works — full analysis, two areas, one chokepoint, a working `GetPath` — on entirely synthetic terrain. One gap remains: BWEM's *neutral* path is fed from `GameImpl`'s `UnitDiscover` **event stream**, not from `data->units`, so a fixture that wants bases must synthesise events too. Not yet working; R11.6 owns it |
+| **R11.6** | *(superseded — R11.6 completed the fixture and found the re-init crash)* The fixture works — full analysis, two areas, one chokepoint, a working `GetPath` — on entirely synthetic terrain. One gap remains: BWEM's *neutral* path is fed from `GameImpl`'s `UnitDiscover` **event stream**, not from `data->units`, so a fixture that wants bases must synthesise events too. Not yet working; R11.6 owns it |
 | **§4.1** | No BWEM section needed in the frame loop. Only a match-start note |
 | **§9 / generator** | The filtered event hooks are hand-written, not generated — three functions with real logic. Worth flagging as the first genuinely non-mechanical wrapper in either header |

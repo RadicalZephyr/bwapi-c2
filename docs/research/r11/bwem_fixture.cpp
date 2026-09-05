@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <unistd.h>
 #include <chrono>
 using namespace BWAPI;
 
@@ -14,6 +15,7 @@ static const int MAPW = 128, MAPH = 128;          // tiles  (a standard ladder s
 static const int WW = MAPW*4, WH = MAPH*4;        // walk tiles
 
 int main(int argc, char** argv) {
+  setvbuf(stdout, NULL, _IONBF, 0);
   GameData* data = (GameData*)calloc(1, sizeof(GameData));
   data->client_version = BWAPI::CLIENT_VERSION;
   data->isInGame = true; data->hasGUI = false;
@@ -62,7 +64,8 @@ int main(int argc, char** argv) {
   for (int k = 0; k < 6; ++k) addMineral(20 + k, 13);
   for (int k = 0; k < 6; ++k) addMineral(MAPW - 26 + k, MAPH - 17);
   data->initialUnitCount = nUnits;
-  data->players[11].type = PlayerTypes::Neutral;   // so getPlayer()->isNeutral() is true
+  data->players[11].type = PlayerTypes::Neutral;
+  data->players[11].isNeutral = true;   // PlayerImpl::isNeutral() reads this flag, not the type
   data->players[11].race = Races::None;
   // GameImpl populates neutralUnits from the UnitDiscover EVENT STREAM, not from a
   // scan of data->units -- so a synthetic fixture must synthesise the events too.
@@ -77,6 +80,16 @@ int main(int argc, char** argv) {
   BWAPI::BroodwarPtr = &game;
   game.onMatchStart();
 
+  printf("  units=%d  events=%d  neutralUnits=%zu  minerals=%zu  staticNeutrals=%zu\n",
+         data->initialUnitCount, data->eventCount,
+         Broodwar->getNeutralUnits().size(), Broodwar->getMinerals().size(),
+         Broodwar->getStaticNeutralUnits().size());
+  { Unit u0 = Broodwar->getUnit(0);
+    printf("  unit0: exists=%d type=%s player=%d isNeutral=%d isMineralField=%d\n",
+      (int)(u0 && u0->exists()), u0?u0->getType().c_str():"?",
+      u0&&u0->getPlayer()?u0->getPlayer()->getID():-1,
+      (int)(u0 && u0->getPlayer() && u0->getPlayer()->isNeutral()),
+      (int)(u0 && u0->getType().isMineralField())); }
   printf("synthetic map %dx%d tiles (%dx%d walk), %d start locations\n",
          MAPW, MAPH, WW, WH, (int)Broodwar->getStartLocations().size());
 
@@ -110,9 +123,22 @@ int main(int argc, char** argv) {
       printf("  base in area %d at (%d,%d) starting=%d minerals=%zu\n",
              (int)a.Id(), b.Location().x, b.Location().y, (int)b.Starting(), b.Minerals().size());
 
-  // second Initialize on the same singleton -- the JBWAPI #51 scenario
-  auto t3 = clk::now(); m.Initialize(&game); auto t4 = clk::now();
-  printf("re-Initialize (consecutive game) %7.1f ms  areas=%zu\n", ms(t3,t4), m.Areas().size());
+  // Second Initialize on the same singleton -- the "consecutive games" scenario.
+  // UPSTREAM BUG (R11.6): with neutrals present this segfaults in
+  // Neutral::~Neutral -> RemoveFromTiles -> MapImpl::GetTile_, reached from
+  // MapImpl::~MapImpl inside MapImpl::Initialize's in-place reset:
+  //     this->~MapImpl(); new (this) MapImpl();
+  // Stardust's vendored BWEM works around it with Map::ResetInstance(), which
+  // BWEM-community does not have. Pass --reinit to reproduce.
+  if (argc > 1 && !strcmp(argv[1], "--reinit")) {
+    printf("re-Initialize with %zu neutrals (expect SIGSEGV upstream)...\n", m.Minerals().size());
+    auto t3 = clk::now(); m.Initialize(&game); auto t4 = clk::now();
+    printf("re-Initialize %7.1f ms  areas=%zu\n", ms(t3,t4), m.Areas().size());
+  }
+  // BWEM's singleton is destroyed by static destruction, AFTER main returns and
+  // after this free() -- and ~Neutral reaches back into the Map's tiles. Both
+  // orderings crash. See R11.6; the wrapper must tear BWEM down explicitly.
+  if (argc > 1 && !strcmp(argv[1], "--exit-clean")) { printf("clean exit\n"); _exit(0); }
   free(data);
   return 0;
 }
