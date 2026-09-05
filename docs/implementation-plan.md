@@ -106,7 +106,10 @@ already names them.
   `ResetInstance`, which touches BWEM's `map.h` and `mapImpl.cpp`. One mechanism for both is
   worth a dirty submodule working tree in CI. The alternative — forks of both dependencies
   under our own org carrying a `bwapi-c2` branch — is cleaner and is open in §7.
-- Commit: *"Carry the two §15.2 patches and apply them at configure"*.
+- Commit: *"Carry the two §15.2 patches and apply them at configure"*. **Done.** Landing it
+  produced [R11.9](research/r11-9-bwem-teardown-retest.md): the R11.6 crash the BWEM patch was
+  recorded as fixing is a fixture artifact, and the patch is carried as BWEM's missing teardown
+  API instead (plan revision 4.3). The CMake hook arrives with 0.5.
 
 ### 0.4 `svnrev.h`
 
@@ -203,11 +206,12 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
   `unit(id, owner, type, x, y, …)`, `neutral(...)`, `terrain(walkable_rows, buildable_rows,
   heights)`, `event(type, unit, player)` — and a `start()` that sets
   `BWAPI::BWAPIClient.data`, constructs the client `GameImpl`, installs `BroodwarPtr`, and
-  calls `onMatchStart()`. Every one of §11's four invariants is encoded in the builder, once:
+  calls `onMatchStart()`. Every one of §11's five invariants is encoded in the builder, once:
   the global is set before any `UnitImpl` exists; every unit-index field defaults to `-1`;
   `isPowered` and `isInterruptible` default true for a unit the scenario wants commandable;
   neutrals are delivered through synthesised `UnitDiscover` events so `PlayerImpl::isNeutral()`
-  and BWEM both see them.
+  and BWEM both see them; and `neutral(...)` refuses a footprint that partially overlaps an
+  existing neutral's (R11.9) unless the call says `stacked` and the footprints are identical.
 - A `frame()` method that advances `frameCount`, clears `unitCommands`/`shapes`/`commands`
   counters and re-runs the event pump, so multi-frame tests are possible.
 - The test framework: **doctest**, single header, MIT, vendored under `tests/support/`. Plain
@@ -215,10 +219,13 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
 - Port R7's harness as `tests/read_write/smoke.cpp` over the builder: client version, frame
   count, map name, the SCV's position, `canMove` true, `canMove` false with `isPowered`
   cleared and `getLastError()` reporting it, and a `move` landing in `data->unitCommands[0]`.
-- Port R11.6's fixture as `tests/bwem/analysis.cpp`: thirty lines of terrain, two areas, one
-  chokepoint, two bases with four minerals each, `GetPath` across the wall; `--reinit` becomes
-  a test that initialises twice and does not crash (this exercises the carried patch);
-  `--exit-clean` becomes a test that resets before the fixture is freed.
+- Port R11.6's fixture as `tests/bwem/analysis.cpp` **with the minerals spaced** (R11.9's
+  `--spaced` layout, two free tiles per field): thirty lines of terrain, two areas, one
+  chokepoint, two bases with four minerals each, `GetPath` across the wall. Then R11.9's six
+  cells as tests: in-place re-`Initialize`, `ResetInstance` then re-`Initialize`, and teardown
+  before the fixture is freed all pass on the spaced layout; and one test that asks the builder
+  for R11.6's overlapping layout and asserts it is refused, so the invariant is enforced rather
+  than remembered.
 - Commit sequence: *"Add the shared synthetic-GameData fixture builder"*, *"Port the R7
   read/write harness onto the fixture builder"*, *"Port the R11.6 BWEM analysis fixture"*.
 
@@ -637,8 +644,14 @@ BWEM.
   no-op, not a throw.
 - `client.cpp`'s event pump dispatches `UnitDestroy` through the same filter, so a host that
   never calls the hooks gets a correct map.
-- Tests, `tests/bwem/lifecycle.cpp`: initialise twice with no crash; reset then a query returns
-  the neutral value and latches `BWEM_NOT_INITIALIZED`; a mineral destroyed via a synthesised `UnitDestroy` event
+- The overlap guard (§8.3): before `Map::Initialize`, walk `Broodwar->getStaticNeutralUnits()`
+  and compare tile footprints pairwise; on a partial overlap latch `BWAPI_ERR_BWEM` with both
+  unit ids in the message and return 0 without initialising. Identical footprints of the same
+  type pass, since BWEM supports that stack.
+- Tests, `tests/bwem/lifecycle.cpp`: initialise twice with no crash; a fixture built with the
+  builder's `stacked` escape hatch holding two partially overlapping minerals makes
+  `bwapi_bwem_initialize` return 0 with `BWAPI_ERR_BWEM` latched and `initialized()` still 0;
+  reset then a query returns the neutral value and latches `BWEM_NOT_INITIALIZED`; a mineral destroyed via a synthesised `UnitDestroy` event
   disappears from the base's mineral list and the hook called again does nothing; destroying a
   marine through the pump does not throw; disconnect with BWEM live does not crash at
   fixture teardown; base ids are identical across two initialisations of the same fixture.
