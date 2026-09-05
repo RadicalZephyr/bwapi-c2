@@ -18,10 +18,12 @@ what changed and why in prose. For plan revisions, the body walks the sections t
 
 `bwapi-c2` is a planned flat C ABI over BWAPI (the C++ StarCraft: Brood War bot API) and BWEM
 (map analysis), so languages with a C FFI can drive both without C++. **There is no production
-code yet.** The repository currently holds the design plan and the research that settled its
-premises. The code layout the plan describes (`include/`, `src/`, `tools/abi/`, `tests/`,
-`bindings/`) does not exist; do not assume it does, and do not create it outside the roadmap's
-phase order.
+code yet.** The repository holds the design plan, the research that settled its premises, the
+license files, and the two pinned submodules under `third_party/` (see `docs/pins.md`; both
+nest their sources one directory down, and BWEM's own submodules must never be fetched). The
+code layout the plan describes (`include/`, `src/`, `tools/abi/`, `tests/`, `bindings/`) does
+not exist; do not assume it does, and do not create it outside the implementation plan's step
+order.
 
 ## Layout
 
@@ -32,6 +34,8 @@ phase order.
 - `docs/implementation-plan.md` — the phase-by-phase execution sequence: commit-sized steps,
   per-step checks, exit checklists, and a table of the judgment calls the plan leaves open. When
   starting work on a phase, begin here; when a step turns out wrong, edit it in place.
+- `docs/pins.md` — the pinned commits, the carried patches, and the pin-bump checklist. Update
+  it in the same commit that moves a submodule.
 - `docs/bwapi-c-abi-plan-revision-4-changes.md` — the directive set that produced revision 4.
   Historical; section numbers in it refer to revision 3.
 - `docs/research/rN-<topic>.md` — results of research round N (R1–R11; R11 has sub-rounds
