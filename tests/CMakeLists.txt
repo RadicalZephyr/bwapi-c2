@@ -8,3 +8,4 @@ add_subdirectory(header_hygiene)
 
 add_subdirectory(layout_dump)
 add_subdirectory(derive_closure)
+add_subdirectory(fixture)

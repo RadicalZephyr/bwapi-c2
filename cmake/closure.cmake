@@ -100,7 +100,7 @@ set_target_properties(bwapi_c2_closure PROPERTIES POSITION_INDEPENDENT_CODE ON)
 # The include list is load-bearing (section 10.1): Shared/*.cpp include their Impl headers
 # unqualified and resolve them against include/BWAPI/Client, which is the one that is easy to
 # miss. svnrev.h lives in include/ on our fork (section 10.3), so nothing is generated here.
-target_include_directories(bwapi_c2_closure PUBLIC
+target_include_directories(bwapi_c2_closure SYSTEM PUBLIC
   "${BWAPI_C2_BWAPI_ROOT}/include"
   "${BWAPI_C2_BWAPI_ROOT}/include/BWAPI/Client"
   "${BWAPI_C2_BWAPI_ROOT}/Shared"
@@ -138,6 +138,6 @@ if(NOT WIN32)
   # Client.cpp is the only file that touches Win32: seven imports, all transport (Appendix B).
   # The shim declares exactly that surface and the stub defines it, so the closure links and the
   # whole test suite runs on Linux (R6, section 11). Test-only scaffolding, hence under tests/.
-  target_include_directories(bwapi_c2_closure PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/tests/support/shim")
+  target_include_directories(bwapi_c2_closure SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/tests/support/shim")
   target_sources(bwapi_c2_closure PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests/support/win32stub.cpp")
 endif()
