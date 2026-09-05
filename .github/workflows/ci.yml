@@ -1,0 +1,88 @@
+# The build and the test suite (implementation plan 0.11; plan section 11).
+#
+# Nothing here downloads anything but the repository and its two direct submodules. The
+# checkout is never recursive: BWEM's own submodules are googletest, OpenBW's BWAPI fork and the
+# unlicensed OpenBW engine, and nothing in this tree may fetch them (docs/pins.md).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The whole suite is Linux-native (section 11): the closure, both fixture-driven suites, the
+  # layout dumps across all three targets and the derived-closure test. Twice: plain, and under
+  # AddressSanitizer and UndefinedBehaviorSanitizer.
+  linux:
+    name: linux (clang, ${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: plain
+            sanitizers: ""
+          - name: asan+ubsan
+            sanitizers: address,undefined
+    env:
+      CC: clang
+      CXX: clang++
+      ASAN_OPTIONS: detect_leaks=0
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true          # direct submodules only; never `recursive`
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          -DBWAPI_C2_SANITIZERS=${{ matrix.sanitizers }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # The artifact: bwapi_c2.dll for Win32 and x64 with the CRT static, exporting exactly what
+  # bwapi_c2.def says, undecorated. The header hygiene tests run under /TC here, the layout
+  # static assertion compiles against the real headers, and the fixture-driven suites run on
+  # MSVC too.
+  windows:
+    name: windows (msvc, ${{ matrix.arch }})
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [Win32, x64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true          # direct submodules only; never `recursive`
+      - name: Configure
+        run: cmake -S . -B build -A ${{ matrix.arch }} -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Test
+        run: ctest --test-dir build --build-config Release --output-on-failure
+      - name: Exports are the .def, undecorated
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem -Recurse build -Filter bwapi_c2.dll | Select-Object -First 1
+          python tests/exports/check_exports.py --lib $dll.FullName --def bwapi_c2.def
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bwapi_c2-${{ matrix.arch }}
+          path: |
+            build/Release/bwapi_c2.dll
+            build/Release/bwapi_c2.lib
+            bwapi_c2.def
+            include/*.h
+            COPYING
+            COPYING.LESSER
+            LICENSE.BWEM
+            NOTICE

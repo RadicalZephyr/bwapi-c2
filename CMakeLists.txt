@@ -23,6 +23,14 @@ set(BWAPI_CUSTOM_COMPILE_FLAGS "" CACHE STRING "Extra compile options for the BW
 
 option(BWAPI_C2_BUILD_TESTS "Build the test suite (section 11)" ${PROJECT_IS_TOP_LEVEL})
 
+# Sanitizers for the whole tree, closure included: "address,undefined" is what CI's second Linux
+# configuration runs the suite under (implementation plan 0.11). Empty means none.
+set(BWAPI_C2_SANITIZERS "" CACHE STRING "Comma-separated -fsanitize= list applied to every target")
+if(BWAPI_C2_SANITIZERS AND NOT MSVC)
+  add_compile_options(-fsanitize=${BWAPI_C2_SANITIZERS} -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=${BWAPI_C2_SANITIZERS})
+endif()
+
 # Both dependencies are submodules pinned to our forks (docs/pins.md). Say what to do when they
 # are missing, and say it here rather than as a compile error five minutes later.
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/bwapi/bwapi/include/BWAPI.h"
