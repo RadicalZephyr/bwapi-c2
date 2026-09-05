@@ -40,6 +40,7 @@ and needs a sentence in the plan explaining why.
 | Linux (CI: `ubuntu-latest`; dev: anything with these) | `clang++` ≥ 15, `g++` ≥ 11, CMake ≥ 3.20, Python ≥ 3.10, `libclang` Python bindings pinned to the same LLVM as `clang++`, `nm`, `ar` | The closure build, every fixture suite, layout dumps (clang cross-target, no linking), the generator, the coverage audit, fuzz under ASan/UBSan |
 | Windows (CI: `windows-latest`; one dev machine) | MSVC (current toolset, x86 and x64), CMake, `dumpbin`, `cscript.exe` for `revisionUpdate.vbs` at pin bumps only | `bwapi_c2.dll` for both bitnesses, the golden-`.def` check, `/TC` header hygiene, the C, Python and C# example bots |
 | Windows, manual, one machine with retail Brood War | BWAPI 4.4.0 installed, Chaoslauncher, one map with a natural expansion | The phase-3 exit criterion and the pre-release end-to-end runs (§11) |
+| Linux (CI: `ubuntu-latest`, the `docs.yml` job) | Zola, one pinned release, plus the same Python | The documentation site (§16): `emit_docs.py`, `zola check`, `zola build`, the Pages deploy. Needs neither a compiler nor the submodules |
 
 **The R5 layout dump runs on Linux.** `run-layout-dump.sh` uses `clang --target=i386-pc-windows-msvc`
 and friends with `-fsyntax-only`; nothing links. So both x86 and x64 layout checks are Linux CI
@@ -56,7 +57,8 @@ toolset, and `v141_xp` is not a supported CI image. Recorded in §7; the layout 
 **Deliverable (§12):** repo; both pinned submodules with carried patches; the derived closure
 with explicit file lists and include dirs; the client-only CMake target; `svnrev.h`; §0 license
 files; header skeletons with the §4 conventions; the layout-dump and derived-closure CI jobs;
-the shared fixture builder.
+the shared fixture builder. Added by §16: the site skeleton and its deploy workflow, so the
+landing page is live before there is anything to document.
 
 **Exit (§12):** an empty `bwapi_c2.dll` links x86 and x64; both layout dumps match the baseline
 at 33,017,048; R7's harness and R11.6's BWEM fixture run green inside the repo.
@@ -230,6 +232,40 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
 - Nothing in either job downloads anything but the submodules. Recursive submodule fetch is off.
 - Commit: *"Add CI: Linux suite with sanitizers, Windows DLL build and export check"*.
 
+### 0.12 The site skeleton and its deploy workflow
+
+Independent of 0.5–0.11; needs only 0.1's README to exist. Landing the site now means the
+Explanation pages can be written alongside the code they explain instead of after it.
+
+- `site/config.toml` with `build_search_index = true`, the Pages `base_url`, and
+  `generate_feeds = false`. Four sections under `site/content/`: `tutorials/`, `how-to/`,
+  `reference/`, `explanation/`, each with an `_index.md` stating in one paragraph what belongs
+  there and what does not (Diátaxis's own definitions, in our words). `site/content/_index.md`
+  is the landing page: the plan's Purpose section rewritten for a reader who has not read it.
+- `site/templates/`: our own, no theme (§7 row 12). `base.html` with the header, a sidebar built
+  from `section.pages` and `section.subsections`, previous/next links, and the search box wired
+  to Zola's `elasticlunr` index; `index.html`, `section.html`, `page.html`; and empty
+  `reference-function.html`, `reference-table.html` for phase 1 to fill. One CSS file; type and
+  colour as custom properties at the top so the reference and prose cannot drift apart.
+- Two Explanation pages written now, because their content exists: "Why a C ABI over the real
+  `Game`" (from §1.6, §2 non-goal 1 and §3) and "What the license asks of a bot author" (from
+  §0 and `NOTICE`). Each ends with the "full argument" link to the plan section on GitHub.
+- `site/static/` holds nothing checked in; `api.json` is copied there at build time from phase 1
+  on. `site/content/reference/**` beyond the `_index.md` files is gitignored: that is where
+  `emit_docs.py` writes.
+- `.github/workflows/docs.yml`: on pull requests, `zola check --skip-external-links` (once Zola's
+  flag is available at the pinned version; otherwise `check.skip_external_links` in config) and
+  `zola build`; on pushes to the default branch, the same followed by
+  `actions/upload-pages-artifact` and `actions/deploy-pages`. A separate weekly schedule runs
+  `zola check` with external links on and opens nothing — it only fails visibly. Zola is
+  installed from a pinned GitHub release tarball, checksum verified, not from a third-party
+  action.
+- Repository setting: Pages source is GitHub Actions. Recorded in the README's contributing
+  notes since it is the one step not in the tree.
+- Commits: *"Add the Zola site skeleton with the four Diátaxis sections"*, *"Add the site
+  templates and stylesheet"*, *"Add two Explanation pages: why a C ABI, and the license"*,
+  *"Add docs.yml: check and build on PRs, deploy to Pages from main"*.
+
 ### Phase 0 exit checklist
 
 | Check | Where it runs |
@@ -239,6 +275,7 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
 | `derive_closure` links `ExampleAIClient` and runs to `connect()`; no foreign undefined symbols | linux CI |
 | `read_write/smoke` and `bwem/analysis` green, including reinit and teardown, under ASan/UBSan | linux CI |
 | Headers compile as C99, C++17, and twice in one TU | both |
+| The landing page and two Explanation pages are live on Pages; `zola check` clean | docs CI |
 
 What phase 0 does **not** do: write any wrapper beyond `bwapi_abi_version`; touch the
 generator; add constants. The temptation is to hand-write `bwapi_game_map_name` "just to see
@@ -300,7 +337,12 @@ Every generated function begins with the same prologue, so it exists before any 
   region | bwem_area | bwem_choke | bwem_base | bwem_neutral | none`), `params` (name, type),
   `returns` (`int32 | bool32 | double | type | position | handle:<kind> | string_out |
   id_array | void`), `body` (opaque C++, still fully typed), `skip` (a string naming the rule),
-  `reentrant` (`allowed | forbidden`), `legit_none` (true for the §6.2 list), `doc`.
+  `reentrant` (`allowed | forbidden`), `legit_none` (true for the §6.2 list), `doc`, `guides`
+  (a list of site paths under `how-to/` or `tutorials/`, optional), `since` (an ABI version,
+  optional before 1.0 and required after).
+- **`doc` is reference-shaped by rule** (§16.1): what it does, parameters, return, neutral
+  value, when it latches. No guidance, no examples; those are pages under `guides`. The spec
+  format document says so, and a review that finds a "you should" in a `doc:` moves it.
 - The neutral value per return kind, stated once here: `0`, `0`, `0.0`, the type's `Unknown`
   or `None` id, packed `Positions::None`, `BWAPI_NONE`, `0` written and `0` returned, `0`,
   nothing.
@@ -340,15 +382,27 @@ others. Commit each once it produces correct output for `Player`.
   name, parameters with types, return kind, `self`, `reentrant`, `legit_none`, `doc`, plus the
   constants and the struct layouts (from phase 2 on). `docs/api-json.md` documents every field
   and is committed with the emitter.
-- `tools/abi/regen.py` runs all four; `tests/regen_check` (a CI step, not a CTest test) runs it
-  and fails on `git diff --exit-code` over the generated paths.
+- `emit_docs.py` → `site/content/reference/`, from `api.json` and never from the spec (§16.1).
+  One `<kind>/<c_name>.md` per function, front matter carrying every `api.json` field for the
+  entry and the `doc:` text as the body, `template = "reference-function.html"`; one table page
+  per constant family, per struct, and for the error codes, `template = "reference-table.html"`,
+  with the rows in front matter and the templates doing all layout. Output is gitignored and
+  regenerated by `docs.yml`; this is the one generated artifact rule 2 does not cover, and
+  `regen.py` runs it anyway so a local `zola serve` is current.
+- Fill `reference-function.html` and `reference-table.html`: signature block, parameter table,
+  return kind with neutral value, the `legit_none` and `reentrant` badges, the §15 rows as links
+  to the divergence-register page, `since` when present, `guides` as "Related guides". Anchors
+  are the page URL; nothing is invented.
+- `tools/abi/regen.py` runs all five; `tests/regen_check` (a CI step, not a CTest test) runs it
+  and fails on `git diff --exit-code` over the checked-in generated paths.
 - Tests, `tests/read_write/player.cpp`: every `Player` export against the fixture — name via
   the string convention (short buffer returns the full length), minerals, race, supply arrays,
   `is_ally/is_enemy/is_neutral` across the fixture's three players, and a bad player id
   returning the neutral value with the latch set.
 - Commits: *"Add emit_header.py and generate the Player declarations"*, *"Add emit_source.py
   with the boundary template; generate player.gen.cpp"*, *"Add emit_def.py and emit_json.py;
-  document api.json"*, *"Add the regenerate-and-diff CI step"*, *"Add Player read tests"*.
+  document api.json"*, *"Add emit_docs.py and the reference templates"*, *"Add the
+  regenerate-and-diff CI step"*, *"Add Player read tests"*.
 
 ### 1.5 Static types: constants, accessors, tables
 
@@ -419,6 +473,7 @@ The exit criterion wants `Player` reaching a compiling Python and C# layer. Do t
 | Python raw layer imports; C# raw layer builds | windows CI |
 | `check_coverage.py` reports every declaration in the audited list as covered, skipped with a rule, or on the recorded phase-2/3 backlog | by hand, recorded in `docs/pins.md` |
 | `errors/latch` green including the wrong-thread case | linux CI |
+| Every `Player` function, every constant family and every struct in `api.json` has a rendered reference page; `docs/api-json.md` is a Reference page; `/api.json` is served | docs CI |
 
 The plan's exit says zero unaccounted declarations. Read literally that is impossible before
 phases 2 and 3 exist; read as intended — every declaration is either an entry, a rule-bearing
@@ -536,6 +591,7 @@ Now the volume, one spec file and one `*.gen.cpp` per interface, in this order: 
 | llvm-cov function coverage of `*.gen.cpp` is 100% under the fixture suites (the fuzz run is excluded from this measure, since bad input is not "exercised") | linux CI, reported not gated until the number is 100 |
 | Fuzz green under sanitizers | linux CI |
 | `check_coverage.py` backlog contains only phase-3 items (commands, BWEM reads) | by hand |
+| Reference pages exist for every export (automatic from `emit_docs.py`); the frame-loop page and the "size buffers with the retry idiom" and "latch or callback" how-tos are written, since phase 2 is when their subject matter lands | docs CI, review |
 
 ---
 
@@ -637,7 +693,19 @@ Written down so it is repeatable and its result is a record rather than a memory
 - Run it for x86 and x64. Commit the filled-in table: *"Record the phase-3 live run"*. That
   commit closes the phase.
 
-### 3.6 Divergence register audit
+### 3.6 Documentation that phase 3 makes possible
+
+- Tutorial: **"A first bot in C"** — the example bot from 3.4, one section per step of the §14
+  loop, every function name a link into the reference. Written against the bot as committed, so
+  it cannot drift from code that CI builds.
+- How-to: "Initialise BWEM and find the natural"; "Consume the DLL from C" (release layout,
+  `.lib`, no C++ toolchain); "Run the live-run protocol" (3.5, so the protocol is a public page,
+  not a repo file).
+- Explanation: "Why client mode, and what it cannot do" (Appendix A, the grouped-command gap);
+  "Why integer handles" (§1.3, §6); "Why the error channel is sticky" (§4).
+- Commit per page.
+
+### 3.7 Divergence register audit
 
 - Walk §15 and §15.1. For every row, name the test that demonstrates it (sorted output, the
   tie-break, no format strings — a header grep for `...`, packed positions, bullets as an
@@ -646,7 +714,8 @@ Written down so it is repeatable and its result is a record rather than a memory
   merged, synthesised base ids, neutrals by unit id, one-call init, filtered hooks, mutators
   absent, scalar tile reads). Add the test where one is missing. Add the test name as a column
   in the register.
-- Commit: *"Name the test behind every divergence-register row"*.
+- Commit: *"Name the test behind every divergence-register row"*. The register is also emitted
+  as a Reference page from this point, so each function page's §15 links resolve.
 
 ### Phase 3 exit checklist
 
@@ -657,6 +726,7 @@ Written down so it is repeatable and its result is a record rather than a memory
 | `check_coverage.py` backlog is empty; `.def` count is ~671 + 98 | by hand, recorded |
 | Command, BWEM lifecycle and BWEM read suites green under sanitizers | linux CI |
 | Every §15 row names a test | review |
+| The C tutorial and the three phase-3 how-tos are live | docs CI, review |
 
 ---
 
@@ -738,6 +808,11 @@ transport fake is for, so it comes first.
 - The idiomatic wrappers are **not** in this repository (§7). Phase 4 ends with an issue in
   each downstream repo (or a stub repo) pointing at the raw layer and `api.json`; their
   existence is not an exit criterion here.
+- Documentation for 1.0: every spec entry gains `since: "1.0"` in one regen; the *unstable*
+  banner comes off the reference; the "Python first bot" tutorial and the "consume from Python /
+  C# / Rust" how-tos are written against the phase-4 example bots; the landing page gains the
+  download links. The `pre-1.0-changes.md` record becomes an Explanation page, "What changed
+  before 1.0 and why".
 
 ### Phase 4 exit checklist
 
@@ -747,6 +822,7 @@ transport fake is for, so it comes first.
 | Both raw layers' test suites drive the real DLL through the transport fake | windows CI |
 | `bwapi-c2-sys` builds; bindgen cross-check agrees | linux CI |
 | `bwapi_abi_version()` = 1.0.0; release assets published; sys crate on crates.io | release |
+| Reference shows `since` on every entry and no unstable banner; the Python tutorial and three consumer how-tos are live | docs CI, review |
 
 ---
 
@@ -758,6 +834,10 @@ transport fake is for, so it comes first.
   adds. The regen check refuses a changed signature by way of a golden-`.def` diff that shows a
   removal; make that a named CI step, `abi_append_only`, from the 1.0 commit on.
 - **The coverage audit** runs at pin bumps and on request, never on the merge path (§9).
+- **The site deploys on every push to the default branch** and only from there. A documentation
+  fix is a normal commit; there is nothing to publish by hand. External links are checked weekly.
+- **Adding a page** means deciding its Diátaxis section first. If it wants to be in two, it is
+  two pages.
 
 ---
 
@@ -778,6 +858,10 @@ changes a §4 convention.
 | 8 | Function coverage over `*.gen.cpp` is reported, then gated at 100% (phase 2 exit) | Rely on the fuzz harness calling every export | Fuzz calls every export with bad input; that is not "exercised against a fixture" |
 | 9 | Minimal Python and C# emitters land in phase 1 (1.7), fuller ones in phase 4 | All consumer work in phase 4 | §12's phase-1 exit criterion names them, and the early version keeps `api.json` honest from its first commit |
 | 10 | Four ABI error codes the plan does not name: `INVALID_HANDLE`, `NOT_CONNECTED`, `BWEM_NOT_INITIALIZED`, `BAD_BUFFER` (0.6) | One generic `BWAPI_ERR_ABI` for everything that is not a thread, re-entrancy or BWEM error | The error callback exists so a wrapper can raise at the failing call; a code that says which rule fired is what makes the raised exception useful. Four codes, all in the header comment, none of them ever reused |
+| 11 | Reference pages are generated at build time and gitignored (1.4) | Check them in under rule 2 | ~770 Markdown files nothing compiles against; the reviewable diff is `api.json`'s, which they are a pure function of. The one stated exception to rule 2 |
+| 12 | Own Zola templates, no third-party theme (0.12) | A documentation theme | The reference layout is not one any theme ships, and a theme is a dependency with a release cadence. The sidebar and prev/next are a few dozen lines |
+| 13 | The site skeleton lands in phase 0, not when there is a reference to show (0.12) | First site work in phase 1 with `emit_docs.py` | Two Explanation pages can be written from the plan today, and a deploy pipeline that has run fifty times before the reference arrives is one fewer thing to debug at the moment it matters |
+| 14 | Zola installed in CI from a pinned, checksummed release tarball (0.12) | A marketplace action | The docs job is the only job that could publish something; its toolchain is not delegated to a third party |
 
 ### Questions worth settling before 0.2
 
