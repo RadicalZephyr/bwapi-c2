@@ -1,0 +1,12 @@
+# CMake build trees. Anything named build* at the root is one.
+/build/
+/build-*/
+/out/
+
+# Recorded GameData buffers are contributor-local by policy (plan section 11).
+/tests/recorded/
+
+# Editor and OS noise
+*.swp
+*~
+.DS_Store
