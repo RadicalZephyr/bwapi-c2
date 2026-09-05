@@ -13,8 +13,9 @@ implementation plan is
 [docs/implementation-plan.md](docs/implementation-plan.md).
 
 **Status: phase 0 (bootstrap) of the implementation plan is in progress.** There is no
-buildable code yet. BWAPI and BWEM are pinned as submodules under `third_party/`; the commits,
-the patches carried on them and the pin-bump procedure are in [docs/pins.md](docs/pins.md).
+buildable code yet. BWAPI and BWEM are pinned as submodules under `third_party/`, each pointing
+at a fork that carries the few commits we need on top of upstream; the commits, what they carry
+and the pin-bump procedure are in [docs/pins.md](docs/pins.md).
 
 ## Working on bwapi-c2
 
@@ -31,18 +32,15 @@ governs `git fetch`). So:
 git clone https://github.com/RadicalZephyr/bwapi-c2.git
 cd bwapi-c2
 git submodule update --init --depth 1     # NOT --recursive, and NOT git clone --recurse-submodules
-tools/apply-patches.sh                     # the two carried patches (docs/pins.md); idempotent
 ```
 
-`--depth 1` keeps the BWAPI checkout to a few hundred megabytes. The one job that needs full
-history is regenerating `svnrev.h` at a pin bump, which runs upstream's script on Windows and
-counts commits; fetch the full history in that checkout only when doing that.
-
-The patches modify the submodule working trees in place, so `git status` will show
-`third_party/bwapi` and `third_party/bwem` as modified while they are applied. That is expected
-and is never committed; `tools/apply-patches.sh --reverse` removes them, and moving a pin starts
-by doing so. Both repositories nest their sources one directory down
-(`third_party/bwapi/bwapi/`, `third_party/bwem/BWEM/`).
+That is the whole checkout. The submodules point at our forks of BWAPI and BWEM, whose
+`bwapi-c2-pin` branches carry the two source fixes we need and BWAPI's generated `svnrev.h` as
+ordinary commits on top of the upstream pins ([docs/pins.md](docs/pins.md)), so nothing is
+patched into a working tree and `git status` stays clean. `--depth 1` keeps the BWAPI checkout
+to a few hundred megabytes; the one job that needs full history is regenerating `svnrev.h` at a
+pin bump, which happens in the fork, not here. Both repositories nest their sources one
+directory down (`third_party/bwapi/bwapi/`, `third_party/bwem/BWEM/`).
 
 ## What a client-mode bot cannot do
 

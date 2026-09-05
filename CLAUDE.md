@@ -34,8 +34,8 @@ order.
 - `docs/implementation-plan.md` — the phase-by-phase execution sequence: commit-sized steps,
   per-step checks, exit checklists, and a table of the judgment calls the plan leaves open. When
   starting work on a phase, begin here; when a step turns out wrong, edit it in place.
-- `docs/pins.md` — the pinned commits, the carried patches, and the pin-bump checklist. Update
-  it in the same commit that moves a submodule.
+- `docs/pins.md` — the pinned commits, the commits our forks carry on top of upstream, and the
+  pin-bump checklist. Update it in the same commit that moves a submodule.
 - `docs/bwapi-c-abi-plan-revision-4-changes.md` — the directive set that produced revision 4.
   Historical; section numbers in it refer to revision 3.
 - `docs/research/rN-<topic>.md` — results of research round N (R1–R11; R11 has sub-rounds
@@ -69,9 +69,9 @@ Key settled conclusions to not re-litigate (each has its section and research ro
 ## Running the research experiments
 
 There is no build system yet. Set up the checkout as the README's "Working on bwapi-c2" says:
-`git submodule update --init --depth 1` (never `--recursive`), then `tools/apply-patches.sh`.
-The applied patches show as modified submodules in `git status`; that is expected, never
-committed, and undone with `tools/apply-patches.sh --reverse`.
+`git submodule update --init --depth 1` (never `--recursive`). The submodules point at our
+forks, whose `bwapi-c2-pin` branches already carry the `§15.2` fixes and `svnrev.h`
+(`docs/pins.md`); nothing is patched into a working tree and `git status` stays clean.
 
 The R1–R11.8 experiment scripts under `docs/research/rN/` predate the submodules and expect
 sibling checkouts that are **not** in this repo:
@@ -80,8 +80,8 @@ sibling checkouts that are **not** in this repo:
   `../../../bwapi` relative to the script. `third_party/bwapi/bwapi` is the same tree and works.
 - `N00byEdge/BWEM-community` — passed as the second argument to the R11 scripts.
 
-R11.9's `docs/research/r11/run-bwem-teardown.sh` is the first to build from the patched
-submodules directly and takes no arguments.
+R11.9's `docs/research/r11/run-bwem-teardown.sh` is the first to build from the submodules
+directly and takes no arguments.
 
 They need `clang++` and `g++` on Linux, build into a `mktemp -d` scratch directory, and clean
 up after themselves. Examples:
@@ -102,7 +102,7 @@ docs/research/r5/run-layout-dump.sh
 
 The R6 `shim/` (a fake `Windows.h`) and `patched/Convenience.h` (a `va_list` by-value fix) are
 shared by the later rounds; they are what makes the closure compile on Linux and are the
-origin of the second carried patch in `§15.2`.
+origin of the `va_list` fix our BWAPI fork carries (`§15.2`).
 
 ## Writing conventions for the docs
 
