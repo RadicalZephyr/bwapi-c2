@@ -4,6 +4,10 @@ Built the candidate source set as a static archive and linked upstream's own
 `ExampleAIClient` against it. Reproducible via
 [`r6/derive-closure.sh`](r6/derive-closure.sh).
 
+**§12 and §13 were added later on request**: an audit of the `awest813/OpenSnowstorm---Brood-War`
+fork, and an assessment of what adding client mode to OpenBW's BWAPI fork would take. §13 changes
+the answer §8 gives, so read both.
+
 **Headline: §10.1's closure is correct — 44 translation units, zero Storm, zero Util, zero
 Boost, and the resulting archive links and runs upstream's client example. But three things in
 §10.1 need fixing. The Boost rationale is stale: Boost was already `#if 0`'d out of this tree in
@@ -222,8 +226,9 @@ bool Client::connect()
 ```
 
 bwapi-c's 2017 README said client mode "is not supported by OpenBW." Still true at OpenBW's last
-commit (2020-06-11). This is a hard blocker for using OpenBW as a client-mode CI substrate, and
-R7 should treat it as settled rather than re-derive it.
+commit (2020-06-11) — **but only on OpenBW's own branches.** A working POSIX client mode already
+exists on a third-party fork, and §13 measures it. Read §13 before concluding anything about
+OpenBW as a CI substrate.
 
 ---
 
@@ -262,4 +267,173 @@ codegen is unavailable. Stated plainly rather than worked around, because the ho
 4. **Delete the `Unitset.cpp` contingency.** Measured: only the safe `setClientInfo<void*>` instantiates.
 5. **Note that `CMake/Client` is too much as well as too little** — it compiles Storm and seven Util TUs into `BWAPIClient`.
 6. **Soften the `/Zp` sentence.** Twenty `#pragma pack` directives exist; all are in `BWAPI/Source/BW/`, none in the closure. The conclusion survives and is better supported.
-7. **Keep `derive-closure.sh` as a CI job.** It builds the closure and links upstream's own example in seconds, and it would catch a pin bump that adds a Storm, Util or Boost reference — the same regression-check role R5 recommends for the layout dump.
+7. **Revisit the OpenBW client-mode assumption before R7.** §13 shows a working POSIX client mode already exists on `basil-ladder/bwapi@linux-client-support` (~344 lines, unmerged, five years idle). "OpenBW has no client mode" is true of OpenBW's repos and false of the ecosystem.
+8. **Keep `derive-closure.sh` as a CI job.** It builds the closure and links upstream's own example in seconds, and it would catch a pin bump that adds a Storm, Util or Boost reference — the same regression-check role R5 recommends for the layout dump.
+
+
+---
+
+## 12. The `awest813/OpenSnowstorm---Brood-War` fork
+
+Checked on request. **It is a fork of `OpenBW/openbw` — the engine — not of `OpenBW/bwapi`, and
+it is not about BWAPI.** It is a single-player campaign client. Almost nothing in it bears on
+this project, with one exception noted at the end.
+
+| | |
+|---|---|
+| Parent | `OpenBW/openbw` (the engine) |
+| Created / last push | 2026-03-02 / 2026-06-05 |
+| Stars / forks | 6 / 1 |
+| License | LGPL-3.0 (inherited) |
+| Position | 93 ahead, 6 behind `OpenBW/openbw@master` |
+| Merge base | `a59617d` (2025-01-07) |
+
+### What the 93 commits are
+
+Read as a sequence, they are a phased "modernize the engine and build a playable campaign client"
+programme run over three months, **largely by AI coding agents** — the commit authorship is 58
+`awest813`, 14 `Cursor Agent`, 11 `copilot-swe-agent[bot]`, 4 `Claude`, 6 `nerdretro`, with
+recurring `Initial plan` commits and branch names like `codex/…`, `cursor/…`, `copilot/…`,
+`claude/…`.
+
+Themes, in order:
+
+1. **Engine decomposition** — splitting the `bwgame.h` monolith into `pathfinding.h`, `triggers.h`, `creep.h`, `bwgame_combat.h`, `bwgame_state.h`, `bwgame_tables.h`, `ai.h`, `serialization.h`. `bwgame.h` alone is +2,809 / −5,900.
+2. **Brood War compatibility** — replay player colours, `is_broodwar` on `tech_type_t`, missing BW actions (Patrol 29, building Land 36), replay `starting_gas` round-trip.
+3. **Sync/desync work** — `sync_protocol.h`, structured desync diagnostics, an action-history ring buffer, replay hash record/verify fixtures.
+4. **Performance** — `perf_metrics.h`, pre-allocating the `unit_finder_x/y` vectors, table consolidation.
+5. **The bulk: a single-player campaign client** in `ui/gfxtest.cpp` (+3,970) and `ui/ui.h` (+5,045 / −2,002) — command panels, fog-of-war controls, quicksave/quickload, multi-slot saves, trigger-engine expansion, briefing/objectives/debrief UI, GRP portrait rendering, campaign chaining, a WebAssembly build.
+
+### Scale, honestly measured
+
+The headline `244 files changed, 89,534 insertions` is misleading. **69,010 of those insertions
+are vendored SDL2 2.30.2 headers and committed build logs.** The tree carries `SDL2.zip`,
+`pwsh.exe`, and 37 committed `.log`/`.txt` build transcripts (`rebuild.txt`, `rebuild2.txt`,
+`rebuild3.txt`, `out.txt`, `output.txt`, `err.txt`, `headless_final.txt`, …). Excluding vendored
+and generated files, the real change is **~19,754 insertions / ~8,452 deletions** across roughly
+55 source, script and doc files.
+
+### Relevance to this project: one item
+
+**Nothing here touches the BWAPI client protocol, `GameData`, `Server.cpp`, or client mode.**
+The engine-side work is below the layer a C ABI cares about.
+
+The exception is **`mini-openbwapi`**, and it is worth recording because R7 asks about it:
+
+- `mini-openbwapi` is a 2,657-line BWAPI-API-compatible **in-process** shim over the OpenBW engine (`openbwapi.h` 1,138 + `openbwapi.cpp` 1,474 + an 8-line `BWAPI.h` aliasing `namespace BWAPI = OpenBWAPI`).
+- **Upstream `OpenBW/openbw` deleted it on 2026-07-16** (commit `8265ec4`, "Remove mini-openbwapi."). It is gone from OpenBW master.
+- This fork predates the deletion and **still carries and maintains it**: a `/bigobj` fix for MSVC, campaign scenario chaining in `openbwapi.cpp` (+22), an `OPENSNOWSTORM_BUILD_BWAPI` CMake option, and two CI jobs — one of which builds `mini-openbwapi` headless with no SDL2.
+- Its `Client` class is a **façade, not a client**: `connect()` sets a bool, `update()` calls `g.update()` in-process, and `mini-openbwapi/BWAPI/Client.h` is a **zero-byte file** so that `#include <BWAPI/Client.h>` compiles. No shared memory, no socket, no second process.
+
+So `mini-openbwapi` answers R7's "is there a smaller target than full BWAPI" with *yes, 2,657
+lines* — but it is source-compatibility only, it exposes ~263 functions rather than BWAPI's full
+surface, it has now been removed upstream, and **the only maintained copy is inside an
+AI-agent-driven campaign-client fork with six stars.** That is not a dependency to build on. It
+is worth knowing it exists as a reference for how small an OpenBW-backed BWAPI façade can be.
+
+---
+
+## 13. Adding client mode to the OpenBW BWAPI fork — already done, and measured
+
+The assessment turned out to be an archaeology problem rather than an estimation problem.
+**Someone already wrote it.** JBWAPI's `ClientConnectionPosix.java` says so in a header comment:
+
+> To be used with OpenBWs BWAPI **including server support**. At time of writing, only the
+> following fork includes this: `https://github.com/basil-ladder/openbw`
+
+and JBWAPI ships a `build_with_openbw.md` documenting the build:
+
+```bash
+git clone https://github.com/basil-ladder/openbw
+git clone -b linux-client-support https://github.com/basil-ladder/bwapi
+```
+
+### What it cost: 5 commits, ~344 lines, 8 files, 16 days
+
+`basil-ladder/bwapi` branch `linux-client-support`, all by Bytekeeper (author of rsbwapi and
+Styx), October 2020:
+
+| Commit | Date | Files | +/− |
+|---|---|---|---|
+| `b4a3fa12` Linux Server using shm and local sockets | 2020-10-01 | `Server.cpp`, `Server.h`, `BWAPILauncher/Main.cpp`, `.gitignore` | +185 / −11 |
+| `ce9b2d41` Set keepAliveTime on server | 2020-10-01 | `Server.cpp` | +3 / −1 |
+| `283df1cf` Allow server to update game table status | 2020-10-02 | `BWAPILauncher/Main.cpp` | +2 |
+| `e648efce` Updated readme, added some basic client code | 2020-10-02 | `BWAPIClient/Client.cpp`, `include/BWAPI/Client/Client.h`, `Server.cpp`, `Command.h`, `README.md` | +150 / −8 |
+| `8ac3673d` shm requires rt library | 2020-10-17 | `BWAPILIB/CMakeLists.txt` | +4 |
+| **Total** | | **8 files** | **≈ +344 / −20** |
+
+### Why it is that small
+
+R6's own build (§1) already showed the answer. OpenBW's fork did not remove the client
+*protocol* — it removed the client *transport*. Its `Server::Server()` reads:
+
+```cpp
+Server::Server()
+{
+  if ( serverEnabled ) { }        // <-- game table + shm + named pipe, deleted
+  if ( !data ) { data = new GameData; localOnly = true; }
+  initializeSharedMemory();
+  if ( serverEnabled ) { }        // <-- deleted
+}
+```
+
+`checkForConnections()` and `callOnFrame()` are empty bodies. Everything else —
+`updateSharedMemory()`, `processCommands()`, `clearAll()`, the entire `GameData` population — is
+**intact and running every frame**, because OpenBW uses `GameData` as its own internal state
+representation. `data` simply points at `new GameData` instead of a named mapping. Diffed against
+upstream, OpenBW's `Server.cpp` is 655 lines to upstream's 852, and 37 transport call sites drop
+to 3.
+
+So the work is a straight Win32→POSIX port of code that already exists upstream, and Bytekeeper's
+diff is exactly that:
+
+| Upstream (Win32) | `linux-client-support` (POSIX) |
+|---|---|
+| `CreateFileMappingA("Local\bwapi_shared_memory_game_list")` | `shm_open("/bwapi_shared_memory_game_list", O_RDWR\|O_CREAT)` + `ftruncate` + `mmap` |
+| `CreateFileMappingA("Local\bwapi_shared_memory_<pid>")` | `shm_open("/bwapi_shared_memory_<pid>")` + `ftruncate(sizeof(GameData))` + `mmap` |
+| `CreateNamedPipe("\\.\pipe\bwapi_pipe_<pid>")` | `socket(AF_UNIX, SOCK_STREAM)` bound to `/tmp/bwapi_socket_<pid>`, `listen` |
+| `ConnectNamedPipe` | `select` with a 5 s timeout, then `accept` |
+| `WriteFile`/`ReadFile` 2-byte handshake | `write`/`read` of the same two bytes (server writes `2`, spins until it reads `1`) |
+| PSID/PACL/PSECURITY_DESCRIPTOR ACL setup | not needed |
+
+The game-table slot-allocation logic is copied across essentially line for line. The whole thing
+is `#ifndef _WIN32`-guarded, so the Windows path is untouched — **and therefore still gutted**:
+this branch gives OpenBW a *POSIX* client mode only.
+
+`BWAPILauncher/Main.cpp` gains five lines that spin `server.update()` until a client connects
+before starting the game, which is what makes a client bot able to attach.
+
+### Current state: unmerged, and slightly bit-rotted
+
+- **Not upstreamed.** `b4a3fa12` is in no `OpenBW/bwapi` branch. `OpenBW/bwapi@develop-openbw` (last commit 2020-06-11) still has `Client::connect()` → `throw std::runtime_error("Client not supported :(")`.
+- The branch tip is `c1b9c4e7` (2021-05-25), and `basil-ladder/bwapi` was last pushed 2021-12-05. Five years idle.
+- **It requires the paired engine fork.** Building against upstream `OpenBW/openbw` fails immediately: `BWData.cpp:869` calls `ui->play_sound(...)`, which only `basil-ladder/openbw` provides. Two forks pinned together, exactly as JBWAPI's doc instructs.
+
+### I tried to build it
+
+Configured and built `linux-client-support` against `basil-ladder/openbw` on GCC 11:
+
+- **`Server.cpp` — the client-mode server itself — compiles cleanly**, after adding one line: `#include <string>` to `Server.h`. The branch added a `std::string shareName;` member in 2020 without the include and got away with it on the libstdc++ of the day; GCC 11 rejects it. One line.
+- `BWAPILIB`, `ExampleAIModule` and `TestAIModule` build.
+- The **headless** build (`-DOPENBW_ENABLE_UI=0`) then fails in the *engine fork*, not the client code: `BWData.cpp` calls `ui_wrapper::screen_pos_x` / `screen_pos_y` and a four-argument `ui_wrapper` constructor that the `#ifndef OPENBW_ENABLE_UI` stub does not declare. The headless stub is out of sync with its callers — the same class of bug as `play_sound`.
+- The **UI** build (`-DOPENBW_ENABLE_UI=1`, which is what JBWAPI's doc uses) needs `SDL2_mixer`, which is not installed here, so I could not complete it. Not attempted further: installing system packages is the user's call.
+
+**So the client-mode code is sound and still compiles; what is broken is the paired engine fork's
+headless path, plus one missing include.** Both are small, well-understood fixes.
+
+### What it would actually take to have this
+
+Ordered by cost, assuming the goal is a working POSIX client-mode OpenBW:
+
+1. **Add `#include <string>` to `Server.h`.** One line. (Verified: `Server.cpp` then compiles on GCC 11.)
+2. **Fix or bypass the headless `ui_wrapper` stub** in `basil-ladder/openbw` — three missing members (`play_sound`, `screen_pos_x`, `screen_pos_y`) and one constructor overload. Alternatively build with `OPENBW_ENABLE_UI=1` and add `libsdl2-mixer-dev`, which is what BASIL and JBWAPI actually do. Either is a day, not a project.
+3. **Rebase onto current OpenBW.** The branch is five years behind, and both forks have to move together. This is the real cost and it is unbounded until someone tries it.
+4. **Windows.** Not addressed by this branch at all — the `_WIN32` server path in the OpenBW fork remains empty. If OpenBW-on-Windows matters, that is a second port.
+5. **Upstreaming.** Nobody has proposed it in five years; `OpenBW/bwapi` has had no commits since 2021-05-27.
+
+**Bottom line for R7: "OpenBW has no client mode" is true of OpenBW's own repositories and false
+of the ecosystem.** A working POSIX implementation exists, is ~344 lines, was written by the
+rsbwapi author, is documented by JBWAPI, and is the substrate BASIL's Linux tooling was built
+against. Adopting it means pinning two five-year-old forks and owning small fixes to both — which
+is a materially different proposition from writing the transport, and R7 should price it as
+maintenance rather than as development.
