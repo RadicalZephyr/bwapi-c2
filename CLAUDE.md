@@ -16,14 +16,16 @@ what changed and why in prose. For plan revisions, the body walks the sections t
 
 ## What this repository is
 
-`bwapi-c2` is a planned flat C ABI over BWAPI (the C++ StarCraft: Brood War bot API) and BWEM
-(map analysis), so languages with a C FFI can drive both without C++. **There is no production
-code yet.** The repository holds the design plan, the research that settled its premises, the
-license files, and the two pinned submodules under `third_party/` (see `docs/pins.md`; both
-nest their sources one directory down, and BWEM's own submodules must never be fetched). The
-code layout the plan describes (`include/`, `src/`, `tools/abi/`, `tests/`, `bindings/`) does
-not exist; do not assume it does, and do not create it outside the implementation plan's step
-order.
+`bwapi-c2` is a flat C ABI over BWAPI (the C++ StarCraft: Brood War bot API) and BWEM (map
+analysis), so languages with a C FFI can drive both without C++. **Phase 0 of the
+implementation plan is done; the ABI itself has one export.** The repository holds the design
+plan, the research that settled its premises, the license files, the two pinned submodules
+under `third_party/` (see `docs/pins.md`; both nest their sources one directory down, and
+BWEM's own submodules must never be fetched), the CMake build of the BWAPI+BWEM closure and
+`bwapi_c2.dll`, the three hand-written header skeletons under `include/`, `src/abi.cpp`, the
+test suite under `tests/`, the Zola site under `site/`, and two workflows. `tools/abi/` and
+`bindings/` do not exist yet; they arrive with phases 1 and 4. Do not create them, or hand-write
+any wrapper beyond `bwapi_abi_version`, outside the implementation plan's step order.
 
 ## Layout
 
@@ -66,12 +68,31 @@ Key settled conclusions to not re-litigate (each has its section and research ro
 - Python and C# are the primary consumers; Rust is the proof-of-concept only (`§7`).
 - License is LGPL-3.0-only because the DLL embeds BWAPI's object code (R9, `§0`).
 
-## Running the research experiments
+## Building and testing
 
-There is no build system yet. Set up the checkout as the README's "Working on bwapi-c2" says:
-`git submodule update --init --depth 1` (never `--recursive`). The submodules point at our
-forks, whose `bwapi-c2-pin` branches already carry the `§15.2` fixes and `svnrev.h`
-(`docs/pins.md`); nothing is patched into a working tree and `git status` stays clean.
+Set up the checkout as the README's "Working on bwapi-c2" says: `git submodule update --init
+--depth 1` (never `--recursive`). The submodules point at our forks, whose `bwapi-c2-pin`
+branches already carry the `§15.2` fixes and `svnrev.h` (`docs/pins.md`); nothing is patched
+into a working tree and `git status` stays clean. Then:
+
+```sh
+CXX=clang++ cmake -B build -G Ninja      # clang only on Linux; g++ is refused at configure (§10.1)
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+- `cmake/closure.cmake` names every translation unit of the closure; never glob.
+- `tests/` is one directory per row of `§11`'s table: `header_hygiene`, `layout_dump`,
+  `derive_closure`, `exports`, `fixture` (the shared synthetic-`GameData` builder every suite
+  uses), `read_write`, `bwem`. New tests use `bwapi_c2_add_test()` and the `Fixture` builder;
+  do not build a `GameData` by hand.
+- `tests/layout_dump/baseline.json` changes only at a pin bump, via the `layout_dump_update`
+  target.
+- The site: `cd site && zola check && zola build`, with Zola at the version pinned in
+  `.github/workflows/docs.yml`. Reference pages under `site/content/reference/` are generated
+  and gitignored.
+
+## Running the research experiments
 
 The R1–R11.8 experiment scripts under `docs/research/rN/` predate the submodules and expect
 sibling checkouts that are **not** in this repo:

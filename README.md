@@ -12,16 +12,31 @@ it rests on is under [docs/research/](docs/research/). The detailed
 implementation plan is
 [docs/implementation-plan.md](docs/implementation-plan.md).
 
-**Status: phase 0 (bootstrap) of the implementation plan is in progress.** There is no
-buildable code yet. BWAPI and BWEM are pinned as submodules under `third_party/`, each pointing
-at a fork that carries the few commits we need on top of upstream; the commits, what they carry
-and the pin-bump procedure are in [docs/pins.md](docs/pins.md).
+**Status: phase 0 (bootstrap) of the implementation plan is complete, pending its first CI
+run.** The tree builds `bwapi_c2.dll` with one export, `bwapi_abi_version()`, over the full
+BWAPI and BWEM closure; the three public headers carry the ABI's conventions and nothing else
+yet; the test suite runs BWAPI's real client and BWEM's full analysis over a synthetic
+`GameData` on Linux, with no StarCraft. Phase 1, the generator, is next. BWAPI and BWEM are
+pinned as submodules under `third_party/`, each pointing at a fork that carries the few commits
+we need on top of upstream; the commits, what they carry and the pin-bump procedure are in
+[docs/pins.md](docs/pins.md).
 
 ## Working on bwapi-c2
 
 Start with [docs/implementation-plan.md](docs/implementation-plan.md); it says what the next
-step is and which plan section decides it. The toolchain is clang++ and g++ with CMake and
-Python 3 on Linux for everything that is not the DLL itself, and MSVC on Windows for the DLL.
+step is and which plan section decides it. The toolchain is clang++ with CMake and Python 3 on
+Linux for everything that is not the DLL itself, and MSVC on Windows for the DLL. Not g++: one
+BWAPI header needs MSVC's template semantics, which only clang emulates, and configure says so.
+
+```sh
+CXX=clang++ cmake -B build -G Ninja
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+The site under `site/` builds with Zola, pinned to the version and checksum in
+`.github/workflows/docs.yml`; `zola check` there must pass before a docs change lands. The one
+repository setting not in the tree is Pages' source, which must be "GitHub Actions".
 
 **Fetch the submodules without `--recursive`.** BWEM's own submodules are googletest, OpenBW's
 BWAPI fork and the unlicensed OpenBW engine; nothing in this tree may fetch them, and
