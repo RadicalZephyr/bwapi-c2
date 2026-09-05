@@ -27,7 +27,7 @@ order.
 
 ## Layout
 
-- `docs/c-abi-plan.md` — the plan, currently **revision 4.2**. ~2,000 lines, numbered sections
+- `docs/c-abi-plan.md` — the plan, currently **revision 4.3**. ~2,000 lines, numbered sections
   (`§0` licensing through `§15` divergence register, plus Appendices A and B). It is the source
   of truth for every design decision. Cross-references throughout the repo use `§N` notation
   against this file.
@@ -68,12 +68,20 @@ Key settled conclusions to not re-litigate (each has its section and research ro
 
 ## Running the research experiments
 
-There is no build system. The experiment scripts under `docs/research/rN/` are bash and expect
+There is no build system yet. Set up the checkout as the README's "Working on bwapi-c2" says:
+`git submodule update --init --depth 1` (never `--recursive`), then `tools/apply-patches.sh`.
+The applied patches show as modified submodules in `git status`; that is expected, never
+committed, and undone with `tools/apply-patches.sh --reverse`.
+
+The R1–R11.8 experiment scripts under `docs/research/rN/` predate the submodules and expect
 sibling checkouts that are **not** in this repo:
 
 - `bwapi/bwapi` (the upstream BWAPI tree) — passed as the first argument, or found at
-  `../../../bwapi` relative to the script.
+  `../../../bwapi` relative to the script. `third_party/bwapi/bwapi` is the same tree and works.
 - `N00byEdge/BWEM-community` — passed as the second argument to the R11 scripts.
+
+R11.9's `docs/research/r11/run-bwem-teardown.sh` is the first to build from the patched
+submodules directly and takes no arguments.
 
 They need `clang++` and `g++` on Linux, build into a `mktemp -d` scratch directory, and clean
 up after themselves. Examples:
