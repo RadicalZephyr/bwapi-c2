@@ -16,6 +16,34 @@ implementation plan is
 buildable code yet. BWAPI and BWEM are pinned as submodules under `third_party/`; the commits,
 the patches carried on them and the pin-bump procedure are in [docs/pins.md](docs/pins.md).
 
+## Working on bwapi-c2
+
+Start with [docs/implementation-plan.md](docs/implementation-plan.md); it says what the next
+step is and which plan section decides it. The toolchain is clang++ and g++ with CMake and
+Python 3 on Linux for everything that is not the DLL itself, and MSVC on Windows for the DLL.
+
+**Fetch the submodules without `--recursive`.** BWEM's own submodules are googletest, OpenBW's
+BWAPI fork and the unlicensed OpenBW engine; nothing in this tree may fetch them, and
+`.gitmodules` cannot stop a recursive update on its own (`fetchRecurseSubmodules = false` only
+governs `git fetch`). So:
+
+```sh
+git clone https://github.com/RadicalZephyr/bwapi-c2.git
+cd bwapi-c2
+git submodule update --init --depth 1     # NOT --recursive, and NOT git clone --recurse-submodules
+tools/apply-patches.sh                     # the two carried patches (docs/pins.md); idempotent
+```
+
+`--depth 1` keeps the BWAPI checkout to a few hundred megabytes. The one job that needs full
+history is regenerating `svnrev.h` at a pin bump, which runs upstream's script on Windows and
+counts commits; fetch the full history in that checkout only when doing that.
+
+The patches modify the submodule working trees in place, so `git status` will show
+`third_party/bwapi` and `third_party/bwem` as modified while they are applied. That is expected
+and is never committed; `tools/apply-patches.sh --reverse` removes them, and moving a pin starts
+by doing so. Both repositories nest their sources one directory down
+(`third_party/bwapi/bwapi/`, `third_party/bwem/BWEM/`).
+
 ## What a client-mode bot cannot do
 
 `bwapi-c2` is client mode only: the bot is a separate process talking to BWAPI over shared
