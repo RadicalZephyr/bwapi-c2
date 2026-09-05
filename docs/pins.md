@@ -29,8 +29,10 @@ and `external/openbw` (the unlicensed engine) are test-only; `.gitmodules` sets
 | `third_party/bwapi` | `patches/bwapi-convenience-va-list.patch` — `BWAPIClient/Source/Convenience.h:33`, `va_list &ap` → `va_list ap` | §15.2 |
 | `third_party/bwem` | `patches/bwem-reset-instance.patch` — adds `void Map::ResetInstance()` | §15.2 |
 
-Applied into the submodule working trees at configure time by `tools/apply-patches.sh`
-(implementation plan 0.3). Neither exists yet; this table is what 0.3 delivers.
+Applied into the submodule working trees by `tools/apply-patches.sh`, which CMake configure
+runs (implementation plan 0.3, 0.5). Idempotent; `--reverse` removes them, which is the first
+thing to do when moving a pin. Each patch file opens with prose stating what it changes and
+why; `git apply` ignores everything before the first `diff --git` line.
 
 ## Moving a pin
 
