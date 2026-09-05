@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="{{ lang | default(value="en") }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ config.title }}{% endblock title %}</title>
+  {% block description %}<meta name="description" content="{{ config.description }}">{% endblock description %}
+  <link rel="stylesheet" href="{{ get_url(path="style.css") | safe }}">
+  {% if config.build_search_index %}
+  {% set search_lang = lang | default(value="en") %}
+  <script defer src="{{ get_url(path="elasticlunr.min.js") | safe }}"></script>
+  <script defer src="{{ get_url(path="search_index." ~ search_lang ~ ".js") | safe }}"></script>
+  {% endif %}
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="{{ get_url(path="/") | safe }}">bwapi-c2</a>
+  <nav class="top-nav">
+    {% set root = get_section(path="_index.md") %}
+    {% for s in root.subsections %}
+      {% set sec = get_section(path=s) %}
+      <a href="{{ sec.permalink | safe }}"{% if current_path is defined and current_path is starting_with(sec.path) %} class="active"{% endif %}>{{ sec.title }}</a>
+    {% endfor %}
+    <a href="{{ config.extra.repo | safe }}">GitHub</a>
+  </nav>
+  {% if config.build_search_index %}
+  <div class="search">
+    <input id="search" type="search" placeholder="Search…" aria-label="Search the documentation" autocomplete="off">
+    <ul id="search-results" hidden></ul>
+  </div>
+  {% endif %}
+</header>
+
+<div class="layout">
+  {% block sidebar %}{% endblock sidebar %}
+  <main class="content">
+    {% block content %}{% endblock content %}
+    {% block pager %}{% endblock pager %}
+  </main>
+</div>
+
+<footer class="site-footer">
+  <span>bwapi-c2 is LGPL-3.0-only. It contains <a href="https://github.com/bwapi/bwapi">BWAPI</a> (LGPL-3.0) and <a href="https://github.com/N00byEdge/BWEM-community">BWEM</a> (MIT/X11).</span>
+  <span><a href="{{ config.extra.plan | safe }}">The plan</a> · <a href="{{ config.extra.research | safe }}">The research</a></span>
+</footer>
+
+{% if config.build_search_index %}
+<script>
+// The search box over Zola's elasticlunr index. Ten results, title and the first line of the
+// matching page; Enter on a result follows it.
+(function () {
+  var input = document.getElementById('search'), list = document.getElementById('search-results'), index = null;
+  function ensureIndex() {
+    if (index || !window.elasticlunr || !window.searchIndex) return index;
+    index = elasticlunr.Index.load(window.searchIndex);
+    return index;
+  }
+  function render(results) {
+    list.innerHTML = '';
+    list.hidden = results.length === 0;
+    results.slice(0, 10).forEach(function (r) {
+      var doc = index.documentStore.getDoc(r.ref), li = document.createElement('li'), a = document.createElement('a');
+      a.href = r.ref; a.textContent = doc.title;
+      var p = document.createElement('span'); p.className = 'hit-body';
+      p.textContent = (doc.description || doc.body || '').slice(0, 120);
+      li.appendChild(a); li.appendChild(p); list.appendChild(li);
+    });
+  }
+  input.addEventListener('input', function () {
+    var q = input.value.trim();
+    if (!q || !ensureIndex()) { list.hidden = true; return; }
+    render(index.search(q, { bool: 'AND', expand: true, fields: { title: { boost: 3 }, description: { boost: 2 }, body: { boost: 1 } } }));
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('.search')) list.hidden = true; });
+})();
+</script>
+{% endif %}
+</body>
+</html>

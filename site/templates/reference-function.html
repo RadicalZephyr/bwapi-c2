@@ -1,0 +1,13 @@
+{% extends "page.html" %}
+{# One exported function (plan section 16.1). emit_docs.py writes a page per function with typed
+   front matter under [extra]: c_name, signature, handle_kind, params, returns, neutral,
+   legit_none, reentrant, since, divergences, guides. Phase 1 fills this template in; until then
+   it renders as an ordinary page. #}
+{% block content %}
+<article class="reference">
+  <h1><code>{{ page.title }}</code></h1>
+  {% if page.extra.since %}<span class="badge">since {{ page.extra.since }}</span>{% endif %}
+  {% if page.extra.signature %}<pre class="signature"><code class="language-c">{{ page.extra.signature }}</code></pre>{% endif %}
+  {{ page.content | safe }}
+</article>
+{% endblock content %}

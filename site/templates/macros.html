@@ -1,0 +1,33 @@
+{# The sidebar for one Diátaxis section: its pages in weight order, then its subsections and
+   theirs. The reference section nests one level (unit/, game/, bwem/, ...) once phase 1 emits
+   it; the prose sections are flat. `current` is the permalink of the page being rendered. #}
+{% macro sidebar(section, current) %}
+<nav class="sidebar" aria-label="{{ section.title }}">
+  <a class="sidebar-title{% if section.permalink == current %} active{% endif %}" href="{{ section.permalink | safe }}">{{ section.title }}</a>
+  <ul>
+    {% for p in section.pages %}
+      <li><a href="{{ p.permalink | safe }}"{% if p.permalink == current %} class="active"{% endif %}>{{ p.title }}</a></li>
+    {% endfor %}
+    {% for sub_path in section.subsections %}
+      {% set sub = get_section(path=sub_path) %}
+      <li class="group">
+        <a href="{{ sub.permalink | safe }}"{% if sub.permalink == current %} class="active"{% endif %}>{{ sub.title }}</a>
+        <ul>
+          {% for p in sub.pages %}
+            <li><a href="{{ p.permalink | safe }}"{% if p.permalink == current %} class="active"{% endif %}>{{ p.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </li>
+    {% endfor %}
+  </ul>
+</nav>
+{% endmacro sidebar %}
+
+{# Previous/next within a section, in weight order. Zola gives page.lower and page.higher when
+   the section sorts by weight. #}
+{% macro pager(page) %}
+<nav class="pager">
+  {% if page.lower %}<a class="prev" href="{{ page.lower.permalink | safe }}">← {{ page.lower.title }}</a>{% else %}<span></span>{% endif %}
+  {% if page.higher %}<a class="next" href="{{ page.higher.permalink | safe }}">{{ page.higher.title }} →</a>{% else %}<span></span>{% endif %}
+</nav>
+{% endmacro pager %}

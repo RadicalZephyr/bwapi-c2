@@ -1,0 +1,11 @@
+{% extends "page.html" %}
+{# One table page (plan section 16.1): a constant family, a struct with its field offsets and
+   sizes and flag bits, or the error codes. emit_docs.py writes the table as Markdown in the
+   body and the family's metadata under [extra]. Phase 1 fills this template in. #}
+{% block content %}
+<article class="reference reference-table">
+  <h1>{{ page.title }}</h1>
+  {% if page.extra.since %}<span class="badge">since {{ page.extra.since }}</span>{% endif %}
+  {{ page.content | safe }}
+</article>
+{% endblock content %}

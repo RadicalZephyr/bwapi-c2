@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+{% block title %}{{ section.title }} · {{ config.title }}{% endblock title %}
+{% block description %}<meta name="description" content="{{ section.description | default(value=config.description) }}">{% endblock description %}
+{% block sidebar %}
+  {# A nested section (reference/unit/) shows its parent's sidebar so the whole tree stays visible. #}
+  {% if section.ancestors | length > 1 %}
+    {% set top = get_section(path=section.ancestors | nth(n=1)) %}
+  {% else %}
+    {% set top = section %}
+  {% endif %}
+  {{ m::sidebar(section=top, current=section.permalink) }}
+{% endblock sidebar %}
+{% block content %}
+<article>
+  <h1>{{ section.title }}</h1>
+  {{ section.content | safe }}
+  {% if section.pages %}
+  <ul class="page-list">
+    {% for p in section.pages %}
+      <li><a href="{{ p.permalink | safe }}">{{ p.title }}</a>{% if p.description %} <span class="muted">— {{ p.description }}</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if section.subsections %}
+  <ul class="page-list">
+    {% for sub_path in section.subsections %}
+      {% set sub = get_section(path=sub_path) %}
+      <li><a href="{{ sub.permalink | safe }}">{{ sub.title }}</a>{% if sub.description %} <span class="muted">— {{ sub.description }}</span>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</article>
+{% endblock content %}
