@@ -65,6 +65,13 @@ This is a design/roadmap document. No production code is included.
 > - Licensing is restated on the correct premise: the DLL embeds the Library (§0).
 > - The roadmap is five phases (§12). Module mode is a scoped v2 item (Appendix A). Linux via
 >   OpenBW is parked with the reason it can stay open (Appendix B).
+>
+> **Revision 4.1** applies the fourteen findings and five prior-art gaps of
+> [research/rev4-review.md](research/rev4-review.md): the invalid-vs-dead handle rule (§4, §6.2),
+> the retry idiom replacing pure preflighting (§4, §14), the thread-affinity check, the error
+> callback, the capability macro, the version triple, the stability bound (all §4); §5.7 removed;
+> the audit's universe made explicit (§9, §12); `bwem_initialize` resets first (§8.2); the
+> general C-over-C++ prior art (§1.6.1).
 
 ---
 
@@ -98,8 +105,13 @@ release asset ships a `NOTICE` snippet a bot author copies verbatim.
 GPL-3.0 §1's System Libraries definition means we need not ship the MSVC runtime's *source* in
 Corresponding Source. It is not a permission to statically link; that permission comes from
 Microsoft's Visual Studio distributable-code terms, a separate contract the LGPL does not touch.
-Verify the latter against the VS edition that builds the release; Community and Professional
-terms differ. The no-allocation-crosses-the-boundary argument in §4 stands on its own merits.
+Two questions for counsel before the first release, neither answerable here: whether static-CRT
+redistribution is permitted under the specific VS edition that builds the release (Community and
+Professional terms differ), and whether LGPL §4's requirement not to restrict reverse engineering
+"for debugging such modifications" is in tension with the VS terms' own reverse-engineering
+clause. It is the standard LGPL-on-Windows question and has a standard answer; the plan carries
+the question rather than assuming it. The no-allocation-crosses-the-boundary argument in §4
+stands on its own merits.
 
 **3. Every release asset ships the file table below**, and the crates.io, PyPI and NuGet
 packages carry the same, declaring `LGPL-3.0-only` in their metadata.
@@ -245,6 +257,27 @@ Three BWEM ports — JBWAPI's `bwem` (5,338 lines), rsbwapi's (2,496), gobwapi's
 **re-run the analysis in the host language**, because there is nothing to read results out of.
 §8 is what changes that.
 
+#### 1.6.1 The general pattern
+
+None of the above is specific to StarCraft. A flat C layer over a C++ implementation, built so
+other languages can bind to it, has a name — Stefanus Du Toit's **hourglass interface** (CppCon
+2014): *C++ on top of C89 on top of C++*, because "C ABIs on many platforms have been stable for
+decades, practically every language supports binding to C code through foreign function
+interfaces, and including nearly any C89 header has a negligible effect on compile time." ICU's
+design document states the premise in one sentence: **only the plain C API is binary-compatible
+across releases**, because C++ "presents extreme technical difficulties to doing so." Every §4
+convention has a production precedent in that field — integer handles are what SkiaSharp's
+three-regime pointer model is the cost of not having; caller buffers with a true-count return
+are ICU's convention since the 1990s; the size prefix is LibreOfficeKit's `nSize`; neutral values
+on bad input are HarfBuzz's inert singletons. **SkiaSharp is the near neighbour and the caution**:
+Google removed Skia's C API for lack of interest, the C# binding's maintainers carry it in a fork,
+and they describe its stability as "at the whim of the underlying C++ API." **cimgui and Godot's
+`extension_api.json`** are the precedents for a generated C layer with a JSON sidecar that a dozen
+bindings consume. **OpenCV is the failure mode**: a hand-maintained C API beside a moving C++ one,
+"not backported," removed in 4.0. Ours is generated from a spec the audit ties to the headers,
+over a target that does not move. The full table, checked against §4, is
+[research/rev4-review.md](research/rev4-review.md) Part 2.
+
 ### 1.7 Exceptions: none in BWAPI's closure, by design in BWEM's
 
 `grep -rn "throw "` across `bwapi/BWAPILIB`, `bwapi/Shared`, `bwapi/BWAPIClient` and
@@ -277,12 +310,16 @@ block is decided by a rule rather than by a count:
 | **`bwapi_c2_bwem.h`** | 279 | **98** | §8 |
 
 Revision 3 guessed "550–600"; the measurement came out ~30% higher. What the measurement
-changed is not the count but the *reason* §9 exists: **542 declarations map to ~457 interface
-exports through five documented exclusion rules, and the rules are the thing that can be
-wrong.** `bwapi-c` hand-wrote 530 wrappers and they work, so "too many to type" was never the
-argument. Only a coverage audit run off a machine-readable spec can show the mapping is
-complete. §5.8's 848 constants and 185 accessors are the part nobody should type at all — five
-projects have transcribed that database by hand, and at least two got it wrong.
+changed is not the count but which of §9's reasons carries weight. **"Too many to type" was
+never the argument** — `bwapi-c` hand-wrote 530 wrappers and they work. Three things are:
+**542 declarations map to ~457 interface exports through five documented exclusion rules, and
+the rules are the thing that can be wrong**, so there must be a machine-readable spec and a
+coverage audit run off it; **~770 functions must share one boundary implementation** — the
+`noexcept` guard, buffer semantics, invalid-handle behaviour, error latching — and hand-written
+copies of that diverge in exactly the details that matter, so there must be an emitter; and
+**§5.8's 848 constants and 185 accessors must come from data** — five projects have transcribed
+that database by hand, and at least two got it wrong. The spec and audit follow from the first,
+the emitter from the second and third.
 
 Usage frequency was measured too (R2: a competitive bot uses ~200 distinct entry points; 95% of
 call sites at 195) and it turned out to be the wrong instrument for scope. **Usage tells you what
@@ -299,8 +336,10 @@ traffic. **One bot in 291 SSCAIT registrations is neither C++ nor JVM.**
 
 The *building* channel is active: a Go client started in February 2026, a Zig bot has run on
 `bwapi-c` since 2023, a vendored-rsbwapi Rust bot appeared in December 2025, and two C# clients
-were started in 2023 and abandoned within days — because the only path available was
-reimplementing the protocol. pybrood, the longest-lived Python attempt, died with six unanswered
+were started in 2023 and abandoned within days. Both took the only path available —
+reimplementing the protocol; whether that is *why* they stopped the record does not say, and the
+conclusion below rests on the count of attempts, not on a theory of their deaths. pybrood, the
+longest-lived Python attempt, died with six unanswered
 issues, every one a coverage complaint, and the last of them is the §5.8 gap exactly: *"is there
 any way to create a UnitType?"* The Nim attempt's own README names the cause: `operator->`,
 mangling, the `AIModule` vtable, and a wrapper generator that is itself a project.
@@ -441,6 +480,11 @@ writing. They were designed against BWAPI and then mapped, unmodified, onto BWEM
 incidentally showed three of them are expressible even in SWIG's typemap language. Locking them
 down first is most of the work.
 
+**The governing principle is TensorFlow's, stated for its C API and adopted here verbatim:
+simplicity and uniformity over convenience, because most usage will be by language-specific
+wrappers.** Where a convenience does appear (§5.3's command verbs) it is for the plain-C consumer
+that phase 3 makes first-class, and wrappers are expected to build on the general form.
+
 **Linkage and calling convention.** Everything `extern "C"`. Explicit
 `#define BWAPI_C2_CALL __cdecl` on every exported function — never rely on the project
 default, since consumers (notably JNA-style loaders) guess. Export via a `.def` file so names
@@ -544,6 +588,16 @@ mismatch — the classic MSVC-CRT-vs-host-CRT bug is designed out. The alternati
 `bwapi-c`'s heap iterator costs ~3 crossings plus a virtual dispatch per element, so 600
 crossings to enumerate 200 units.
 
+**The size query is not the idiom; retry-on-overflow is.** A `cap == 0` call runs the whole
+operation — the build and the sort — and the real call runs it again. ICU, which has used this
+exact convention for twenty-five years, says so in its documentation: "pure preflighting is
+inefficient since the operation executes twice." The recommended idiom, and the one §14
+demonstrates, is: **size the buffer to last frame's return value plus slack, call once, and grow
+only when the return exceeds `cap`.** Between frames the unit count moves by a handful, so the
+retry is rare. Where BWAPI already holds the number, the ABI exposes it as a cheap counter so the
+common cases need no query at all: `bwapi_game_unit_count()`, `bwapi_game_event_count()`,
+`bwapi_game_bullet_count()`, `bwapi_bwem_map_area_count()` and their kin.
+
 **When `cap < total`, the returned elements are the first `cap` in ID order.** So a retry with a
 larger buffer is coherent with the truncated result, and a caller can page. Leaving this
 unspecified would make truncation a silent random sample.
@@ -573,9 +627,24 @@ Applied uniformly, including to `bwapi_unit_command`. The per-call cost is setti
 a struct most bots never touch (§5.3's ~40 convenience functions are the real command path), and
 uniformity is worth more than four bytes.
 
+`bwapi_c2_types.h` ships one capability macro, LibreOfficeKit's `LIBREOFFICEKIT_HAS_MEMBER`
+under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) <
+size` — so a consumer compiled against a newer header can test whether the DLL it loaded filled
+a field before reading it. The size prefix makes that possible; the macro makes it one line.
+
 **Invalid handles.** Never dereference. Validate, then return a documented neutral value (`0` /
 `-1` / packed `Positions::None` / empty) and latch it in the ABI error channel. Rationale: a
 wrapper bug in a foreign language must not crash StarCraft mid-tournament.
+
+**An ABI error is a handle that could never have been valid — not a handle to a unit that has
+since died.** The distinction decides whether the latch is usable. Every bot keeps unit ids
+across frames — squads, build queues, scout assignments — and queries them after the unit is
+gone; if that latched, the end-of-frame check would trip on ordinary play from the first game.
+So: negative, out of range (10,000 units, 12 players, 5 forces, BWEM's own counts), wrong kind,
+or used before `connect` → neutral value **and** latch. In range but no longer existing → **what
+BWAPI returns** for a dead unit (its own semantics, typically `0`/`None`), no latch; the host
+detects it with `bwapi_unit_exists()` or the snapshot's `exists` bit. §6.2 states the same rule
+from the handle side; §8.2 applies it to a neutral whose unit has been destroyed.
 
 **Handle spaces are disjoint** — a unit id is never valid where a player id is expected, and
 BWEM's area, chokepoint and base ids are disjoint from each other and from BWAPI's — **with one
@@ -611,29 +680,53 @@ discarded.
 is no context handle and there will not be one. `bwapi_client_connect()` when already connected
 latches `BWAPI_ERR_ALREADY_CONNECTED` and returns 0.
 
-**Diagnostics.** `Client::connect()` writes directly to `std::cout`/`std::cerr`
-(`bwapi/BWAPIClient/Source/Client.cpp`), which is useless-to-harmful for an embedded consumer.
-Add `bwapi_set_log_callback(void(*)(int32_t level, const char* msg, void* user), void* user)`
-and route wrapper diagnostics there. Every callback in the ABI carries a `void* user` — the
-omission is the reason `bwapi-c`'s filter callbacks could not carry a closure. Leave the
-underlying C++ prints alone in v1, but document them.
+**Two callbacks, both optional.** `Client::connect()` writes directly to
+`std::cout`/`std::cerr` (`bwapi/BWAPIClient/Source/Client.cpp`), which is useless-to-harmful for
+an embedded consumer, so wrapper diagnostics go to
+`bwapi_set_log_callback(void(*)(int32_t level, const char* msg, void* user), void* user)`. And
+because "a silently no-op'd command in a language where nobody checks error codes is a miserable
+afternoon," there is also
+`bwapi_set_error_callback(void(*)(int32_t code, const char* msg, void* user), void* user)`,
+**invoked at the moment an error is latched** — Z3's `Z3_set_error_handler`, added to that API for
+exactly this reason: bindings wanted to raise at the failing call rather than poll. Off by
+default; a Python or C# wrapper enables it in debug builds and raises from inside it. The sticky
+latch is unchanged and remains the release-build mechanism. Every callback in the ABI carries a
+`void* user` — the omission is the reason `bwapi-c`'s filter callbacks could not carry a closure.
+Leave the underlying C++ prints alone in v1, but document them.
 
-**Threading.** BWAPI is single-threaded and frame-synchronous. All calls happen on the thread
-that calls `bwapi_client_update()` — see §4.1, which is normative.
+**Threading — checked, not requested.** BWAPI is single-threaded and frame-synchronous. All
+calls happen on the thread that calls `bwapi_client_update()` (§4.1, normative). The ABI records
+that thread's id at `connect` and **latches `BWAPI_ERR_WRONG_THREAD` and returns the neutral
+value on any call from another thread** — one integer compare per call, cheaper than the
+resolve-and-guard every wrapper already does, and it turns a data race inside `GameImpl` into
+the error the latch exists to report. A Python `asyncio` host or a C# UI thread will make this
+mistake at least once; it is the first case in the boundary-fuzz list (§11) because a fuzzer
+will not find it on its own.
 
 **Versioning and the stability timeline.**
 ```c
-uint32_t bwapi_abi_version(void);      /* semver of this ABI */
+void     bwapi_abi_version(int32_t* major, int32_t* minor, int32_t* patch);
+int32_t  bwapi_abi_version_string(char* buf, int32_t buf_len);   /* snprintf convention */
 int32_t  bwapi_client_version(void);   /* BWAPI::CLIENT_VERSION, 10003 today */
 int32_t  bwapi_revision(void);         /* SVN_REV from upstream's generator, §10.3 */
 int32_t  bwapi_is_debug(void);
 ```
+Three `int32_t` out-params rather than a packed `uint32_t`: it keeps §4's one-integer-width rule
+intact and needs no documented packing to compare.
 
 **The ABI is `0.x` and explicitly unstable until the consumers phase completes.** Real bindings
 always shake out ergonomics, and promising append-only stability while also planning to revise
 on consumer feedback cannot both hold. **Append-only begins when `bwapi_abi_version()` returns
 1.0**, and reaching 1.0 is the exit criterion of phase 4 (§12). After that: new functions get
 new names; existing signatures never change meaning; a removal is a major bump.
+
+**The bound on that promise is the one LLVM-C states for itself**: stability "limited by the
+abstractness of the interface and the stability of the C++ API that it wraps." Ours wraps two
+libraries that have not moved since 2018 and 2021, so the bound is loose — but it exists, and a
+**pin bump is the only event that can change semantics behind an unchanged signature.** That is
+why §10.3 attaches every check to that event and why §15 is a register rather than a promise.
+There is no runtime behaviour-version selection of the FoundationDB `fdb_select_api_version`
+kind; with a frozen dependency there is nothing for it to select between.
 
 ---
 
@@ -657,7 +750,7 @@ for (;;) {
         bwapi_client_update();                    /* blocks on the pipe */
         if (!bwapi_client_is_connected()) break;
     }
-    bwapi_bwem_reset();                           /* before the mapping goes away */
+    bwapi_bwem_reset();                           /* optional: initialize() and disconnect() both do it */
 }
 ```
 
@@ -742,9 +835,17 @@ int32_t bwapi_unit_issue_command(int32_t unit_id, const bwapi_unit_command* cmd)
 int32_t bwapi_game_issue_command(const int32_t* unit_ids, int32_t n,
                                  const bwapi_unit_command* cmd);
 ```
+**`bwapi_game_issue_command(ids, n, cmd)` is a loop, not a grouped command.** Client-mode
+`GameImpl::issueCommand(const Unitset&, UnitCommand)` iterates `u->issueCommand(command)` — the
+source is annotated `//FIX FIX FIX naive implementation` — and grouped commands do not exist in
+client mode at all (§15 #17, Appendix A). The array form saves crossings; it changes nothing
+about what the server receives.
+
 Also expose the ~40 convenience methods directly (`bwapi_unit_attack_unit`, `bwapi_unit_train`,
-`bwapi_unit_build`, …) — that is what bots actually call, and going through a struct for
-`move()` is a needless ergonomic tax on every wrapper author.
+`bwapi_unit_build`, …). Under §4's governing principle these are convenience, and they are here
+for one consumer: the plain-C bot that is phase 3's exit criterion, for whom building a struct to
+call `move()` is a real tax. They are generated, so they cost nothing to keep; wrappers are
+expected to build on `issue_command` and may ignore them.
 
 ### 5.4 Filters, predicates, and re-entrancy
 
@@ -877,12 +978,14 @@ re-entrancy entirely, and every host language can build its own callback dispatc
 The same event pump is where the ABI drives BWEM's three destruction hooks internally (§8), so
 a host that never calls them still gets a correct map.
 
-### 5.7 Unit-set broadcasts
+### 5.7 Unit-set broadcasts — not exposed
 
-`Unitset` has 48 broadcast methods (`unitset.attack(pos)` → all units). Rather than reproducing
-them, expose the ID-array form for the ~10 that matter:
-`bwapi_units_attack_position(const int32_t* ids, int32_t n, int32_t x, int32_t y, int32_t queued)`.
-The rest are host-language `for` loops.
+`Unitset` has 48 broadcast methods (`unitset.attack(pos)` → all units). Every one is sugar over
+`Game::issueCommand(const Unitset&, …)`, which in client mode is a `for` loop (§5.3), so every
+one is `bwapi_game_issue_command(ids, n, cmd)` with a different `cmd`. None is exported. A
+previous draft shipped "the ~10 that matter," which was a usage-based cut of exactly the kind
+§1.8 rules out; the honest rule is that there is nothing here to cut, because there is nothing
+here that is not already a one-line host loop over an exported function.
 
 ### 5.8 Static type data — the product
 
@@ -909,9 +1012,13 @@ than a snapshot of them. The **848 constants** ship generated into `bwapi_c2_typ
 `Text::{Enum,Size::Enum}`, `MouseButton`, `Key`, `Latency::Enum`, `Colors`, and the position
 sentinels in both forms; names come from the enum identifiers, so they cannot drift. And **one
 size-prefixed bulk table per type class** ships as an optional §5.10-style fast path, so a host
-that would rather pay one crossing at startup than 185 can have it. Declined: shipping *only*
-the table — that is what rsbwapi does because it has no ABI to ask, and it forces every host to
-re-derive accessor semantics the ABI already knows.
+that would rather pay one crossing at startup than 185 can have it. **The table carries scalar
+fields only.** The container-valued accessors — `requiredUnits()`, `abilities()`, `upgrades()`,
+`buildsWhat()`, `whatBuilds()` — stay function-only, with one exception: `requiredUnits` is on
+the hot path of every build-order planner, so it also ships as a flat
+`(type, required_type, count)` table sorted by type, the same shape as a snapshot array.
+Declined: shipping *only* the table — that is what rsbwapi does because it has no ABI to ask, and
+it forces every host to re-derive accessor semantics the ABI already knows.
 
 ### 5.9 Explicitly not exposed
 
@@ -1046,6 +1153,14 @@ Without that list, `BWAPI_NONE` is indistinguishable from a rejected handle unle
 reads the error channel after every single call — which is precisely the second crossing §4
 designed away.
 
+**Three outcomes, and only one is an error.** A handle that could never have been valid (negative,
+≥ 10,000 for units, ≥ 12 for players, ≥ 5 for forces, wrong kind, before `connect`) → neutral
+value, latched. A handle to a unit that existed and no longer does → what BWAPI's own getters
+return on a dead `UnitImpl`, not latched; `resolve()` returns it because `getUnit(id)` indexes
+the 10,000-entry vector regardless of `exists()`. A handle to a live unit → the answer. The
+generated resolve-and-guard checks range and kind, never existence; a wrapper that added an
+`exists()` check would break every bot that remembers ids across frames.
+
 **Zero is not "none" anywhere in BWAPI.** Every unit-index field in `UnitData` — `transport`,
 `target`, `orderTarget`, `buildUnit`, `addon`, `carrier`, `hatchery`, `rallyUnit`,
 `lastAttackerPlayer` — uses `-1`, and a zero is a *valid* index into unit 0. R7's fixture found
@@ -1104,7 +1219,8 @@ bwapi-c2/                           # separate repository, LGPL-3.0-only
     spec/{game,unit,player,types,bwem,...}.yaml   # the source of truth
     emit_header.py  emit_source.py  emit_json.py  emit_def.py
     check_coverage.py      # libclang audit, off the merge path (§9)
-  api.json                 # generated — the downstream binding contract
+  api.json                 # generated — the downstream binding contract; carries api_json_version
+  docs/api-json.md         # every field of api.json, documented
   bwapi_c2.def             # generated, checked in — the golden symbol artifact
   tests/
     header_hygiene/        # C99 + C++ compile checks
@@ -1130,8 +1246,13 @@ bwapi-c2/                           # separate repository, LGPL-3.0-only
 `bindings/` holds the **raw FFI layer only**: `extern` declarations, constants, build glue,
 nothing more. Keeping it here means it is generated from the same `api.json`, versioned with the
 ABI, and regression-tested in one CI run against the fixtures. **Two raw bindings consuming
-`api.json` in CI are the test of `api.json`'s stability** — that is why there is no separate
-JSON Schema.
+`api.json` in CI are the test of `api.json`'s stability for those two consumers**, which is why
+there is no JSON Schema yet. It is not a test for the third-party consumer `api.json` exists
+for — the Go or Zig binding that never touches this repo — so `api.json` carries a top-level
+integer `api_json_version`, every field is documented in `docs/api-json.md`, and the schema comes
+back the day a third-party consumer appears. Godot's `extension_api.json` is the precedent on
+both counts: the format that a dozen generators consume, and the "hardening of the specification"
+issue that opened once they did.
 
 The **idiomatic, safe, host-language wrapper** for each language lives in its own repository,
 released on that ecosystem's cadence: a `bwapi-c2` package on PyPI, `BwapiC2` on NuGet, a
@@ -1215,12 +1336,18 @@ void    bwapi_bwem_on_blocking_neutral_destroyed(int32_t unit_id);
 `FindBasesForStartingLocations` has an ordering dependency and no use case for the intermediate
 states; an ABI should make ordering errors impossible rather than diagnosable (§15 #13). It
 blocks for **~450 ms** on a 128×128 map, all of it at match start; BWEM has nothing per-frame.
+**By the same principle, `bwapi_bwem_initialize()` resets first if already initialised.** The
+§15.2 patch adds `ResetInstance()`; it does not make `Initialize()` safe to call twice, and a
+host that starts its second match without calling `reset()` would otherwise hit the R11.6 crash
+the patch exists to avoid. `bwapi_bwem_reset()` stays exported for hosts that want the ~30 MB
+back between matches; nothing depends on their calling it.
 
 **Ids are stable from `initialize` to the next `initialize`.** `OnMineralDestroyed` erases a
 mineral from lists and never renumbers areas, chokepoints or bases; a blocking neutral's
 destruction changes a `GroupId`, not an `Id`. A neutral's id outlives its unit briefly — BWEM
-keeps the `Neutral` until the hook runs — and `bwapi_bwem_neutral_exists()` covers the gap.
-Nothing carries across a match boundary.
+keeps the `Neutral` until the hook runs — and `bwapi_bwem_neutral_exists()` covers the gap. A
+query on a neutral whose unit has been destroyed is the §4 dead-handle case, not an ABI error:
+neutral return, no latch. Nothing carries across a match boundary.
 
 **The three hooks are filtered and idempotent, and the ABI drives them itself.**
 `MapImpl::OnMineralDestroyed` does `bwem_assert(found)` and therefore *throws* when handed a unit
@@ -1256,11 +1383,15 @@ the §4 `noexcept` boundary, latching `BWAPI_ERR_BWEM` and routing `Exception::w
 ## 9. Codegen: spec-driven, drafted by clang, audited by libclang
 
 **Why a generator, restated.** Not because 770 wrappers are too many to type — `bwapi-c` typed
-530 and they work. Because §1.8's mapping from 542 declarations to ~457 interface exports goes
-through five exclusion rules, §5.8's 1,033 entries must come from a machine-readable source or
-every consumer transcribes them again, and only a coverage audit run off a spec can show the
-first is complete and the second is exact. The generator is the deliverable; the wrappers are
-output.
+530 and they work. Three reasons, each justifying a different piece. §1.8's mapping from 542
+declarations to ~457 interface exports goes through five exclusion rules, and only a coverage
+audit run off a machine-readable spec can show it is complete: **that justifies the spec and the
+audit.** ~770 functions must share one boundary implementation — `noexcept` guard, thread check,
+resolve-and-guard, buffer semantics, latch — and hand-written copies diverge in exactly those
+details: **that justifies the emitter.** §5.8's 1,033 entries must come from data or every
+consumer transcribes them again: **that justifies both.** The generator is the deliverable; the
+wrappers are output. (An earlier draft said the audit alone justified the generator; it justifies
+the list, not the emitter.)
 
 **Rejected: parse the headers and emit directly.** The headers use MSVC extensions, `#pragma
 warning`, and heavy templates; a parser-driven generator is brittle and, worse, would silently
@@ -1364,10 +1495,17 @@ in CI are its compatibility test; §15 is a table, not a per-entry field.
 
 ### The coverage audit runs off the merge path
 
-`check_coverage.py` parses the BWAPI and BWEM headers with libclang and reports any public
-declaration with neither a spec entry nor a rule-bearing `skip:`, and any spec entry whose
-declared signature no longer matches. Its real value is a **one-time completeness audit** —
-proving the spec accounts for all 542 + 279 declarations — plus a re-run at pin bumps.
+`check_coverage.py` parses **an explicit, checked-in list of headers** — `tools/abi/audited-headers.txt`
+— with libclang and reports any public declaration with neither a spec entry nor a rule-bearing
+`skip:`, and any spec entry whose declared signature no longer matches. The list is the audit's
+universe, and "complete" means complete relative to it, so it is written down rather than
+implied by §1.8's counts: the six interface headers; the fourteen type-class headers behind
+§5.8's 185 accessors; `UnitCommand.h`, `Event.h`, `Position.h`, `Color.h`, `Error.h`; and BWEM's
+`map.h`, `area.h`, `cp.h`, `base.h`, `neutral.h`, `tiles.h`. Every header *not* on the list
+carries the rule that excludes it beside its name — `Filters.h`: §5.4; `Unitset.h`: §5.7;
+`Client/*.h`: not public; BWEM's `graph.h`, `gridMap.h`, `mapImpl.h`, `mapDrawer.h`,
+`mapPrinter.h`, `bwapiExt.h`: §15 #15. Its real value is a **one-time completeness audit** plus a
+re-run at pin bumps.
 
 It is **not** a per-PR gate. Parsing `v141_xp` headers and 3,098 lines of `Templates.h` needs
 `-fms-extensions -fms-compatibility -fdelayed-template-parsing` and a pinned LLVM; that is a
@@ -1524,10 +1662,16 @@ same design independently: its `GameBuilder` is 48 lines. OpenBW was evaluated a
 and is unusable in public CI — it needs Blizzard's MPQs, and the two projects that tried disabled
 their workflows in 2022 (Appendix B).
 
-**Fixtures are synthetic by policy** (§0). Recorded buffers are contributor-local and gitignored.
-The cost of that policy is exactly the three things R7 and R11.6 found a synthetic fixture must
-get right, so **one shared fixture builder encodes them once** rather than every suite
-rediscovering them:
+**Fixtures are synthetic by policy** (§0), and the cost of that policy is stated rather than
+hidden. R7's case against a mock server was that a hand-built game state is *plausibly wrong* in
+ways its author cannot know, and a recorded buffer is correct by construction; a synthetic fixture
+is a hand-built game state. So **the shared fixture builder encodes the known invariants once**
+rather than every suite rediscovering them — and **recorded buffers have a job**: a
+**differential test**, run locally by whoever has a StarCraft installation, loads a recorded
+frame-0 buffer, runs the same read-path assertions the synthetic suite runs, and reports any
+assertion that passes on one substrate and fails on the other. CI coverage is synthetic; the
+correctness of the synthetic substrate is established locally and periodically, not assumed. The
+invariants the builder carries today:
 
 1. `UnitImpl`'s constructor reads the global `BWAPI::BWAPIClient.data`, not the `GameData*`
    handed to `GameImpl` — set it first or segfault.
@@ -1548,7 +1692,8 @@ Ordered by value per unit of effort:
 | **Read path, rules, command emission** — every read and write entry point exercised | synthetic `GameData` | small; the harness exists |
 | **BWEM** — full analysis, ids, paths, hooks, reset, teardown order | synthetic terrain | small; the fixture exists |
 | **Error paths** — bad handles, truncation, the sticky latch, BWEM assertions caught | deliberately malformed `GameData` | small |
-| **Boundary fuzz** — a harness generated from the `.def` calling every export with negative handles, `cap` of `INT_MIN`, `NULL` with nonzero `cap`, `buf_len` one byte short. The headline safety promise, tested | synthetic | an afternoon |
+| **Boundary fuzz** — a harness generated from the `.def` calling every export from the wrong thread (§4), with negative and out-of-range handles, `cap` of `INT_MIN`, `NULL` with nonzero `cap`, `buf_len` one byte short. The headline safety promise, tested | synthetic | an afternoon |
+| **Differential** — recorded frame-0 buffer vs. the synthetic fixture, same assertions, any disagreement reported | recorded, contributor-local | one script; not in CI |
 | **Transport** — game table, mapping, two-byte handshake | a ~150-line fake of the transport only, no game semantics | small |
 | **Coverage audit** — on demand and at pin bumps, not on the merge path (§9) | libclang | — |
 | **End-to-end** — the C, Python and C# example bots against real StarCraft | manual, gated, pre-release | occasional |
@@ -1568,7 +1713,7 @@ rather than by work.
 | Phase | Deliverable | Exit criterion |
 |---|---|---|
 | **0. Bootstrap** | Repo; both pinned submodules with carried patches; the derived closure with explicit file lists and include dirs; the client-only CMake target; `svnrev.h` from upstream's script; §0 license files; header skeletons with the §4 conventions; the layout-dump and derived-closure CI jobs; the shared fixture builder | An empty `bwapi_c2.dll` links **x86 and x64**; both layout dumps match the baseline at 33,017,048; R7's harness and R11.6's BWEM fixture run green inside the repo |
-| **1. Generator and static types** | `draft_spec.py`, the emitters, `check_coverage.py`, `api.json`, the golden `.def`; `bwapi_c2_types.h` with 848 constants, 185 accessors and the bulk tables; `Player` fully generated as the interface proving ground | ~500 type assertions green with no game; `Player` round-trips spec → header → `.def` → `api.json` → a compiling Python `ctypes` and C# P/Invoke layer; the coverage audit reports **zero unaccounted declarations** across the six headers — every one has an entry or a rule-bearing `skip:` |
+| **1. Generator and static types** | `draft_spec.py`, the emitters, `check_coverage.py`, `api.json`, the golden `.def`; `bwapi_c2_types.h` with 848 constants, 185 accessors and the bulk tables; `Player` fully generated as the interface proving ground | ~500 type assertions green with no game; `Player` round-trips spec → header → `.def` → `api.json` → a compiling Python `ctypes` and C# P/Invoke layer; the coverage audit reports **zero unaccounted declarations across the audited-headers list** (§9) — every one has an entry or a rule-bearing `skip:`, and every excluded header names its rule |
 | **2. Read surface** | `Game`, `Unit`, `Force`, `Region` getters; the 88 `can_*`; events; bulk grids; snapshots; boundary-side closest queries | Every read entry point exercised against a synthetic fixture; boundary fuzz green |
 | **3. Write surface and BWEM** | Commands and broadcasts; `bwapi_c2_bwem.h` — 98 functions, the three hand-written hooks, reset and teardown | **A C99 example bot builds against the headers alone, with no C++ toolchain, and against real StarCraft reads game state, moves units, and finds its natural expansion through BWEM** |
 | **4. Consumers → 1.0** | Python and C# raw layers from `api.json`; the Rust proof-of-concept; Python and C# example bots; idiomatic wrappers spun out to their own repos | Both example bots play a game; **`bwapi_abi_version()` returns 1.0 and the append-only promise takes effect** |
@@ -1636,6 +1781,7 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 15 | Linux / OpenBW | **Parked, not closed.** The process boundary means nothing unlicensed is ever linked (Appendix B). 32-bit Linux is a non-goal |
 | 16 | Test fixtures | **Synthetic by policy**; recorded buffers contributor-local; no mock server (§11) |
 | 17 | SWIG | **Rejected on five measured grounds**; clang drafts the spec (§9) |
+| 18 | The rev-4 review's fourteen findings and five prior-art gaps | **All applied** in revision 4.1 ([research/rev4-review.md](research/rev4-review.md)). Largest: invalid-vs-dead handles (§4, §6.2); retry over preflight (§4, §14); the error callback and thread check (§4) |
 
 ---
 
@@ -1647,28 +1793,38 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 #include <bwapi_c2_bwem.h>
 
 while (!bwapi_client_connect()) { Sleep(1000); }
+bwapi_set_error_callback(on_abi_error, NULL);          /* debug builds: fail loudly, at the call */
+
+int32_t cap = 0;
+bwapi_unit_snapshot* units = NULL;
 for (;;) {
     while (!bwapi_game_is_in_game()) bwapi_client_update();
-    bwapi_bwem_initialize(1, 1);
+    bwapi_bwem_initialize(1, 1);                       /* resets first if a match already ran */
     while (bwapi_game_is_in_game()) {
         bwapi_clear_last_error();
 
-        int32_t n = bwapi_game_snapshot_units(NULL, 0);
-        bwapi_unit_snapshot* units = malloc(n * sizeof *units);
+        /* size to last frame's count plus slack; call once; grow only on overflow (§4) */
+        if (cap == 0) cap = bwapi_game_unit_count() + 64;
+        units = realloc(units, cap * sizeof *units);
         units[0].size = sizeof *units;
-        n = bwapi_game_snapshot_units(units, n);
+        int32_t n = bwapi_game_snapshot_units(units, cap);
+        if (n > cap) { cap = n + 64; continue; }        /* rare: re-run this frame's read */
 
         for (int32_t i = 0; i < n; ++i)
             if (units[i].type == BWAPI_UNIT_TERRAN_SCV && (units[i].flags & BWAPI_UF_IDLE))
                 bwapi_unit_gather(units[i].id, nearest_mineral(units[i].x, units[i].y), 0);
 
-        free(units);
         if (bwapi_last_error() != BWAPI_ERR_NONE) report(bwapi_last_error());
         bwapi_client_update();
     }
-    bwapi_bwem_reset();
 }
 ```
+
+Two things the example is careful about, both from §4: the snapshot buffer is sized from a
+cheap counter and reused across frames, never preflighted with `cap == 0`; and the error
+callback is installed so a debug build stops at the offending call, while the sticky latch
+remains the once-per-frame check a release build relies on. `bwapi_bwem_reset()` does not
+appear, because `initialize` performs it (§8.2) and `disconnect` performs it (§4.1).
 
 **Python** (`ctypes`, generated from `api.json`):
 ```python
@@ -1714,7 +1870,7 @@ being scattered through prose where they rot.
 | 8 | Invalid handles return a documented neutral value | §4 | A foreign-language bug must not crash the game |
 | 9 | Bulk grids cropped to the live map | §5.5 | 16× less data on a 128×128 map; `out_w`/`out_h` report the extent |
 | 10 | Text truncated at 256 bytes | §5.1 | Inherited from `GameImpl::vPrintf`, not introduced — but surfaced here because callers cannot see it |
-| 17 | `canXxxGrouped` not exposed | §5.11 | 17 declarations under 11 names. Grouped commands are **not implemented by the BWAPI server** (JBWAPI #70), so a client bot cannot use them in any language; exposing the predicates would advertise a capability that does not exist in client mode. Revisit with module mode |
+| 17 | `canXxxGrouped` not exposed | §5.11 | 17 declarations under 11 names. Grouped commands are **not implemented by the BWAPI server** (JBWAPI #70), so a client bot cannot use them in any language; exposing the predicates would advertise a capability that does not exist in client mode. `bwapi_game_issue_command(ids, n, cmd)` is a loop, not this (§5.3). Revisit with module mode |
 | 18 | `checkCommandibility` not exposed; every `can_*` behaves as if it were `true` | §5.11 | A default argument on 88 declarations, not an overload. Passing `false` skips the commandability precheck — an optimisation for chaining predicates, costing a boolean on every signature and a footgun across a boundary where the precondition cannot be enforced |
 | 19 | Filter-taking query overloads not exposed; every query has an unfiltered form | §5.4 | `std::function` does not cross C; the host filters the ID array or the snapshot. 13 declarations |
 | 20 | `int x, int y` overloads merged into their `Position` sibling | §4 | §4 unpacks position parameters, so the two declarations have one C signature. 14 declarations. A de-duplication, recorded so the coverage audit expects it |

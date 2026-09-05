@@ -1,5 +1,7 @@
 # Revision 4 — critical review
 
+> **Status:** every finding and gap below was applied to the plan as revision 4.1.
+
 A read of [c-abi-plan.md](../c-abi-plan.md) at revision 4 (commit `70f0a082`) for poor
 decisions, faulty reasoning, accidental inversions and weaknesses, followed by the prior art the
 plan has never engaged with: **published accounts of plain-C wrappers built over C++ codebases
