@@ -50,6 +50,7 @@ target_compile_definitions(BWAPI_C2 PRIVATE
   BWAPI_C2_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
   BWAPI_C2_VERSION_MINOR=${PROJECT_VERSION_MINOR}
   BWAPI_C2_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+  BWAPI_C2_BUILDING=1
 )
 if(MSVC)
   # CMake passes a .def listed among the sources to the linker as /DEF.
