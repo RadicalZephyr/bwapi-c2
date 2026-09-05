@@ -20,6 +20,8 @@ audience is thin but real and currently active. Eight genuine forks remain open;
 | Primary consumers are **Python and C#** | Confirms rev-4 §B's consequence and R3/R4's recommendation. Rust demoted (see fork 8) |
 | **Do not cut the surface to R2's minimal set.** Target what the surveyed bots collectively need | Changes rev-4 §H's trigger. See §2H below |
 | **Draw-call usage data is not authoritative** — draws are dev/debug tooling, and §5.2 already reduces them properly | Correct, and it invalidates one of my own R2 recommendations. See §2H |
+| **32-bit Linux is an explicit non-goal** | Closes R5's one incompatible target (`BulletData` 76 vs 80, `sizeof(GameData)` 404 bytes short). Record it in §2 non-goals; the layout hazard then cannot be hit |
+| **BWEM must be wrapped** — second header, same §4 conventions | New research project R11 ([r11-bwem-research-plan.md](r11-bwem-research-plan.md)). Supersedes fork 5 below |
 
 **On the draw point specifically, you are right and I was wrong.** R2 §4 recommended "ship 8 draw
 functions in Map and Screen space; drop the generic `CoordinateType`-taking forms" on the grounds
@@ -282,10 +284,12 @@ gap, not a binding limitation, and one competitors also cannot close. Appendix A
 module mode indefinitely. Does this reopen it as a v2 item, or is it an accepted limitation
 documented in the README?
 
-**5. Is BWEM / map analysis an explicit non-goal?**
-JBWAPI ships 5,338 lines of it, rsbwapi 2,631, gobwapi its own port — because bots need it and
-BWAPI does not provide it. The plan is currently **silent**, which reads as an oversight rather
-than a decision. Recommend an explicit non-goal with a pointer to the existing ports.
+**5. ~~Is BWEM / map analysis an explicit non-goal?~~ — RESOLVED: in scope.**
+Decided: BWEM is wrapped, through a second header, under the same §4 conventions. The reasoning
+is that a bot written against `bwapi-c2` without BWEM starts behind an equivalent C++ bot, and
+every host ecosystem would otherwise wrap or reimplement it separately — which is the same
+duplicated-effort trap §5.8 exists to close. Scoped as **R11**, a new research project:
+[r11-bwem-research-plan.md](r11-bwem-research-plan.md).
 
 **6. Linux/OpenBW: closed or parked?**
 R9's missing license is a blocker today, R7's MPQ problem makes it untestable, R5's i386 layout

@@ -192,7 +192,7 @@ actually breaks:
 |---|---|---|
 | Win32 (retail BWAPI) | Win32 or Win64 | agree — 33,017,048 |
 | Linux x86-64 (OpenBW) | Linux x86-64 | agree — 33,017,048 |
-| **Linux i386** | **Linux x86-64** | **disagree — 33,016,644 vs 33,017,048** |
+| **Linux i386** | **Linux x86-64** | **disagree — 33,016,644 vs 33,017,048** — *32-bit Linux is an explicit non-goal (decided); recorded so the hazard is not rediscovered* |
 
 **This is a direct input to R7.** If OpenBW's Linux build is 64-bit — which BWAPI4J's
 "64-bit is required when using OpenBW" implies — the hazard never arises in practice and the
