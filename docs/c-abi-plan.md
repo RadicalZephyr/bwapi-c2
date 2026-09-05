@@ -76,6 +76,12 @@ This is a design/roadmap document. No production code is included.
 > **Revision 4.2** adds §16, documentation: the ABI reference is emitted from the same spec as
 > the header, the site is Zola-only on GitHub Pages, structured by Diátaxis, built and deployed
 > from CI. Nothing else moved.
+>
+> **Revision 4.3** corrects the rationale for the carried BWEM patch on
+> [R11.9](research/r11-9-bwem-teardown-retest.md): the R11.6 teardown crash is a fixture
+> artifact (partially overlapping minerals) that `Map::ResetInstance()` does not prevent. The
+> patch stays as the teardown API BWEM lacks (§8.2, §15.2); the fixture builder gains a fifth
+> invariant and `bwapi_bwem_initialize()` a guard against misaligned neutrals (§8.3, §11).
 
 ---
 
@@ -1343,11 +1349,12 @@ void    bwapi_bwem_on_blocking_neutral_destroyed(int32_t unit_id);
 `FindBasesForStartingLocations` has an ordering dependency and no use case for the intermediate
 states; an ABI should make ordering errors impossible rather than diagnosable (§15 #13). It
 blocks for **~450 ms** on a 128×128 map, all of it at match start; BWEM has nothing per-frame.
-**By the same principle, `bwapi_bwem_initialize()` resets first if already initialised.** The
-§15.2 patch adds `ResetInstance()`; it does not make `Initialize()` safe to call twice, and a
-host that starts its second match without calling `reset()` would otherwise hit the R11.6 crash
-the patch exists to avoid. `bwapi_bwem_reset()` stays exported for hosts that want the ~30 MB
-back between matches; nothing depends on their calling it.
+**By the same principle, `bwapi_bwem_initialize()` resets first if already initialised.** One
+call, in any state, produces one freshly analysed map; a host that starts its second match
+without calling `reset()` gets the same result as one that did. (Upstream's in-place
+re-`Initialize` is sound — R11.9 — so this is uniformity, not a crash guard.)
+`bwapi_bwem_reset()` stays exported for hosts that want the ~30 MB back between matches;
+nothing depends on their calling it.
 
 **Ids are stable from `initialize` to the next `initialize`.** `OnMineralDestroyed` erases a
 mineral from lists and never renumbers areas, chokepoints or bases; a blocking neutral's
@@ -1364,25 +1371,37 @@ once, correctly, and the three explicit entry points stay in the header for host
 control, made safe to call with any unit id (§15 #14). These are the first genuinely
 non-mechanical wrappers in either header, and §9 names them as hand-written.
 
-**Teardown is explicit, and `bwapi_client_disconnect()` performs it.** BWEM's singleton points
-into `GameData` and must die before the mapping does and before static destruction. That is the
-first required shutdown order in the ABI, and the reason is a crash R11.6 found rather than a
-preference:
+**Teardown is explicit, and `bwapi_client_disconnect()` performs it.** BWEM's singleton holds
+`BWAPI::Unit` pointers into the client `GameImpl` and otherwise lives until static destruction,
+after the host has released everything it points at. Today's `~Neutral` happens not to
+dereference them (R11.9); the ABI does not rely on that staying true. So the map is destroyed
+before the `GameImpl` and before the mapping — the first required shutdown order in either
+header, performed by `disconnect()` so a host that forgot still gets it.
 
-**`bwapi_bwem_reset()` depends on a patch we carry.** `MapImpl::Initialize` resets in place with
-`this->~MapImpl(); new (this) MapImpl();`, and `~Neutral` calls `RemoveFromTiles()`, which
-reaches back into the Map's already-destroyed tile storage. Re-initialisation therefore
-segfaults on any map with neutrals — every map — and the same root cause crashes at static
-destruction. The fix is `void Map::ResetInstance() { m_gInstance = nullptr; }`, which Stardust's
-vendored BWEM already carries. It is recorded in §15.2, re-applied at every pin bump (§10.3),
-and offered upstream without gating on a repository dormant since 2021. JBWAPI's #51 —
-`IllegalStateException` on consecutive games — is plausibly this bug inherited through the port.
+**`bwapi_bwem_reset()` depends on a patch we carry, because BWEM has no teardown API.**
+`Map::Initialize` both resets and re-analyses, and nothing destroys the singleton short of
+process exit. `void Map::ResetInstance() { m_gInstance = nullptr; }` — the identical one-liner
+Stardust's vendored BWEM carries — is what lets `reset()` leave `initialized()` false and
+return the memory, and lets `disconnect()` tear down deterministically. It is recorded in
+§15.2, re-applied at every pin bump (§10.3), and offered upstream without gating on a
+repository dormant since 2021. Revision 4.1 called it a crash fix; it is not (R11.9), and no
+attribution of JBWAPI's #51 to this code path survives.
 
-### 8.3 Exceptions
+### 8.3 Exceptions, and the assertions BWEM compiles out
 
 BWEM throws from assertions compiled into release builds (§1.7). Every `bwapi_bwem_*` export is
 the §4 `noexcept` boundary, latching `BWAPI_ERR_BWEM` and routing `Exception::what()` into
-`bwapi_last_error_message()`. JBWAPI's #34 ("BWEM has no areas", an intermittent crash in 1 in
+`bwapi_last_error_message()`.
+
+Only the `bwem_assert_throw` family throws. Plain `bwem_assert` expands to **nothing** in a
+release build (`defs.h`), and one of the conditions it guards is reachable from real map data:
+`Neutral::PutOnTiles()` requires stacked neutrals to share a type and a `TopLeft()`, and a map
+editor can place two mineral fields partially overlapping. BWEM then builds a misaligned stack
+silently and crashes at the first teardown — in a bot, at match end (R11.9). **So
+`bwapi_bwem_initialize()` checks every neutral's tile footprint against every other's before
+handing the game to BWEM**, and on a partial overlap latches `BWAPI_ERR_BWEM` with a message
+naming the two units and does not initialise. The §4 principle — a third party's assertion
+becomes a latched error — applied to an assertion the third party compiled out. JBWAPI's #34 ("BWEM has no areas", an intermittent crash in 1 in
 10–20 games) is what this turns into a latched error and a neutral return.
 
 ---
@@ -1689,6 +1708,10 @@ invariants the builder carries today:
 4. Neutrals arrive via the `UnitDiscover` **event stream**, not `data->units`, and
    `PlayerImpl::isNeutral()` reads a `PlayerData` flag rather than the player type — so a
    fixture that wants BWEM bases must synthesise events too.
+5. Neutrals occupy their own tiles unless the scenario deliberately stacks them, and a
+   deliberate stack has identical `TopLeft()` and type. A 2×1 mineral field placed one tile
+   from the next partially overlaps it; BWEM accepts that silently in release and crashes at
+   teardown (R11.9). The builder rejects such a placement rather than encode it.
 
 Ordered by value per unit of effort:
 
@@ -1795,6 +1818,7 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 17 | SWIG | **Rejected on five measured grounds**; clang drafts the spec (§9) |
 | 18 | The rev-4 review's fourteen findings and five prior-art gaps | **All applied** in revision 4.1 ([research/rev4-review.md](research/rev4-review.md)). Largest: invalid-vs-dead handles (§4, §6.2); retry over preflight (§4, §14); the error callback and thread check (§4) |
 | 19 | Documentation | **Reference emitted from `api.json`, no Doxygen; one Zola site, Diátaxis-structured, on GitHub Pages, deployed from CI; the design record linked, not rendered** (§16) |
+| 20 | Keep the BWEM `ResetInstance` patch once its crash rationale fell (R11.9)? | **Yes, as the teardown API BWEM lacks** (§8.2, §15.2). And `bwapi_bwem_initialize()` rejects partially overlapping neutrals with a latched error rather than let BWEM crash at match end (§8.3) |
 
 ---
 
@@ -1910,7 +1934,7 @@ on a response.
 
 | Dependency | Patch | Reason |
 |---|---|---|
-| `third_party/bwem` (`N00byEdge/BWEM-community`, MIT/X11) | Add `void Map::ResetInstance() { m_gInstance = nullptr; }` | **Upstream bug found in R11.6.** `MapImpl::Initialize` resets in place with `this->~MapImpl(); new (this) MapImpl();`, and `~Neutral` calls `RemoveFromTiles()` which reaches back into the Map's already-destroyed tile storage. Re-initialisation segfaults on any map with neutrals — every map — and the same root cause crashes at static destruction after the host releases its `GameData`. Stardust's vendored BWEM already carries exactly this method. `bwapi_bwem_reset()` depends on it |
+| `third_party/bwem` (`N00byEdge/BWEM-community`, MIT/X11) | Add `static void Map::ResetInstance() { m_gInstance = nullptr; }` | **BWEM has no teardown API.** `Map::Initialize` both resets in place and re-analyses; the singleton otherwise lives until static destruction. `ResetInstance` is what lets `bwapi_bwem_reset()` leave `initialized()` false and return the memory, and lets `bwapi_client_disconnect()` destroy the map before the `GameImpl` it points into (§8.2). Stardust's vendored BWEM carries the identical method. Revision 4.1 recorded this as a fix for a teardown segfault found in R11.6; R11.9 showed that crash to be a fixture artifact the patch does not prevent, so the rationale is the API gap alone |
 | `third_party/bwapi` (LGPL-3.0) | `BWAPIClient/Source/Convenience.h:33`: `va_list &ap` → `va_list ap` | MSVC's `va_list` is `char*`, so a reference binds; glibc's is an array type and cannot. One character; blocks `GameImpl.cpp` on every non-MSVC compiler (R6 §5). Needed only for the Linux-native test suite (§11), which is reason enough |
 
 ---
