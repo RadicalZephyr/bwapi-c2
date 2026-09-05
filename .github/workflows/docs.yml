@@ -1,0 +1,91 @@
+# The documentation site (plan section 16.3; implementation plan 0.12).
+#
+# Pull requests build and check the site without deploying. Pushes to main build, check and
+# deploy to GitHub Pages from the Actions artifact; there is no gh-pages branch, so the published
+# site is always the output of one commit of main. External links are checked weekly, off the
+# merge path, so a dead upstream link cannot block a deploy.
+#
+# Zola is installed from a pinned, checksummed release tarball, not a marketplace action: the
+# docs job is the one job that can publish something, and its toolchain is not delegated.
+#
+# One-time repository setting, the only step not in the tree: Settings → Pages → Source →
+# "GitHub Actions".
+name: docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths: ["site/**", ".github/workflows/docs.yml"]
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays 06:17 UTC: the external-link check
+
+permissions:
+  contents: read
+
+env:
+  ZOLA_VERSION: 0.19.2
+  ZOLA_SHA256: 0798e69b86c628ddcb264ebd86c8cc8dce7670b9049060bf94faa73f6857cd9c
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        # No submodules: the site needs neither a compiler nor the closure.
+      - name: Install Zola ${{ env.ZOLA_VERSION }} (pinned, checksum verified)
+        run: |
+          set -euo pipefail
+          url="https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+          curl -sSL -o zola.tar.gz "$url"
+          echo "${ZOLA_SHA256}  zola.tar.gz" | sha256sum -c -
+          tar xzf zola.tar.gz zola
+          sudo mv zola /usr/local/bin/zola
+          zola --version
+      # From phase 1 on: copy api.json into site/static/ (this is also how /api.json is served)
+      # and run tools/abi/emit_docs.py into site/content/reference/. Neither exists yet.
+      - name: Check internal links and anchors
+        run: zola check
+        working-directory: site
+      - name: Build
+        run: zola build
+        working-directory: site
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name == 'push'
+        with:
+          path: site/public
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Weekly, and only visibly failing: external links, with the level raised to error for this
+  # run alone. Opens nothing, deploys nothing.
+  external-links:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Zola ${{ env.ZOLA_VERSION }} (pinned, checksum verified)
+        run: |
+          set -euo pipefail
+          url="https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz"
+          curl -sSL -o zola.tar.gz "$url"
+          echo "${ZOLA_SHA256}  zola.tar.gz" | sha256sum -c -
+          tar xzf zola.tar.gz zola
+          sudo mv zola /usr/local/bin/zola
+      - name: Check every link, external ones included
+        run: |
+          sed -i 's/^external_level = "warn"/external_level = "error"/' config.toml
+          zola check
+        working-directory: site
