@@ -244,7 +244,8 @@ int`, `getID`, `getName`, `c_str`, `toString` and `isValid` are all absent. `%te
 instantiate it, per type, by hand.
 
 **`std::string`, `Unitset`, `std::function`, varargs?** Opaque `SWIGTYPE_*` pointers for the first
-three (heap-allocated, unfreeable); a hard compile error for the fourth.
+three (heap-allocated, unfreeable); a hard compile error for the fourth. The vararg result is a
+design input beyond SWIG — see §10, which settles §4 on exposing plain `const char*` only.
 
 **Can typemaps express any of the §4 conventions?** Three of them cleanly — packed positions,
 `int32_t` booleans, integer handles. Not caller-provided buffers, sorted output, size-prefixed
@@ -319,4 +320,52 @@ dumps are large (188 MB for `UnitType.h`, because libstdc++ comes along), so use
 - **Rewrite §1.6 and §9's SWIG rejection** with §8 above. The current wording is wrong on the premise and would not survive review by anyone who has run the tool.
 - **Keep the generator ours.** The conclusion is unchanged; the reasoning is now evidence rather than assertion, and it is stronger for conceding what typemaps genuinely do.
 - **Adopt clang's AST dump for the spec draft**, per §9. It removes the "hand-type 900 entries" objection to the generator without adding a dependency, and it is the same tool three other experiments already rely on.
-- **Record the vararg finding as a design input, not just a SWIG problem.** BWAPI's `printf`/`sendText`/`drawText*` family is genuinely awkward to cross any FFI boundary. §4 should say explicitly that the C ABI exposes the `v*` (`va_list`) forms or plain `const char*` forms and does not attempt variadic exports — which is what bwapi-c did (R1) and what every binding in R3 does.
+- **Record the vararg finding as a design input, not just a SWIG problem, and settle it in §4.**
+  BWAPI's `printf` / `sendText` / `sendTextEx` / `drawText{,Map,Mouse,Screen}` family is awkward
+  across any FFI boundary, not only SWIG's. **§4 should state explicitly that the ABI exposes
+  only plain `const char*`: no `...` and no `va_list` in any exported signature. Formatting is
+  the host language's job and must be done before the call.**
+
+  ```c
+  /* the only shape the ABI exports */
+  void bwapi_game_printf         (const char* text);
+  void bwapi_game_send_text      (const char* text);
+  void bwapi_game_send_text_ex   (int32_t to_allies, const char* text);
+  void bwapi_game_draw_text_screen(int32_t x, int32_t y, const char* text);
+  void bwapi_game_draw_text_map   (int32_t x, int32_t y, const char* text);
+  ```
+
+  Rationale, in order of weight:
+
+  1. **`...` is not portably callable through FFI.** `ctypes`, JNA, koffi, P/Invoke and Go's cgo
+     either cannot call variadic functions at all or do so only with per-platform special cases,
+     because the variadic calling convention differs from the fixed one on x86-64 SysV, AArch64
+     and Win64. An ABI whose stated purpose is to be bound from other languages must not export
+     one.
+  2. **`va_list` is worse, not a fallback.** It is an opaque, ABI-specific type — `char*` on MSVC
+     x86, an array type on glibc (R6 §5 tripped over exactly this) — with no representation in
+     any host language's FFI. Exporting `bwapi_game_vprintf(const char*, va_list)` would be
+     unusable by every consumer this project exists to serve.
+  3. **It is a format-string injection hazard.** Passing caller data as the format argument is
+     the classic `printf(user_input)` bug. A single `const char*` text parameter removes the
+     class entirely.
+  4. **Nothing is lost.** Every host language already has better formatting than C's —
+     `format!`, f-strings, `String.format`, template literals. Spot-checking the R2 corpus (~660
+     text call sites across the five bots), every format argument I sampled is a **string
+     literal** with the values passed as trailing arguments — and the commonest idiom is already
+     the degenerate one: `Broodwar->sendText("%s", text.c_str())`, i.e. "I have a string, print
+     it." Under a `const char*`-only ABI that becomes `bwapi_game_send_text(text)`. This is a
+     sample rather than an exhaustive audit, but I found no counter-example.
+
+  **This is a deliberate divergence from bwapi-c, which got it wrong.** R1 records twelve
+  variadic exports in its `Game.h` (`Game_printf(Game*, const char*, ...)` and siblings), plus
+  parallel `va_list` forms — and R3's Zig bot consequently calls
+  `Game_sendText(Broodwar, "My name is %s", module.*.name)` straight through the boundary, which
+  works only because Zig happens to be C-ABI-native. It is precisely what a Python or C# consumer
+  could not do.
+
+  **The maintained bindings all already do it our way**, which is the strongest evidence that
+  this is the right shape: gobwapi exports `func (g *Game) Printf(text string)` and
+  `SendText(text string)`; JBWAPI takes a pre-formatted `String` (its `Text...` parameter is a
+  Java-side colour list, resolved before the call, not a C vararg). Neither passes a format
+  string across the boundary.
