@@ -284,7 +284,7 @@ this project, with one exception noted at the end.
 | Parent | `OpenBW/openbw` (the engine) |
 | Created / last push | 2026-03-02 / 2026-06-05 |
 | Stars / forks | 6 / 1 |
-| License | LGPL-3.0 (inherited) |
+| License | LGPL-3.0 — **asserted, not inherited**: added by the fork on 2026-03-01 (`e2e90a6`); upstream `OpenBW/openbw` has no license at all (R9 §6) |
 | Position | 93 ahead, 6 behind `OpenBW/openbw@master` |
 | Merge base | `a59617d` (2025-01-07) |
 
