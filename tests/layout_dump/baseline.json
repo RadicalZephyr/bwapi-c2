@@ -1,0 +1,1316 @@
+{
+ "i386-pc-windows-msvc": {
+  "sizeof": {
+   "BWAPI::GameData": 33017048,
+   "BWAPI::UnitData": 336,
+   "BWAPI::PlayerData": 5788,
+   "BWAPI::ForceData": 32,
+   "BWAPI::BulletData": 80,
+   "BWAPI::RegionData": 1068,
+   "BWAPI::unitFinder": 8,
+   "BWAPIC::Position": 8,
+   "BWAPIC::Event": 12,
+   "BWAPIC::Shape": 40,
+   "BWAPIC::Command": 12,
+   "BWAPIC::UnitCommand": 24
+  },
+  "fields": [
+   {
+    "name": "client_version",
+    "offset": 0,
+    "size": 4
+   },
+   {
+    "name": "revision",
+    "offset": 4,
+    "size": 4
+   },
+   {
+    "name": "isDebug",
+    "offset": 8,
+    "size": 1
+   },
+   {
+    "name": "instanceID",
+    "offset": 12,
+    "size": 4
+   },
+   {
+    "name": "botAPM_noselects",
+    "offset": 16,
+    "size": 4
+   },
+   {
+    "name": "botAPM_selects",
+    "offset": 20,
+    "size": 4
+   },
+   {
+    "name": "forceCount",
+    "offset": 24,
+    "size": 4
+   },
+   {
+    "name": "forces",
+    "offset": 28,
+    "size": 160
+   },
+   {
+    "name": "playerCount",
+    "offset": 188,
+    "size": 4
+   },
+   {
+    "name": "players",
+    "offset": 192,
+    "size": 69456
+   },
+   {
+    "name": "initialUnitCount",
+    "offset": 69648,
+    "size": 4
+   },
+   {
+    "name": "units",
+    "offset": 69656,
+    "size": 3360000
+   },
+   {
+    "name": "unitArray",
+    "offset": 3429656,
+    "size": 6800
+   },
+   {
+    "name": "bullets",
+    "offset": 3436456,
+    "size": 8000
+   },
+   {
+    "name": "nukeDotCount",
+    "offset": 3444456,
+    "size": 4
+   },
+   {
+    "name": "nukeDots",
+    "offset": 3444460,
+    "size": 1600
+   },
+   {
+    "name": "gameType",
+    "offset": 3446060,
+    "size": 4
+   },
+   {
+    "name": "latency",
+    "offset": 3446064,
+    "size": 4
+   },
+   {
+    "name": "latencyFrames",
+    "offset": 3446068,
+    "size": 4
+   },
+   {
+    "name": "latencyTime",
+    "offset": 3446072,
+    "size": 4
+   },
+   {
+    "name": "remainingLatencyFrames",
+    "offset": 3446076,
+    "size": 4
+   },
+   {
+    "name": "remainingLatencyTime",
+    "offset": 3446080,
+    "size": 4
+   },
+   {
+    "name": "hasLatCom",
+    "offset": 3446084,
+    "size": 1
+   },
+   {
+    "name": "hasGUI",
+    "offset": 3446085,
+    "size": 1
+   },
+   {
+    "name": "replayFrameCount",
+    "offset": 3446088,
+    "size": 4
+   },
+   {
+    "name": "randomSeed",
+    "offset": 3446092,
+    "size": 4
+   },
+   {
+    "name": "frameCount",
+    "offset": 3446096,
+    "size": 4
+   },
+   {
+    "name": "elapsedTime",
+    "offset": 3446100,
+    "size": 4
+   },
+   {
+    "name": "countdownTimer",
+    "offset": 3446104,
+    "size": 4
+   },
+   {
+    "name": "fps",
+    "offset": 3446108,
+    "size": 4
+   },
+   {
+    "name": "averageFPS",
+    "offset": 3446112,
+    "size": 8
+   },
+   {
+    "name": "mouseX",
+    "offset": 3446120,
+    "size": 4
+   },
+   {
+    "name": "mouseY",
+    "offset": 3446124,
+    "size": 4
+   },
+   {
+    "name": "mouseState",
+    "offset": 3446128,
+    "size": 3
+   },
+   {
+    "name": "keyState",
+    "offset": 3446131,
+    "size": 255
+   },
+   {
+    "name": "screenX",
+    "offset": 3446388,
+    "size": 4
+   },
+   {
+    "name": "screenY",
+    "offset": 3446392,
+    "size": 4
+   },
+   {
+    "name": "flags",
+    "offset": 3446396,
+    "size": 2
+   },
+   {
+    "name": "mapWidth",
+    "offset": 3446400,
+    "size": 4
+   },
+   {
+    "name": "mapHeight",
+    "offset": 3446404,
+    "size": 4
+   },
+   {
+    "name": "mapFileName",
+    "offset": 3446408,
+    "size": 261
+   },
+   {
+    "name": "mapPathName",
+    "offset": 3446669,
+    "size": 261
+   },
+   {
+    "name": "mapName",
+    "offset": 3446930,
+    "size": 33
+   },
+   {
+    "name": "mapHash",
+    "offset": 3446963,
+    "size": 41
+   },
+   {
+    "name": "getGroundHeight",
+    "offset": 3447004,
+    "size": 262144
+   },
+   {
+    "name": "isWalkable",
+    "offset": 3709148,
+    "size": 1048576
+   },
+   {
+    "name": "isBuildable",
+    "offset": 4757724,
+    "size": 65536
+   },
+   {
+    "name": "isVisible",
+    "offset": 4823260,
+    "size": 65536
+   },
+   {
+    "name": "isExplored",
+    "offset": 4888796,
+    "size": 65536
+   },
+   {
+    "name": "hasCreep",
+    "offset": 4954332,
+    "size": 65536
+   },
+   {
+    "name": "isOccupied",
+    "offset": 5019868,
+    "size": 65536
+   },
+   {
+    "name": "mapTileRegionId",
+    "offset": 5085404,
+    "size": 131072
+   },
+   {
+    "name": "mapSplitTilesMiniTileMask",
+    "offset": 5216476,
+    "size": 10000
+   },
+   {
+    "name": "mapSplitTilesRegion1",
+    "offset": 5226476,
+    "size": 10000
+   },
+   {
+    "name": "mapSplitTilesRegion2",
+    "offset": 5236476,
+    "size": 10000
+   },
+   {
+    "name": "regionCount",
+    "offset": 5246476,
+    "size": 4
+   },
+   {
+    "name": "regions",
+    "offset": 5246480,
+    "size": 5340000
+   },
+   {
+    "name": "startLocationCount",
+    "offset": 10586480,
+    "size": 4
+   },
+   {
+    "name": "startLocations",
+    "offset": 10586484,
+    "size": 64
+   },
+   {
+    "name": "isInGame",
+    "offset": 10586548,
+    "size": 1
+   },
+   {
+    "name": "isMultiplayer",
+    "offset": 10586549,
+    "size": 1
+   },
+   {
+    "name": "isBattleNet",
+    "offset": 10586550,
+    "size": 1
+   },
+   {
+    "name": "isPaused",
+    "offset": 10586551,
+    "size": 1
+   },
+   {
+    "name": "isReplay",
+    "offset": 10586552,
+    "size": 1
+   },
+   {
+    "name": "selectedUnitCount",
+    "offset": 10586556,
+    "size": 4
+   },
+   {
+    "name": "selectedUnits",
+    "offset": 10586560,
+    "size": 48
+   },
+   {
+    "name": "self",
+    "offset": 10586608,
+    "size": 4
+   },
+   {
+    "name": "enemy",
+    "offset": 10586612,
+    "size": 4
+   },
+   {
+    "name": "neutral",
+    "offset": 10586616,
+    "size": 4
+   },
+   {
+    "name": "eventCount",
+    "offset": 10586620,
+    "size": 4
+   },
+   {
+    "name": "events",
+    "offset": 10586624,
+    "size": 120000
+   },
+   {
+    "name": "eventStringCount",
+    "offset": 10706624,
+    "size": 4
+   },
+   {
+    "name": "eventStrings",
+    "offset": 10706628,
+    "size": 256000
+   },
+   {
+    "name": "stringCount",
+    "offset": 10962628,
+    "size": 4
+   },
+   {
+    "name": "strings",
+    "offset": 10962632,
+    "size": 20480000
+   },
+   {
+    "name": "shapeCount",
+    "offset": 31442632,
+    "size": 4
+   },
+   {
+    "name": "shapes",
+    "offset": 31442636,
+    "size": 800000
+   },
+   {
+    "name": "commandCount",
+    "offset": 32242636,
+    "size": 4
+   },
+   {
+    "name": "commands",
+    "offset": 32242640,
+    "size": 240000
+   },
+   {
+    "name": "unitCommandCount",
+    "offset": 32482640,
+    "size": 4
+   },
+   {
+    "name": "unitCommands",
+    "offset": 32482644,
+    "size": 480000
+   },
+   {
+    "name": "unitSearchSize",
+    "offset": 32962644,
+    "size": 4
+   },
+   {
+    "name": "xUnitSearch",
+    "offset": 32962648,
+    "size": 27200
+   },
+   {
+    "name": "yUnitSearch",
+    "offset": 32989848,
+    "size": 27200
+   }
+  ]
+ },
+ "x86_64-pc-windows-msvc": {
+  "sizeof": {
+   "BWAPI::GameData": 33017048,
+   "BWAPI::UnitData": 336,
+   "BWAPI::PlayerData": 5788,
+   "BWAPI::ForceData": 32,
+   "BWAPI::BulletData": 80,
+   "BWAPI::RegionData": 1068,
+   "BWAPI::unitFinder": 8,
+   "BWAPIC::Position": 8,
+   "BWAPIC::Event": 12,
+   "BWAPIC::Shape": 40,
+   "BWAPIC::Command": 12,
+   "BWAPIC::UnitCommand": 24
+  },
+  "fields": [
+   {
+    "name": "client_version",
+    "offset": 0,
+    "size": 4
+   },
+   {
+    "name": "revision",
+    "offset": 4,
+    "size": 4
+   },
+   {
+    "name": "isDebug",
+    "offset": 8,
+    "size": 1
+   },
+   {
+    "name": "instanceID",
+    "offset": 12,
+    "size": 4
+   },
+   {
+    "name": "botAPM_noselects",
+    "offset": 16,
+    "size": 4
+   },
+   {
+    "name": "botAPM_selects",
+    "offset": 20,
+    "size": 4
+   },
+   {
+    "name": "forceCount",
+    "offset": 24,
+    "size": 4
+   },
+   {
+    "name": "forces",
+    "offset": 28,
+    "size": 160
+   },
+   {
+    "name": "playerCount",
+    "offset": 188,
+    "size": 4
+   },
+   {
+    "name": "players",
+    "offset": 192,
+    "size": 69456
+   },
+   {
+    "name": "initialUnitCount",
+    "offset": 69648,
+    "size": 4
+   },
+   {
+    "name": "units",
+    "offset": 69656,
+    "size": 3360000
+   },
+   {
+    "name": "unitArray",
+    "offset": 3429656,
+    "size": 6800
+   },
+   {
+    "name": "bullets",
+    "offset": 3436456,
+    "size": 8000
+   },
+   {
+    "name": "nukeDotCount",
+    "offset": 3444456,
+    "size": 4
+   },
+   {
+    "name": "nukeDots",
+    "offset": 3444460,
+    "size": 1600
+   },
+   {
+    "name": "gameType",
+    "offset": 3446060,
+    "size": 4
+   },
+   {
+    "name": "latency",
+    "offset": 3446064,
+    "size": 4
+   },
+   {
+    "name": "latencyFrames",
+    "offset": 3446068,
+    "size": 4
+   },
+   {
+    "name": "latencyTime",
+    "offset": 3446072,
+    "size": 4
+   },
+   {
+    "name": "remainingLatencyFrames",
+    "offset": 3446076,
+    "size": 4
+   },
+   {
+    "name": "remainingLatencyTime",
+    "offset": 3446080,
+    "size": 4
+   },
+   {
+    "name": "hasLatCom",
+    "offset": 3446084,
+    "size": 1
+   },
+   {
+    "name": "hasGUI",
+    "offset": 3446085,
+    "size": 1
+   },
+   {
+    "name": "replayFrameCount",
+    "offset": 3446088,
+    "size": 4
+   },
+   {
+    "name": "randomSeed",
+    "offset": 3446092,
+    "size": 4
+   },
+   {
+    "name": "frameCount",
+    "offset": 3446096,
+    "size": 4
+   },
+   {
+    "name": "elapsedTime",
+    "offset": 3446100,
+    "size": 4
+   },
+   {
+    "name": "countdownTimer",
+    "offset": 3446104,
+    "size": 4
+   },
+   {
+    "name": "fps",
+    "offset": 3446108,
+    "size": 4
+   },
+   {
+    "name": "averageFPS",
+    "offset": 3446112,
+    "size": 8
+   },
+   {
+    "name": "mouseX",
+    "offset": 3446120,
+    "size": 4
+   },
+   {
+    "name": "mouseY",
+    "offset": 3446124,
+    "size": 4
+   },
+   {
+    "name": "mouseState",
+    "offset": 3446128,
+    "size": 3
+   },
+   {
+    "name": "keyState",
+    "offset": 3446131,
+    "size": 255
+   },
+   {
+    "name": "screenX",
+    "offset": 3446388,
+    "size": 4
+   },
+   {
+    "name": "screenY",
+    "offset": 3446392,
+    "size": 4
+   },
+   {
+    "name": "flags",
+    "offset": 3446396,
+    "size": 2
+   },
+   {
+    "name": "mapWidth",
+    "offset": 3446400,
+    "size": 4
+   },
+   {
+    "name": "mapHeight",
+    "offset": 3446404,
+    "size": 4
+   },
+   {
+    "name": "mapFileName",
+    "offset": 3446408,
+    "size": 261
+   },
+   {
+    "name": "mapPathName",
+    "offset": 3446669,
+    "size": 261
+   },
+   {
+    "name": "mapName",
+    "offset": 3446930,
+    "size": 33
+   },
+   {
+    "name": "mapHash",
+    "offset": 3446963,
+    "size": 41
+   },
+   {
+    "name": "getGroundHeight",
+    "offset": 3447004,
+    "size": 262144
+   },
+   {
+    "name": "isWalkable",
+    "offset": 3709148,
+    "size": 1048576
+   },
+   {
+    "name": "isBuildable",
+    "offset": 4757724,
+    "size": 65536
+   },
+   {
+    "name": "isVisible",
+    "offset": 4823260,
+    "size": 65536
+   },
+   {
+    "name": "isExplored",
+    "offset": 4888796,
+    "size": 65536
+   },
+   {
+    "name": "hasCreep",
+    "offset": 4954332,
+    "size": 65536
+   },
+   {
+    "name": "isOccupied",
+    "offset": 5019868,
+    "size": 65536
+   },
+   {
+    "name": "mapTileRegionId",
+    "offset": 5085404,
+    "size": 131072
+   },
+   {
+    "name": "mapSplitTilesMiniTileMask",
+    "offset": 5216476,
+    "size": 10000
+   },
+   {
+    "name": "mapSplitTilesRegion1",
+    "offset": 5226476,
+    "size": 10000
+   },
+   {
+    "name": "mapSplitTilesRegion2",
+    "offset": 5236476,
+    "size": 10000
+   },
+   {
+    "name": "regionCount",
+    "offset": 5246476,
+    "size": 4
+   },
+   {
+    "name": "regions",
+    "offset": 5246480,
+    "size": 5340000
+   },
+   {
+    "name": "startLocationCount",
+    "offset": 10586480,
+    "size": 4
+   },
+   {
+    "name": "startLocations",
+    "offset": 10586484,
+    "size": 64
+   },
+   {
+    "name": "isInGame",
+    "offset": 10586548,
+    "size": 1
+   },
+   {
+    "name": "isMultiplayer",
+    "offset": 10586549,
+    "size": 1
+   },
+   {
+    "name": "isBattleNet",
+    "offset": 10586550,
+    "size": 1
+   },
+   {
+    "name": "isPaused",
+    "offset": 10586551,
+    "size": 1
+   },
+   {
+    "name": "isReplay",
+    "offset": 10586552,
+    "size": 1
+   },
+   {
+    "name": "selectedUnitCount",
+    "offset": 10586556,
+    "size": 4
+   },
+   {
+    "name": "selectedUnits",
+    "offset": 10586560,
+    "size": 48
+   },
+   {
+    "name": "self",
+    "offset": 10586608,
+    "size": 4
+   },
+   {
+    "name": "enemy",
+    "offset": 10586612,
+    "size": 4
+   },
+   {
+    "name": "neutral",
+    "offset": 10586616,
+    "size": 4
+   },
+   {
+    "name": "eventCount",
+    "offset": 10586620,
+    "size": 4
+   },
+   {
+    "name": "events",
+    "offset": 10586624,
+    "size": 120000
+   },
+   {
+    "name": "eventStringCount",
+    "offset": 10706624,
+    "size": 4
+   },
+   {
+    "name": "eventStrings",
+    "offset": 10706628,
+    "size": 256000
+   },
+   {
+    "name": "stringCount",
+    "offset": 10962628,
+    "size": 4
+   },
+   {
+    "name": "strings",
+    "offset": 10962632,
+    "size": 20480000
+   },
+   {
+    "name": "shapeCount",
+    "offset": 31442632,
+    "size": 4
+   },
+   {
+    "name": "shapes",
+    "offset": 31442636,
+    "size": 800000
+   },
+   {
+    "name": "commandCount",
+    "offset": 32242636,
+    "size": 4
+   },
+   {
+    "name": "commands",
+    "offset": 32242640,
+    "size": 240000
+   },
+   {
+    "name": "unitCommandCount",
+    "offset": 32482640,
+    "size": 4
+   },
+   {
+    "name": "unitCommands",
+    "offset": 32482644,
+    "size": 480000
+   },
+   {
+    "name": "unitSearchSize",
+    "offset": 32962644,
+    "size": 4
+   },
+   {
+    "name": "xUnitSearch",
+    "offset": 32962648,
+    "size": 27200
+   },
+   {
+    "name": "yUnitSearch",
+    "offset": 32989848,
+    "size": 27200
+   }
+  ]
+ },
+ "x86_64-unknown-linux-gnu": {
+  "sizeof": {
+   "BWAPI::GameData": 33017048,
+   "BWAPI::UnitData": 336,
+   "BWAPI::PlayerData": 5788,
+   "BWAPI::ForceData": 32,
+   "BWAPI::BulletData": 80,
+   "BWAPI::RegionData": 1068,
+   "BWAPI::unitFinder": 8,
+   "BWAPIC::Position": 8,
+   "BWAPIC::Event": 12,
+   "BWAPIC::Shape": 40,
+   "BWAPIC::Command": 12,
+   "BWAPIC::UnitCommand": 24
+  },
+  "fields": [
+   {
+    "name": "client_version",
+    "offset": 0,
+    "size": 4
+   },
+   {
+    "name": "revision",
+    "offset": 4,
+    "size": 4
+   },
+   {
+    "name": "isDebug",
+    "offset": 8,
+    "size": 1
+   },
+   {
+    "name": "instanceID",
+    "offset": 12,
+    "size": 4
+   },
+   {
+    "name": "botAPM_noselects",
+    "offset": 16,
+    "size": 4
+   },
+   {
+    "name": "botAPM_selects",
+    "offset": 20,
+    "size": 4
+   },
+   {
+    "name": "forceCount",
+    "offset": 24,
+    "size": 4
+   },
+   {
+    "name": "forces",
+    "offset": 28,
+    "size": 160
+   },
+   {
+    "name": "playerCount",
+    "offset": 188,
+    "size": 4
+   },
+   {
+    "name": "players",
+    "offset": 192,
+    "size": 69456
+   },
+   {
+    "name": "initialUnitCount",
+    "offset": 69648,
+    "size": 4
+   },
+   {
+    "name": "units",
+    "offset": 69656,
+    "size": 3360000
+   },
+   {
+    "name": "unitArray",
+    "offset": 3429656,
+    "size": 6800
+   },
+   {
+    "name": "bullets",
+    "offset": 3436456,
+    "size": 8000
+   },
+   {
+    "name": "nukeDotCount",
+    "offset": 3444456,
+    "size": 4
+   },
+   {
+    "name": "nukeDots",
+    "offset": 3444460,
+    "size": 1600
+   },
+   {
+    "name": "gameType",
+    "offset": 3446060,
+    "size": 4
+   },
+   {
+    "name": "latency",
+    "offset": 3446064,
+    "size": 4
+   },
+   {
+    "name": "latencyFrames",
+    "offset": 3446068,
+    "size": 4
+   },
+   {
+    "name": "latencyTime",
+    "offset": 3446072,
+    "size": 4
+   },
+   {
+    "name": "remainingLatencyFrames",
+    "offset": 3446076,
+    "size": 4
+   },
+   {
+    "name": "remainingLatencyTime",
+    "offset": 3446080,
+    "size": 4
+   },
+   {
+    "name": "hasLatCom",
+    "offset": 3446084,
+    "size": 1
+   },
+   {
+    "name": "hasGUI",
+    "offset": 3446085,
+    "size": 1
+   },
+   {
+    "name": "replayFrameCount",
+    "offset": 3446088,
+    "size": 4
+   },
+   {
+    "name": "randomSeed",
+    "offset": 3446092,
+    "size": 4
+   },
+   {
+    "name": "frameCount",
+    "offset": 3446096,
+    "size": 4
+   },
+   {
+    "name": "elapsedTime",
+    "offset": 3446100,
+    "size": 4
+   },
+   {
+    "name": "countdownTimer",
+    "offset": 3446104,
+    "size": 4
+   },
+   {
+    "name": "fps",
+    "offset": 3446108,
+    "size": 4
+   },
+   {
+    "name": "averageFPS",
+    "offset": 3446112,
+    "size": 8
+   },
+   {
+    "name": "mouseX",
+    "offset": 3446120,
+    "size": 4
+   },
+   {
+    "name": "mouseY",
+    "offset": 3446124,
+    "size": 4
+   },
+   {
+    "name": "mouseState",
+    "offset": 3446128,
+    "size": 3
+   },
+   {
+    "name": "keyState",
+    "offset": 3446131,
+    "size": 255
+   },
+   {
+    "name": "screenX",
+    "offset": 3446388,
+    "size": 4
+   },
+   {
+    "name": "screenY",
+    "offset": 3446392,
+    "size": 4
+   },
+   {
+    "name": "flags",
+    "offset": 3446396,
+    "size": 2
+   },
+   {
+    "name": "mapWidth",
+    "offset": 3446400,
+    "size": 4
+   },
+   {
+    "name": "mapHeight",
+    "offset": 3446404,
+    "size": 4
+   },
+   {
+    "name": "mapFileName",
+    "offset": 3446408,
+    "size": 261
+   },
+   {
+    "name": "mapPathName",
+    "offset": 3446669,
+    "size": 261
+   },
+   {
+    "name": "mapName",
+    "offset": 3446930,
+    "size": 33
+   },
+   {
+    "name": "mapHash",
+    "offset": 3446963,
+    "size": 41
+   },
+   {
+    "name": "getGroundHeight",
+    "offset": 3447004,
+    "size": 262144
+   },
+   {
+    "name": "isWalkable",
+    "offset": 3709148,
+    "size": 1048576
+   },
+   {
+    "name": "isBuildable",
+    "offset": 4757724,
+    "size": 65536
+   },
+   {
+    "name": "isVisible",
+    "offset": 4823260,
+    "size": 65536
+   },
+   {
+    "name": "isExplored",
+    "offset": 4888796,
+    "size": 65536
+   },
+   {
+    "name": "hasCreep",
+    "offset": 4954332,
+    "size": 65536
+   },
+   {
+    "name": "isOccupied",
+    "offset": 5019868,
+    "size": 65536
+   },
+   {
+    "name": "mapTileRegionId",
+    "offset": 5085404,
+    "size": 131072
+   },
+   {
+    "name": "mapSplitTilesMiniTileMask",
+    "offset": 5216476,
+    "size": 10000
+   },
+   {
+    "name": "mapSplitTilesRegion1",
+    "offset": 5226476,
+    "size": 10000
+   },
+   {
+    "name": "mapSplitTilesRegion2",
+    "offset": 5236476,
+    "size": 10000
+   },
+   {
+    "name": "regionCount",
+    "offset": 5246476,
+    "size": 4
+   },
+   {
+    "name": "regions",
+    "offset": 5246480,
+    "size": 5340000
+   },
+   {
+    "name": "startLocationCount",
+    "offset": 10586480,
+    "size": 4
+   },
+   {
+    "name": "startLocations",
+    "offset": 10586484,
+    "size": 64
+   },
+   {
+    "name": "isInGame",
+    "offset": 10586548,
+    "size": 1
+   },
+   {
+    "name": "isMultiplayer",
+    "offset": 10586549,
+    "size": 1
+   },
+   {
+    "name": "isBattleNet",
+    "offset": 10586550,
+    "size": 1
+   },
+   {
+    "name": "isPaused",
+    "offset": 10586551,
+    "size": 1
+   },
+   {
+    "name": "isReplay",
+    "offset": 10586552,
+    "size": 1
+   },
+   {
+    "name": "selectedUnitCount",
+    "offset": 10586556,
+    "size": 4
+   },
+   {
+    "name": "selectedUnits",
+    "offset": 10586560,
+    "size": 48
+   },
+   {
+    "name": "self",
+    "offset": 10586608,
+    "size": 4
+   },
+   {
+    "name": "enemy",
+    "offset": 10586612,
+    "size": 4
+   },
+   {
+    "name": "neutral",
+    "offset": 10586616,
+    "size": 4
+   },
+   {
+    "name": "eventCount",
+    "offset": 10586620,
+    "size": 4
+   },
+   {
+    "name": "events",
+    "offset": 10586624,
+    "size": 120000
+   },
+   {
+    "name": "eventStringCount",
+    "offset": 10706624,
+    "size": 4
+   },
+   {
+    "name": "eventStrings",
+    "offset": 10706628,
+    "size": 256000
+   },
+   {
+    "name": "stringCount",
+    "offset": 10962628,
+    "size": 4
+   },
+   {
+    "name": "strings",
+    "offset": 10962632,
+    "size": 20480000
+   },
+   {
+    "name": "shapeCount",
+    "offset": 31442632,
+    "size": 4
+   },
+   {
+    "name": "shapes",
+    "offset": 31442636,
+    "size": 800000
+   },
+   {
+    "name": "commandCount",
+    "offset": 32242636,
+    "size": 4
+   },
+   {
+    "name": "commands",
+    "offset": 32242640,
+    "size": 240000
+   },
+   {
+    "name": "unitCommandCount",
+    "offset": 32482640,
+    "size": 4
+   },
+   {
+    "name": "unitCommands",
+    "offset": 32482644,
+    "size": 480000
+   },
+   {
+    "name": "unitSearchSize",
+    "offset": 32962644,
+    "size": 4
+   },
+   {
+    "name": "xUnitSearch",
+    "offset": 32962648,
+    "size": 27200
+   },
+   {
+    "name": "yUnitSearch",
+    "offset": 32989848,
+    "size": 27200
+   }
+  ]
+ }
+}

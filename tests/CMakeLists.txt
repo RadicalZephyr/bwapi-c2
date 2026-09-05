@@ -5,3 +5,5 @@ add_library(bwapi_c2_headers INTERFACE)
 target_include_directories(bwapi_c2_headers INTERFACE "${CMAKE_SOURCE_DIR}/include")
 
 add_subdirectory(header_hygiene)
+
+add_subdirectory(layout_dump)
