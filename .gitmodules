@@ -1,9 +1,11 @@
 [submodule "third_party/bwapi"]
 	path = third_party/bwapi
 	url = https://github.com/RadicalZephyr/bwapi.git
+	branch = bwapi-c2-pin
 [submodule "third_party/bwem"]
 	path = third_party/bwem
 	url = https://github.com/RadicalZephyr/BWEM-community.git
+	branch = bwapi-c2-pin
 	# BWEM's own submodules are googletest, OpenBW's BWAPI fork and the unlicensed
 	# OpenBW engine, all test-only. Nothing in this tree may fetch them (plan §10.1).
 	fetchRecurseSubmodules = false
