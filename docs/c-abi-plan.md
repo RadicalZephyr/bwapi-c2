@@ -1718,6 +1718,9 @@ rather than by work.
 | **3. Write surface and BWEM** | Commands and broadcasts; `bwapi_c2_bwem.h` — 98 functions, the three hand-written hooks, reset and teardown | **A C99 example bot builds against the headers alone, with no C++ toolchain, and against real StarCraft reads game state, moves units, and finds its natural expansion through BWEM** |
 | **4. Consumers → 1.0** | Python and C# raw layers from `api.json`; the Rust proof-of-concept; Python and C# example bots; idiomatic wrappers spun out to their own repos | Both example bots play a game; **`bwapi_abi_version()` returns 1.0 and the append-only promise takes effect** |
 
+The step-by-step sequence for executing each phase — commit-sized steps, per-step checks, and
+the judgment calls the table above leaves open — is [implementation-plan.md](implementation-plan.md).
+
 **Phase 3's criterion is the one that matters.** The ABI has to be usable from plain C before it
 is usable from anything else. A C bot that works is proof the headers are honest; a Python bot
 that works could just mean the Python wrapper is clever.
