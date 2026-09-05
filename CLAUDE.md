@@ -29,6 +29,9 @@ phase order.
   (`§0` licensing through `§15` divergence register, plus Appendices A and B). It is the source
   of truth for every design decision. Cross-references throughout the repo use `§N` notation
   against this file.
+- `docs/implementation-plan.md` — the phase-by-phase execution sequence: commit-sized steps,
+  per-step checks, exit checklists, and a table of the judgment calls the plan leaves open. When
+  starting work on a phase, begin here; when a step turns out wrong, edit it in place.
 - `docs/bwapi-c-abi-plan-revision-4-changes.md` — the directive set that produced revision 4.
   Historical; section numbers in it refer to revision 3.
 - `docs/research/rN-<topic>.md` — results of research round N (R1–R11; R11 has sub-rounds
