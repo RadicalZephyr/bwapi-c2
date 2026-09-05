@@ -1660,8 +1660,10 @@ Upstream's `revisionUpdate.vbs` computes `2383 + git rev-list HEAD --count` and 
 `include/svnrev.h`, which also `#include`s `starcraftver.h` (the definer of `BUILD_DEBUG`). Our
 BWAPI fork carries `revisionUpdate.sh`, a POSIX port of the same arithmetic, and the generated
 header as a commit, so no Windows Script Host is involved and this tree has no `vendor/svnrev.h`.
-The count is taken **at the upstream commit**, not at the tip of `bwapi-c2-pin`: the carried
-commits are ours and would inflate BWAPI's revision. A synthesised header would make
+The count is taken **at the upstream commit**, not at the tip of `bwapi-c2-pin`: `SVN_REV`
+names the BWAPI a bot is talking to, and a bot built against upstream at the same commit reports
+the same number. Our commits touch nothing the number describes, so counting them would make
+`bwapi_revision()` disagree with upstream's own build of the same code. A synthesised header would make
 `bwapi_revision()` return a number that is not BWAPI's revision — worse than not exporting it at
 all.
 

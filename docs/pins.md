@@ -56,8 +56,9 @@ scheduled drift job. The work happens in the fork first and in this repository s
    `bwapi-c2-pin` onto it. A carried commit that no longer applies is the bump's first finding,
    not a surprise.
 2. For BWAPI, regenerate `svnrev.h` **with the upstream commit checked out**, not the tip of
-   `bwapi-c2-pin`: `revisionUpdate.sh` counts the commits reachable from `HEAD`, and the carried
-   commits would inflate the number. Run `sh revisionUpdate.sh` from `bwapi/` at the upstream
+   `bwapi-c2-pin`: `revisionUpdate.sh` counts the commits reachable from `HEAD`, and the number
+   must match what upstream's own build of the same commit reports (plan §10.3). Run
+   `sh revisionUpdate.sh` from `bwapi/` at the upstream
    commit, then on `bwapi-c2-pin` replace the committed header with that output
    (`git add -f bwapi/include/svnrev.h`; upstream's `.gitignore` excludes it). Never synthesise
    it.
