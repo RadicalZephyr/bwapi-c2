@@ -169,11 +169,19 @@ wrappers):
 | `WeaponType.h` | 27 | |
 | others | ~90 | Bullet, Region, Force, Position, Color, Error, Tech/Upgrade/Race/… |
 
-Call it **~900 declarations, collapsing to roughly 550–600 distinct ABI entry points**
-once overloads are given distinct names and the `drawX{Map,Mouse,Screen}` triples collapse
-into one function taking a `coordinate_type` parameter.
+Call it **~900 declarations**. The estimate that followed — "collapsing to roughly 550–600
+distinct ABI entry points" — has since been **measured, and it was low**. The six interface
+headers alone declare 542 member functions; after §5.2's draw collapse, fork 3's `canXxx` rule
+and two mechanical merges, and with §5.8 shipped whole, v1 is **~671 exported functions plus 848
+constants in `bwapi_c2.h`, and 98 more in `bwapi_c2_bwem.h`** — about 30% above the guess. The
+arithmetic is in [research/research-vs-rev4-review.md](research/research-vs-rev4-review.md) §3.2.
 
-That number is the whole reason for §9: hand-writing 600 wrappers is a mistake.
+That number is the whole reason for §9 — but the reason is not "hand-writing 670 wrappers is a
+mistake", which is arguable: `RnDome/bwapi-c` hand-wrote 530 and they work. It is that **542
+declarations map to ~457 interface exports through five documented exclusion rules**, and the
+rules are the thing that can be wrong. Only a coverage audit run off a machine-readable spec can
+show the mapping is complete. §5.8's 848 constants and 185 accessors are the part nobody should
+type at all.
 
 ---
 
@@ -685,11 +693,20 @@ The few that return containers need out-buffers: `requiredUnits()` → `std::map
 → parallel `(type[], count[])` arrays; `whatBuilds()` → `std::pair` → two out-params;
 `abilities()`/`upgrades()`/`buildsWhat()` → ID arrays.
 
+**Shipped three ways, not one** (fork 1). The 185 accessors ship as functions, because that is
+what the 1,671 measured call sites are written against and it is the only form that carries
+upstream's semantics rather than a snapshot of them. The constants ship generated into the
+header. And **one size-prefixed bulk table per type class ships as an optional §5.10-style fast
+path**, so a host that would rather pay one crossing at startup than 185 can have it. What is
+*declined* is shipping only the table: that is what rsbwapi does because it has no ABI to ask,
+and it forces every host to re-derive accessor semantics the ABI already knows.
+
 Also generate the full **constant set** into `bwapi_c_types.h` — every `UnitTypes::Enum`,
 `Orders::Enum`, `TechTypes::Enum`, `UpgradeTypes::Enum`, `WeaponTypes::Enum`, `Races::Enum`,
 `Errors::Enum`, `EventType::Enum`, `Flag::Enum`, `CoordinateType::Enum`,
 `Text::{Enum,Size::Enum}`, `MouseButton`, `Key`, `Latency::Enum`, `Colors`, and the position
-sentinels in both forms. ~700 constants, pure codegen, and it's what makes the ABI pleasant
+sentinels in both forms. **848 constants** (measured in R1), pure codegen, and it's what makes
+the ABI pleasant
 rather than magic-number soup. Names come from the enum identifiers, so they can't drift.
 
 ### 5.9 Explicitly not exposed
@@ -820,7 +837,7 @@ bwapi-c/                            # separate repository, LGPL-3.0
   third_party/bwapi/                # git submodule, pinned revision
   include/
     bwapi_c.h            # generated — the single public header
-    bwapi_c_types.h      # generated — ~700 constants + PODs
+    bwapi_c_types.h      # generated — 848 constants + PODs
   src/
     abi.cpp              # version, sticky error channel, log callback,
                          #   the in-predicate depth counter (§5.4)
@@ -879,7 +896,9 @@ produces no change.
 
 ## 8. Module mode
 
-Deferred indefinitely. See **Appendix A**.
+**A v2 item, out of scope for v1.** R4 supplied the concrete reason it should exist — grouped
+commands are unavailable to *any* client-mode bot, in any language — without changing the reason
+it waits. See **Appendix A**.
 
 ---
 
@@ -1135,7 +1154,7 @@ every phase.
 |---|---|---|
 | **0. Bootstrap** | Repo, pinned submodule, derived link closure with explicit file lists, client-only CMake target, `svnrev.h` from upstream's script, layout-dump tooling, LGPL files, `bwapi_c.h` skeleton with the §4 conventions | An empty `bwapi_c.dll` links x86; the x86 layout dump is checked in as the baseline; the x64 verdict is recorded as either "empty x64 DLL links and the dumps match" or a named blocking dependency |
 | **1. Generator** | Spec format, `emit_*.py`, `check_coverage.py`, `api.json` + its schema; `Player` (54 decls) fully generated as the proving ground | `Player` round-trips spec → header → `.def` → `api.json` → a compiling Rust `extern` block; header hygiene and golden `.def` diff green in CI |
-| **2. Static types** | `bwapi_c_types.h` (~700 constants), all `*Type` static data (~150 functions) | ~500 assertions green with no game, no server, and no StarCraft installed |
+| **2. Static types** | `bwapi_c_types.h` (848 constants), all `*Type` static data (185 accessors + ~14 bulk tables) | ~500 assertions green with no game, no server, and no StarCraft installed |
 | **3. Mock server** | Client-facing half of the shared-memory and pipe protocol, plus scenario fixtures populating a synthetic map, units, players and the `xUnitSearch`/`yUnitSearch` arrays | A scenario is asserted end-to-end through the ABI on CI with no StarCraft; **an x64 client completes a frame handshake against an x86 mock**, or the x86-only decision is final and documented |
 | **4. Read surface** | `Game` (~120 after the §5.2 collapse) and `Unit` (~250) getters, `Force`/`Region`, events, bulk map grids, the §5.10 snapshots | Every read entry point is exercised against a mock scenario; boundary fuzz green |
 | **5. Write surface** | Commands, unit-set broadcasts, the §5.4 boundary-side closest queries | **A C99 example bot builds against `bwapi_c.h` alone, with no C++ toolchain, and against real StarCraft reads game state and moves units** |
@@ -1158,7 +1177,7 @@ could just mean the Rust wrapper is clever.
 | **x86-only shuts out Node and default Rust** | Storm's exclusion (§10.1) removes the one dependency that would have killed it outright. Phase 0 gives a provisional answer, phase 3 a real one |
 | **A private build of upstream sources drifts from what upstream builds** | Explicit file lists, never globs, so a new source file is a loud link error; the §10.3 checklist re-derives at pin bumps |
 | **`unordered_set` pointer hashing makes bots irreproducible** | Sort collections by ID; compute closest-unit at the boundary with a lowest-ID tie-break (§5.4). Both recorded in §15 |
-| **~600 entry points is a lot of surface to keep correct** | Codegen, declaration hashes, golden `.def`, boundary fuzz. The generator is the deliverable; the wrappers are output |
+| **~770 entry points across two headers is a lot of surface to keep correct** | Codegen, declaration hashes, golden `.def`, boundary fuzz. The generator is the deliverable; the wrappers are output |
 | **Struct layout freezes the ABI prematurely** | Size-prefixed PODs (§4), flag bits rather than boolean fields (§5.10), and 0.x until phase 6 (§4) |
 | **Per-call FFI cost makes the ABI look slow in Node/Python** | Snapshots (§5.10), bulk grids cropped to the live map (§5.5), sticky errors that avoid a second crossing per call (§4) |
 | **A foreign callback unwinds into BWAPI's stack** | Callbacks are a conditional follow-on; if they land, `catch(...)` at every site, the `reentrant: forbidden` guard, and warn-level logging on rejection |
@@ -1177,6 +1196,25 @@ From the revision-1 review:
 | 3 | Python dependency in CI? | **Yes.** Generated sources stay checked in, so it is a CI-only dependency |
 | 4 | Does module mode justify a phase? | **No — deferred indefinitely.** Appendix A |
 | 5 | Remove `swig.i` / `swig_lib/` from BWAPI? | **No.** Separate repository; no standing to propose removals there |
+
+From the research round (R1–R11), 2026-09-05 — the eight forks left open by the rev-4 review
+([research-vs-rev4-review.md](research/research-vs-rev4-review.md) §3):
+
+| # | Question | Decision |
+|---|---|---|
+| 6 | Does §5.8 ship as functions or a lookup table? | **Both, plus constants.** Per-accessor functions, generated constants in the header, and a size-prefixed bulk-table export as an optional §5.10-style fast path |
+| 7 | Where is the v1 cut line? | **Derived, not chosen: ~671 functions + 848 constants here, 98 in the BWEM header.** ~30% *above* §1.8's 550–600. Review §3.2 shows the arithmetic |
+| 8 | `canXxx`: ship ~30 or all of them? | **All base predicates — 88 exports.** No `*Grouped`, no `checkCommandibility` parameter (§15 entries 17–18) |
+| 9 | Does module mode return? | **Yes, as a scoped v2 item**, motivated by the grouped-command gap that no client-mode binding in any language can close. Appendix A |
+| 10 | Is BWEM in scope? | **Yes** — second header, same §4 conventions. R11; §15.1; §15.2 |
+| 11 | Linux via OpenBW? | **Parked, not closed.** A client never links the engine — it reaches a separate `BWAPILauncher` process over shm and a Unix socket — so the unlicensed-engine problem is a process boundary, not a link edge. **Nothing OpenBW is built, linked or distributed from this tree.** The remaining work is a POSIX port of `Client.cpp`'s 7 Win32 imports, as a §15.2-style patch on a pinned LGPL dependency |
+| 12 | Test fixtures | **Synthetic by policy.** Recorded fixtures contributor-local and gitignored; JBWAPI's `.bin` files not vendored (R9 §7) |
+| 13 | Rust in `bindings/`? | **Yes, as the proof-of-consumer.** Python and C# are the primary consumers; Rust proves the ABI is bindable |
+
+Consequence of 6–8 taken together: **the generator is unconditional and lands in phase 1** — for
+§5.8 because 848 constants cannot be hand-maintained, and for the interface layer because 542
+declarations map to ~457 exports through five documented exclusion rules and only a coverage
+audit can prove that mapping is complete.
 
 From this revision: the ABI is LGPL-3.0 and dynamically consumed (§0); positions pack into
 `int64_t` on return only (§4); errors are sticky and first-wins (§4); every crossing POD is
@@ -1253,6 +1291,8 @@ a divergence here or asserts `divergence: none`.**
 | 8 | Invalid handles return a documented neutral value | §4 | A foreign-language bug must not crash the game |
 | 9 | Bulk grids cropped to the live map | §5.5 | 16× less data on a 128×128 map; `out_w`/`out_h` report the extent |
 | 10 | Text truncated at 256 bytes | §5.1 | Inherited from `GameImpl::vPrintf`, not introduced — but surfaced here because callers cannot see it |
+| 17 | `canXxxGrouped` not exposed | §5.4 | 17 declarations under 11 names. Grouped commands are **not implemented by the BWAPI server at all** (JBWAPI #70), so a client bot cannot use them in any language — exposing the predicates would advertise a capability that does not exist in client mode. Revisit with module mode (Appendix A) |
+| 18 | `checkCommandibility` not exposed; every `can_*` behaves as if it were `true` | §5.4 | The flag is a default argument on 88 declarations, not a separate overload. Passing `false` skips the "can this unit accept commands at all" precheck — an optimisation for callers chaining several predicates on one unit, which costs a boolean on every signature and is a footgun across an FFI boundary where the precondition cannot be enforced |
 
 ### 15.1 BWEM divergences
 
@@ -1281,10 +1321,13 @@ re-applied at a pin bump (§10.3).
 
 ## Appendix A. Module mode
 
-**Deferred indefinitely**, until someone presents a concrete reason it is necessary. Client
-mode covers the non-C++ audience, and module mode carries real costs: x86-forever, no crash
-isolation, and a much harder test story. This appendix exists so a revival does not start
-from a blank page. Nothing in §12 depends on it.
+**A scoped v2 item — not v1, and no longer deferred indefinitely.** The concrete reason arrived
+with R4: **grouped commands are not implemented by the BWAPI server**, so no client-mode bot in
+any language can issue them (JBWAPI #70). That is a capability gap rather than a binding
+limitation, every competing binding has it too, and module mode is the only way to close it.
+It stays out of v1 because it carries real costs — x86-forever, no crash isolation, and a much
+harder test story — and because client mode covers the non-C++ audience today; v1 documents the
+gap in the README. Nothing in §12 depends on it.
 
 **How it works today.** BWAPI loads `bwapi-data/AI/<bot>.dll` and resolves `gameInit` and
 `newAIModule` by `GetProcAddress` (`bwapi/BWAPI/Source/GameUpdate.cpp:389`;

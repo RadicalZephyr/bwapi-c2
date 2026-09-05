@@ -1,13 +1,15 @@
 # Research (R1–R10) vs. the revision-4 change set
 
 The rev-4 change set was written from a survey, before the experiments. R1–R10 have now run.
-This is a directive-by-directive reconciliation and, at the end, the forks that still need a
-decision.
+This is a directive-by-directive reconciliation and, at the end, the fork decisions and the v1
+cut line they produce.
 
 **Summary: rev-4 holds up well. Every directive survives in substance; six need their premise or
 their trigger condition corrected, because the research came back with numbers rev-4 guessed at
 and, in four places, guessed wrong. Nothing in R1–R10 argues for abandoning the project — R3's
-audience is thin but real and currently active. Eight genuine forks remain open; they are in §3.**
+audience is thin but real and currently active. Eight genuine forks were opened; all eight are
+now decided (§3), and §3.2 derives the v1 cut line that follows: ~770 exported functions and
+~850 constants across two headers, with the generator unconditional in phase 1.**
 
 ---
 
@@ -22,6 +24,13 @@ audience is thin but real and currently active. Eight genuine forks remain open;
 | **Draw-call usage data is not authoritative** — draws are dev/debug tooling, and §5.2 already reduces them properly | Correct, and it invalidates one of my own R2 recommendations. See §2H |
 | **32-bit Linux is an explicit non-goal** | Closes R5's one incompatible target (`BulletData` 76 vs 80, `sizeof(GameData)` 404 bytes short). Record it in §2 non-goals; the layout hazard then cannot be hit |
 | **BWEM must be wrapped** — second header, same §4 conventions | New research project R11 ([r11-bwem-research-plan.md](r11-bwem-research-plan.md)). Supersedes fork 5 below |
+| **All eight forks decided** (2026-09-05) | §3 records each; §3.2 derives the cut line. Summarised in the plan's §13 decisions log |
+| §5.8 ships as **functions + generated constants + a bulk-table fast path** | Fork 1. Rev-4 §H's table-instead-of-functions suggestion rejected |
+| `canXxx`: **all base predicates**, no `*Grouped`, no `checkCommandibility` parameter | Fork 3 → 88 exports. §15 entries 17–18 |
+| **Module mode becomes a scoped v2 item** | Fork 4. Appendix A stops saying "deferred indefinitely"; the grouped-command gap is its motivation |
+| **Linux/OpenBW parked, not closed** — nothing OpenBW is ever linked or shipped from this tree | Fork 6. A client never links the engine; the exposure is a process boundary, not a link edge |
+| **Synthetic fixtures by policy**; recorded ones contributor-local and gitignored | Fork 7 |
+| **Rust stays as the proof-of-concept consumer** | Fork 8. Python and C# remain primary |
 
 **On the draw point specifically, you are right and I was wrong.** R2 §4 recommended "ship 8 draw
 functions in Map and Screen space; drop the generic `CoordinateType`-taking forms" on the grounds
@@ -252,69 +261,101 @@ is why that Zig repo vendors unlicensed headers into an MIT project).
 
 ---
 
-## 3. Forks that still need a decision
+## 3. Forks — all eight decided
 
-Ordered by how much downstream work hangs on them.
+Decided 2026-09-05. Each entry keeps the question as posed, then the decision and what follows
+from it. **§3.2 derives the v1 cut line the decisions imply**, which is what fork 2 asked for.
 
-> **Updated after R11.** Fork 5 is closed (BWEM is in scope; BWTA2 is an explicit non-goal).
-> R11 also settled several things that were open when this list was written — see §3.1 — and
-> added two directives to §2I's roadmap rewrite.
+**1. Does §5.8 ship as exported functions, a generated lookup table, or both? — RESOLVED: all
+three.**
+R2: 185 accessors, 848 constants; 80 accessors used at 1,671 sites (20% of all traffic).
+Decided as recommended: **per-accessor functions** (§4's shape, and what the 1,671 sites are
+actually written against), **constants generated into the header**, and a **size-prefixed bulk
+table export as a §5.10-style optional fast path** for hosts that would rather pay one crossing
+at startup than 185 per type. Rev-4 §H's "a table *instead of* functions" is rejected: a table is
+what rsbwapi ships *because it has no ABI to ask*, and shipping only a table would force every
+host to re-derive the accessor semantics it already has. Consequence: §5.8 grows a small export
+block (~1 per type class) and §5.10's snapshot machinery is reused rather than duplicated.
 
-**1. Does §5.8 ship as exported functions, a generated lookup table, or both?**
-R2: 185 accessors, 848 constants; 80 accessors used at 1,671 sites (20% of all traffic). A table
-is one blob and zero per-call cost; functions are ~185 symbols and match §4's shape. **My
-recommendation: functions for the accessors, generated constants in the header, and a
-size-prefixed bulk-table export as a §5.10-style optional fast path.** But it is a real fork and
-rev-4 §H points the other way.
+**2. Where exactly is the v1 cut line now? — RESOLVED: derived, not chosen.**
+Your reading was right — forks 1, 3 and 5 determine it, and §5.4 (already in the plan) determines
+the filter block. Worked out in **§3.2**: **~671 exported functions and 848 constants in
+`bwapi_c2.h`, plus 98 in `bwapi_c2_bwem.h` — call it ~770 functions across the two headers.**
+That is ~30% *above* §1.8's 550–600 target, not below it. The consequence fork 2 existed to
+settle: **the generator is phase 1 and unconditional for both blocks**, and its justification for
+the interface layer is the coverage audit, not the typing (§3.2).
 
-**2. Where exactly is the v1 cut line now?**
-Your rule gives the union: **347 entry points** (270 interface + 70 type-data + 7 other), plus all
-848 constants and the ~105 unused type accessors if §5.8 ships whole, minus the draw collapse
-(§5.2: ~90 → 8). Rough total **~500 exported functions plus ~850 constants**. That is close to
-§1.8's original 550–600 — so the honest statement is that the measurement *validated* the
-completeness target rather than shrinking it, and only the *reason* changed. **Confirm that
-reading before §9 and §12 are rewritten**, because it decides whether the generator is phase 1 or
-phase 7.
+**3. Do the `canXxx` predicates get the draw treatment or the usage treatment? — RESOLVED: ship
+them all, minus two mechanical exclusions.**
+Ship every base predicate; exclude the `*Grouped` variants and do not expose the
+`checkCommandibility` parameter. Measured against this tree's headers rather than R2's
+name inventory: `Unit.h` + `Game.h` declare **105 `canXxx` functions under 68 unique names — 88
+declarations / 57 names non-Grouped, 17 declarations / 11 names `*Grouped`**. The
+`checkCommandibility` flags are default arguments, not separate overloads, so suppressing them
+costs no declarations; every `can_*` behaves as `checkCommandibility = true`. **v1 exports 88
+`can_*` functions.** Both exclusions are recorded in §15 (entries 17–18).
 
-**3. Do the `canXxx` predicates get the draw treatment or the usage treatment?**
-R2: 74 base predicates, **29 used, 45 never**, and no bot calls a `*Grouped` variant or a
-`checkCommandibility` overload. Unlike draws they are not a dev-time tool, and unlike draws there
-is no structural collapse available — each is a distinct rule. **They are the one remaining place
-where a usage-based cut is defensible.** Ship ~30 or ship 74?
+*Note on the count.* R2 §3 reported "74 `canXxx` predicates"; that figure counted name/class pairs
+across the whole inventory including `UnitType::canProduce`-class accessors, which belong to
+§5.8. The Unit/Game family is 68 names. The 29-used / 45-never split is unaffected, and is now
+moot for scope.
 
-**4. Does module mode come back off the shelf?**
-R4 found grouped commands are **impossible in client mode in any language** — a real capability
-gap, not a binding limitation, and one competitors also cannot close. Appendix A currently defers
-module mode indefinitely. Does this reopen it as a v2 item, or is it an accepted limitation
-documented in the README?
+*Available but not taken:* the no-target and target-taking forms of the same predicate
+(`canAttackUnit()` vs `canAttackUnit(Unit)`) could collapse into one function with a
+`BWAPI_NONE` target, the way §5.2 collapses draws. **Declined** — §4 already gives an invalid
+handle a neutral return, so `-1` would be ambiguous between "no target supplied" and "bad handle",
+and the two queries mean genuinely different things. 88 distinct signatures stay distinct.
 
-**5. ~~Is BWEM / map analysis an explicit non-goal?~~ — RESOLVED: in scope.**
-Decided: BWEM is wrapped, through a second header, under the same §4 conventions. The reasoning
-is that a bot written against `bwapi-c2` without BWEM starts behind an equivalent C++ bot, and
-every host ecosystem would otherwise wrap or reimplement it separately — which is the same
-duplicated-effort trap §5.8 exists to close. Scoped as **R11**, a new research project:
-[r11-bwem-research-plan.md](r11-bwem-research-plan.md) — **now executed**; see
-[R11.4](r11-4-bwem-link-closure.md) (ten symbols, all in the closure) and
-[R11.8](r11-8-bwta2.md) (BWTA2 closed). Outcomes summarised in §3.1.
+**4. Does module mode come back off the shelf? — RESOLVED: v2, not v1.**
+R4's finding stands: grouped commands are impossible in client mode in any language (JBWAPI #70 —
+the BWAPI *server* does not implement them), so this is a capability gap no competitor can close
+either. It is a real reason for module mode to exist, but not a reason to build it now.
+**Appendix A stops saying "deferred indefinitely" and becomes a scoped v2 item**, with the
+grouped-command gap as its stated motivation; the README documents the limitation for v1.
+Nothing in §12 changes.
 
-**6. Linux/OpenBW: closed or parked?**
-R9's missing license is a blocker today, R7's MPQ problem makes it untestable, R5's i386 layout
-break and the 10002/10003 `CLIENT_VERSION` split add cost. **Recommend: closed for v1, with the
-reasons recorded so it is not re-litigated** — but rev-4 §F's "possible second target" wording
-currently keeps it open.
+**5. ~~Is BWEM / map analysis an explicit non-goal?~~ — RESOLVED earlier: in scope.**
+Wrapped through a second header under the same §4 conventions. Scoped and executed as **R11**
+([plan](r11-bwem-research-plan.md)); see [R11.4](r11-4-bwem-link-closure.md) (ten symbols, all
+already in the closure) and [R11.8](r11-8-bwta2.md) (BWTA2 closed as a non-goal). Outcomes in
+§3.1; divergences in §15.1; the dependency patch in §15.2.
 
-**7. Test fixtures: synthetic only, or synthetic plus recorded?**
-R9 §7 found `GameData` carries **no Blizzard static tables** — the provenance exposure is *map
-terrain*, and JBWAPI's fifteen fixtures are community ladder maps with no stated license.
-**Recommend: synthetic by policy, recorded fixtures contributor-local and gitignored, JBWAPI's
-`.bin` files not vendored.** Cheap to adopt, and it makes the question disappear.
+**6. Linux/OpenBW: closed or parked? — RESOLVED: parked, and the exposure is smaller than R9
+made it look.**
+Your instinct to separate it from the library is right, and the separation already exists in the
+architecture: **a client never links the engine.** R6 §11 and R7 §3 together establish that
+OpenBW runs as its own process (`BWAPILauncher`) and a client reaches it over shared memory plus
+a Unix socket. So a Linux target needs (a) a POSIX port of the client transport — **7 Win32
+imports, all in one TU, `Client.cpp`** (R6 §2), with the port already written line-for-line on
+`basil-ladder/bwapi@linux-client-support` (~344 lines, R6 §11) — and (b) a server binary the user
+supplies. (a) is a patch on a pinned **LGPL** dependency, exactly the §15.2 pattern BWEM already
+established. (b) we neither link nor distribute.
 
-**8. Is Rust in `bindings/` at all?**
-You have confirmed Python and C# as primary. R4's view: rsbwapi is alive but is one person, and
-lacks latcom, `getBuildLocation`, `clientInfo` and `registerEvent` — all of which a C ABI provides
-free. **Recommend: Rust stays as the proof-of-concept test consumer** (it is the cheapest way to
-prove the ABI is bindable, and R2 gives a usage baseline from Styx2) **but is not shipped as a
-product competing with rsbwapi.** Rev-4 §B asks the question and does not answer it.
+**R9's unlicensed-engine blocker therefore applies to *shipping OpenBW*, not to *supporting
+Linux*.** What remains are ordinary engineering costs, all measured: the `CLIENT_VERSION`
+10002/10003 split (`Client.cpp:120` refuses to connect on mismatch), no public CI (R7: MPQs, and
+JBWAPI's own workflows disabled since April 2022), and i386 — now a non-goal, and **Linux x86-64
+agrees with Windows at `sizeof(GameData) == 33,017,048`** (R5 §2), so the one layout hazard is
+already outside the matrix.
+
+Recorded as: **parked for v1; not closed; no OpenBW artifact is ever built, linked or
+distributed from this tree.** Rev-4 §F's "possible second target" wording stands, with the
+process boundary as the reason it can stay open at no licensing cost.
+
+**7. Test fixtures: synthetic only, or synthetic plus recorded? — RESOLVED: as recommended.**
+**Synthetic by policy.** Recorded fixtures stay contributor-local and gitignored; JBWAPI's
+fifteen `.bin` files are not vendored. R9 §7's finding is why this is cheap: `GameData` carries
+no Blizzard static tables, so the only provenance exposure is *map terrain* — and R11.6 showed a
+hand-built `GameData` drives BWEM's full analysis too, so neither header needs a recorded map.
+Pairs with §3.1's shared fixture builder.
+
+**8. Is Rust in `bindings/` at all? — RESOLVED: yes, as the proof-of-concept.**
+Rust stays the test consumer that proves the ABI is bindable — the cheapest such proof, and R2
+gives a usage baseline from Styx2. It is **not** positioned as a product competing with rsbwapi,
+but the door is not closed either: rsbwapi lacks latency compensation, `getBuildLocation`,
+`clientInfo` and `registerEvent`, all of which a C ABI provides for free, so a Rust binding on
+`bwapi-c2` has enough additional value that building one is reasonable. Python and C# remain the
+primary consumers (§0).
 
 ---
 
@@ -345,7 +386,53 @@ product competing with rsbwapi.** Rev-4 §B asks the question and does not answe
    event stream, and `isNeutral()` reads a `PlayerData` flag rather than the player type — belong
    in one helper used by both headers' tests, solved once.
 
-**Unchanged by R11:** forks 1, 2, 3, 4, 6, 7 and 8 below.
+**Unchanged by R11:** forks 1, 2, 3, 4, 6, 7 and 8, all since decided above.
+
+---
+
+### 3.2 The v1 cut line, derived from the decisions
+
+Fork 2 asked where the line lands. It is now a calculation rather than a choice, so here is the
+calculation. Counts are from this tree's headers, comments and templates stripped, taken with
+`Game.h`, `Unit.h`, `Player.h`, `Region.h`, `Force.h`, `Bullet.h` — **542 member function
+declarations**, of which 105 are `canXxx`, 49 are `draw*`, and 388 are everything else.
+
+| Block | Declared | v1 exports | Rule that decides it |
+|---|---|---|---|
+| Interface methods (ex-`can`, ex-`draw`) | 388 | **361** | Ship the declared surface, less two mechanical merges: 13 filter-taking overloads (§5.4 — the unfiltered sibling ships instead) and 14 `int x, int y` overloads that §4's position rule makes identical to their `Position` sibling |
+| `canXxx` | 105 | **88** | Fork 3: all base predicates, no `*Grouped` (17 declarations), `checkCommandibility` suppressed |
+| `draw*` | 49 | **8** | §5.2's `ctype` collapse — all three coordinate spaces kept |
+| §5.8 type-data accessors | 185 | **185** | Fork 1: ship whole, as functions |
+| §5.8 bulk-table export | — | **~14** | Fork 1: one size-prefixed table per type class, optional fast path |
+| Lifecycle, error latch, version, connection | — | **~15** | §4 machinery |
+| **`bwapi_c2.h` total** | | **~671 functions** | plus **848 constants** (§5.8, generated) |
+| `bwapi_c2_bwem.h` | | **98** | R11.3's sketch, unchanged |
+| **Both headers** | | **~769 functions, ~850 constants** | |
+
+Three things follow, and the first is the one that matters.
+
+**The generator is phase 1, unconditional, for both blocks — but for different reasons.** For
+§5.8 the reason is the one R2 found: 848 constants and 185 accessors must come from a
+machine-readable source or every consumer transcribes them again, as five projects already have.
+For the interface layer the reason is new and comes out of this table: **542 declarations map to
+~457 exports through five documented exclusion rules**, and nothing but a coverage audit can show
+that mapping is complete. R2 concluded ~200 hand-written one-liners need no DSL, and that was
+right for ~200 chosen by usage. It is not right for 457 chosen by rule, where the rules are the
+thing that can be wrong. Rev-4 §H's "if the 95% line lands under ~250, defer the generator"
+trigger never fires and should be deleted rather than re-tuned.
+
+**§1.8's 550–600 was low, not high.** The measurement did not shrink the completeness target; it
+raised it by about 30%, and moved the justification from "be complete" to "here are five rules,
+and here is the audit that proves we followed them." Worth saying plainly in §1.8, because the
+number will otherwise look like scope creep.
+
+**Two of R2's four cut recommendations are now withdrawn**, both for the same reason and both in
+the plan's favour — see §4. The `canXxx` cut ("ship 10, defer ~120") is withdrawn by fork 3. The
+filter recommendation ("ship ~26 as constants") is withdrawn by **§5.4, which already declines an
+enum filter DSL** on the grounds that it re-encodes upstream semantics in a switch statement that
+silently rots. That argument was sound when it was written and R2 did not engage with it. The
+generalisation from the draw correction holds a third and fourth time: *usage frequency is
+evidence about what is safe to merge, not about what is safe to omit.*
 
 ---
 
@@ -358,3 +445,19 @@ usage data stands as evidence that the collapse is safe; it should not have been
 argument. Your framing — draws are development tooling, so tournament-bot usage undercounts them —
 is the right correction and it generalises: **usage frequency is evidence about what is safe to
 merge, not about what is safe to omit.**
+
+**Two more R2 recommendations are withdrawn on the same principle**, both after the fork
+decisions:
+
+- *"`canXxx`: ship 10, defer ~120"* — withdrawn by fork 3. The family is not dev tooling, but it
+  is the block where "never called in a tournament bot" is weakest evidence: a predicate exists
+  precisely so a bot can ask a question it does not yet know it will ask.
+- *"Filters: ship ~26 as constants"* — withdrawn by **§5.4**, which had already declined an
+  enum filter DSL because it re-encodes upstream semantics in a switch that silently rots. R2
+  proposed the DSL without engaging that argument. The plan was right; the filter-less queries
+  plus host-side filtering stand, and the 13 filter-taking overloads simply do not cross.
+
+So of R2's four cut-line recommendations, **three are withdrawn and the fourth (§5.8: "ship it
+all — this is the product") is the one that survives and was strengthened.** That is worth
+recording as a methodology result, not just a tally: R2 measured usage well and reasoned from it
+badly, in a consistent direction, four times out of four.
