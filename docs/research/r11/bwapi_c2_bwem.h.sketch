@@ -1,0 +1,154 @@
+/* bwapi_c2_bwem.h -- SKETCH, R11.3. Signatures only; no implementation.
+ *
+ * Second header of bwapi-c2. Same section 4 conventions as bwapi_c2.h:
+ *   int32_t handles, int32_t booleans (0/1), packed int64_t position returns,
+ *   unpacked int32_t x,y parameters, caller-provided buffers with true-count
+ *   returns, ID-sorted collection output, plain const char* strings,
+ *   the sticky first-error latch, and noexcept boundaries throughout.
+ *
+ * Handle spaces are disjoint from bwapi_c2.h's and from each other:
+ *   bwapi_bwem_area_id   1..N   (BWEM's own Area::id, int16_t, widened)
+ *   bwapi_bwem_choke_id  0..N-1 (BWEM's own ChokePoint::Index())
+ *   bwapi_bwem_base_id   0..N-1 (SYNTHESISED - BWEM has none; see R11.3)
+ *   neutrals are addressed by their BWAPI unit id -- the join between headers
+ */
+#ifndef BWAPI_C2_BWEM_H
+#define BWAPI_C2_BWEM_H
+#include "bwapi_c2_types.h"
+
+#define BWAPI_BWEM_AREA_NONE   0    /* Area::id 0 == not walkable       */
+#define BWAPI_BWEM_ID_NONE    (-1)  /* neutral value for every id space */
+
+/* ChokePoint::node */
+#define BWAPI_BWEM_NODE_END1   0
+#define BWAPI_BWEM_NODE_MIDDLE 1
+#define BWAPI_BWEM_NODE_END2   2
+
+/* Neutral::Is* collapsed to a discriminator */
+#define BWAPI_BWEM_NEUTRAL_MINERAL         0
+#define BWAPI_BWEM_NEUTRAL_GEYSER          1
+#define BWAPI_BWEM_NEUTRAL_STATIC_BUILDING 2
+
+/* ---- lifecycle (7) ------------------------------------------------------
+ * One call replaces BWEM's three-phase init; ordering cannot be got wrong.
+ * Must be called after bwapi_client_connect() and before any query.        */
+int32_t bwapi_bwem_initialize(int32_t enable_path_analysis,
+                              int32_t find_bases_for_start_locations);
+int32_t bwapi_bwem_initialized(void);
+int32_t bwapi_bwem_automatic_path_update(void);
+void    bwapi_bwem_reset(void);                  /* Map::ResetInstance, per JBWAPI #51 */
+void    bwapi_bwem_on_mineral_destroyed(int32_t unit_id);
+void    bwapi_bwem_on_static_building_destroyed(int32_t unit_id);
+void    bwapi_bwem_on_blocking_neutral_destroyed(int32_t unit_id);
+
+/* ---- map ---------------------------------------------------------------- */
+int64_t bwapi_bwem_map_size(void);          /* packed TilePosition */
+int64_t bwapi_bwem_map_walk_size(void);     /* packed WalkPosition */
+int64_t bwapi_bwem_map_center(void);        /* packed Position     */
+int32_t bwapi_bwem_map_max_altitude(void);
+int32_t bwapi_bwem_map_area_count(void);
+int32_t bwapi_bwem_map_base_count(void);
+int32_t bwapi_bwem_map_choke_point_count(void);
+int32_t bwapi_bwem_map_valid_tile(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_map_valid_walk(int32_t wx, int32_t wy);
+int64_t bwapi_bwem_map_crop_tile(int32_t tx, int32_t ty);
+int64_t bwapi_bwem_map_crop_walk(int32_t wx, int32_t wy);
+int64_t bwapi_bwem_map_crop_position(int32_t x, int32_t y);
+int64_t bwapi_bwem_map_random_position(void);
+int32_t bwapi_bwem_map_get_areas(int32_t* out_ids, int32_t cap);          /* ID-sorted */
+int32_t bwapi_bwem_map_get_start_locations(int64_t* out_tiles, int32_t cap);
+int32_t bwapi_bwem_map_area_at_tile(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_map_area_at_walk(int32_t wx, int32_t wy);
+int32_t bwapi_bwem_map_nearest_area_tile(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_map_nearest_area_walk(int32_t wx, int32_t wy);
+int32_t bwapi_bwem_map_get_minerals(int32_t* out_unit_ids, int32_t cap);
+int32_t bwapi_bwem_map_get_geysers(int32_t* out_unit_ids, int32_t cap);
+int32_t bwapi_bwem_map_get_static_buildings(int32_t* out_unit_ids, int32_t cap);
+/* GetPath: chokepoint ids from a to b; *out_length receives the path length. */
+int32_t bwapi_bwem_map_get_path(int32_t ax, int32_t ay, int32_t bx, int32_t by,
+                                int32_t* out_choke_ids, int32_t cap,
+                                int32_t* out_length);
+
+/* ---- area --------------------------------------------------------------- */
+int32_t bwapi_bwem_area_group_id(int32_t area_id);
+int64_t bwapi_bwem_area_top_left(int32_t area_id);
+int64_t bwapi_bwem_area_bottom_right(int32_t area_id);
+int64_t bwapi_bwem_area_bounding_box_size(int32_t area_id);
+int64_t bwapi_bwem_area_top(int32_t area_id);           /* packed WalkPosition */
+int32_t bwapi_bwem_area_max_altitude(int32_t area_id);
+int32_t bwapi_bwem_area_mini_tiles(int32_t area_id);
+int32_t bwapi_bwem_area_low_ground_percentage(int32_t area_id);
+int32_t bwapi_bwem_area_high_ground_percentage(int32_t area_id);
+int32_t bwapi_bwem_area_very_high_ground_percentage(int32_t area_id);
+int32_t bwapi_bwem_area_accessible_from(int32_t area_id, int32_t other_area_id);
+int32_t bwapi_bwem_area_get_choke_points(int32_t area_id, int32_t* out_ids, int32_t cap);
+int32_t bwapi_bwem_area_get_choke_points_to(int32_t area_id, int32_t other_area_id,
+                                            int32_t* out_ids, int32_t cap);
+int32_t bwapi_bwem_area_get_accessible_neighbours(int32_t area_id, int32_t* out_ids, int32_t cap);
+int32_t bwapi_bwem_area_get_bases(int32_t area_id, int32_t* out_base_ids, int32_t cap);
+int32_t bwapi_bwem_area_get_minerals(int32_t area_id, int32_t* out_unit_ids, int32_t cap);
+int32_t bwapi_bwem_area_get_geysers(int32_t area_id, int32_t* out_unit_ids, int32_t cap);
+
+/* ---- choke point -------------------------------------------------------- */
+int32_t bwapi_bwem_choke_is_pseudo(int32_t choke_id);
+int32_t bwapi_bwem_choke_blocked(int32_t choke_id);
+int32_t bwapi_bwem_choke_blocking_neutral(int32_t choke_id);   /* BWAPI unit id or NONE */
+int64_t bwapi_bwem_choke_center(int32_t choke_id);             /* packed WalkPosition */
+int64_t bwapi_bwem_choke_pos(int32_t choke_id, int32_t node);
+int64_t bwapi_bwem_choke_pos_in_area(int32_t choke_id, int32_t node, int32_t area_id);
+int32_t bwapi_bwem_choke_get_areas(int32_t choke_id, int32_t* out_area_id_a, int32_t* out_area_id_b);
+int32_t bwapi_bwem_choke_get_geometry(int32_t choke_id, int64_t* out_walk_positions, int32_t cap);
+int32_t bwapi_bwem_choke_distance_from(int32_t choke_id, int32_t other_choke_id);
+int32_t bwapi_bwem_choke_accessible_from(int32_t choke_id, int32_t other_choke_id);
+int32_t bwapi_bwem_choke_get_path_to(int32_t choke_id, int32_t other_choke_id,
+                                     int32_t* out_choke_ids, int32_t cap);
+
+/* ---- base --------------------------------------------------------------- */
+int32_t bwapi_bwem_base_starting(int32_t base_id);
+int32_t bwapi_bwem_base_get_area(int32_t base_id);
+int64_t bwapi_bwem_base_location(int32_t base_id);   /* packed TilePosition */
+int64_t bwapi_bwem_base_center(int32_t base_id);     /* packed Position     */
+int32_t bwapi_bwem_base_get_minerals(int32_t base_id, int32_t* out_unit_ids, int32_t cap);
+int32_t bwapi_bwem_base_get_geysers(int32_t base_id, int32_t* out_unit_ids, int32_t cap);
+int32_t bwapi_bwem_base_get_blocking_minerals(int32_t base_id, int32_t* out_unit_ids, int32_t cap);
+
+/* ---- neutral (addressed by BWAPI unit id) -------------------------------- */
+int32_t bwapi_bwem_neutral_exists(int32_t unit_id);
+int32_t bwapi_bwem_neutral_kind(int32_t unit_id);      /* BWAPI_BWEM_NEUTRAL_* */
+int32_t bwapi_bwem_neutral_unit_type(int32_t unit_id);
+int64_t bwapi_bwem_neutral_pos(int32_t unit_id);
+int64_t bwapi_bwem_neutral_top_left(int32_t unit_id);
+int64_t bwapi_bwem_neutral_bottom_right(int32_t unit_id);
+int64_t bwapi_bwem_neutral_size(int32_t unit_id);
+int32_t bwapi_bwem_neutral_blocking(int32_t unit_id);
+int32_t bwapi_bwem_neutral_get_blocked_areas(int32_t unit_id, int32_t* out_area_ids, int32_t cap);
+int32_t bwapi_bwem_neutral_next_stacked(int32_t unit_id);
+int32_t bwapi_bwem_neutral_last_stacked(int32_t unit_id);
+int32_t bwapi_bwem_resource_amount(int32_t unit_id);
+int32_t bwapi_bwem_resource_initial_amount(int32_t unit_id);
+
+/* ---- tiles: scalar reads (the shape every port shipped) ------------------ */
+int32_t bwapi_bwem_tile_area_id(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_tile_min_altitude(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_tile_buildable(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_tile_walkable(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_tile_ground_height(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_tile_doodad(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_tile_get_neutral(int32_t tx, int32_t ty);   /* BWAPI unit id or NONE */
+int32_t bwapi_bwem_tile_stacked_neutrals(int32_t tx, int32_t ty);
+int32_t bwapi_bwem_minitile_area_id(int32_t wx, int32_t wy);
+int32_t bwapi_bwem_minitile_altitude(int32_t wx, int32_t wy);
+int32_t bwapi_bwem_minitile_walkable(int32_t wx, int32_t wy);
+int32_t bwapi_bwem_minitile_sea(int32_t wx, int32_t wy);
+int32_t bwapi_bwem_minitile_lake(int32_t wx, int32_t wy);
+int32_t bwapi_bwem_minitile_blocked(int32_t wx, int32_t wy);
+
+/* ---- tiles: bulk grids (optional section 5.5 fast path) ------------------ */
+int32_t bwapi_bwem_grid_tile_area_id(int16_t* out, int32_t cap);      /* Size().x*Size().y */
+int32_t bwapi_bwem_grid_tile_buildable(uint8_t* out, int32_t cap);
+int32_t bwapi_bwem_grid_tile_ground_height(uint8_t* out, int32_t cap);
+int32_t bwapi_bwem_grid_minitile_area_id(int16_t* out, int32_t cap);  /* WalkSize().x*.y  */
+int32_t bwapi_bwem_grid_minitile_altitude(int16_t* out, int32_t cap);
+int32_t bwapi_bwem_grid_minitile_walkable(uint8_t* out, int32_t cap);
+
+#endif /* BWAPI_C2_BWEM_H */
