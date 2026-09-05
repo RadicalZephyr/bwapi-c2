@@ -9,16 +9,21 @@ bwapi_c2.dll contains object code compiled from two third-party libraries:
 1. BWAPI — the Brood War Application Programming Interface
    https://github.com/bwapi/bwapi
    License: LGPL-3.0 (COPYING.LESSER)
-   Pinned commit: d727fed68558c506163048ea889131d8cbb33915
-   Modification carried by bwapi-c2 (patches/bwapi-convenience-va-list.patch):
+   Upstream commit: d727fed68558c506163048ea889131d8cbb33915
+   Pinned as: https://github.com/RadicalZephyr/bwapi, branch bwapi-c2-pin, commit
+     621ef61e0d423b5ed48f75f0126cd1dfb7efb47a
+   Modifications carried by bwapi-c2 (the commits between the two):
      BWAPIClient/Source/Convenience.h, `va_list &ap` changed to `va_list ap`, so the
-     client closure compiles with non-MSVC compilers.
+     client closure compiles with non-MSVC compilers; a POSIX revisionUpdate.sh; and the
+     generated include/svnrev.h committed.
 
 2. BWEM — the Brood War Easy Map library, community fork
    https://github.com/N00byEdge/BWEM-community
    License: MIT/X11, Copyright (c) 2015, 2017, Igor Dimitrijevic (LICENSE.BWEM)
-   Pinned commit: 9a63141f301f7830e9e09a2bae95c304fcc03cc5
-   Modification carried by bwapi-c2 (patches/bwem-reset-instance.patch):
+   Upstream commit: 9a63141f301f7830e9e09a2bae95c304fcc03cc5
+   Pinned as: https://github.com/RadicalZephyr/BWEM-community, branch bwapi-c2-pin, commit
+     70d7b34a2ae2043e1bf42e024461ef26dca6967c
+   Modification carried by bwapi-c2 (the one commit between the two):
      adds `void Map::ResetInstance()`, which lets a host destroy the map singleton
      explicitly — between games, or before the game data it analysed goes away — instead
      of only at static destruction.
