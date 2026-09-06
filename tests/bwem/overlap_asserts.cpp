@@ -22,9 +22,9 @@ int main() {
   f.start_location(104, 105);
   for (int k = 0; k < 4; ++k) {
     // Tiles 20, 21, 22, 23 with 2x1 footprints: each overlaps the next by one tile.
+    // unit() delivers the UnitDiscover itself; only the footprint check is being bypassed here.
     const int id = f.unit(11, UnitTypes::Resource_Mineral_Field, (20 + k) * 32 + 32, 13 * 32 + 16);
     f.data()->units[id].resources = 1500;
-    f.event(EventType::UnitDiscover, id);
   }
   f.start();
   BWEM::Map::Instance().Initialize(&f.game());
