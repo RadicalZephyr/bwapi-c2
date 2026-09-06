@@ -98,6 +98,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: true          # direct submodules only; never `recursive`
+      # ctypes can only load a DLL of Python's own bitness, so the Win32 leg gets a 32-bit
+      # Python and the x64 leg a 64-bit one; the raw-layer import then proves both DLLs load.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: ${{ matrix.arch == 'Win32' && 'x86' || 'x64' }}
       - name: Configure
         run: cmake -S . -B build -A ${{ matrix.arch }} -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
       - name: Build
