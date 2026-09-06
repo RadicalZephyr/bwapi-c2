@@ -13,15 +13,6 @@ using namespace bwapi_c2;
 
 extern "C" {
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_id(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT {
-  return guard<int32_t>(0, [&]() -> int32_t {
-    if (!game_ready("bwapi_player_get_id")) return 0;
-    BWAPI::Player self = resolve_player(player_id, "bwapi_player_get_id");
-    if (!self) return 0;
-    return static_cast<int32_t>(self->getID());
-  });
-}
-
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_name(bwapi_player_id player_id, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_string_buffer(buf, buf_len)) return 0;

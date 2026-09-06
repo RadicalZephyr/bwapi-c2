@@ -646,7 +646,8 @@ Now the volume, one spec file and one `*.gen.cpp` per interface, in this order: 
 
 - `draft_spec.py` the class, apply the §1.8 rules, write `skip:` with a rule for every
   filter-taking overload, every `*Grouped`, `getBestUnit`, `registerEvent`, `clientInfo`,
-  and the `int x, int y` duplicates (§15 #19, #20, #3, §5.9). Mark `legit_none` on the §6.2
+  the `int x, int y` duplicates (§15 #19, #20, #3, §5.9), and `getID` (§6.2, decision 23: the
+  id is the handle; `spec/player.yaml` has the skip to copy). Mark `legit_none` on the §6.2
   list. Mark `reentrant: forbidden` on the three categories in §5.4.
 - Regenerate; the regen check and header hygiene catch most mistakes before a test runs.
 - Tests per interface in `tests/read_write/<iface>.cpp`, organised by return kind: one test per

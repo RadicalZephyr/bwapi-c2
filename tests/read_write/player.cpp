@@ -84,10 +84,8 @@ std::string name_of(int32_t player) {
 
 }  // namespace
 
-TEST_CASE("identity: id, name, race, type, force, colour") {
+TEST_CASE("identity: name, race, type, force, colour") {
   PlayerScenario s;
-  CHECK(bwapi_player_get_id(0) == 0);
-  CHECK(bwapi_player_get_id(11) == 11);
   CHECK(name_of(0) == "FixtureBot");
   CHECK(name_of(1) == "Opponent");
   CHECK(name_of(11) == "Neutral");

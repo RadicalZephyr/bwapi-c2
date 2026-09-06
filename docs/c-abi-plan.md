@@ -94,8 +94,9 @@ This is a design/roadmap document. No production code is included.
 > `Positions::None` for every scale (§4, decision 22). The rest is the plan catching up with
 > the header where phase 1 improved on it: `BWAPI_HAS_FIELD` tests the field's end (§4), the
 > handle typedefs carry an `_id` suffix (§6), `whatBuilds` returns the builder and writes the
-> count (§5.8), and the `body:` `static_assert` is an existence check with the body's own
-> compilation as the type check (§9).
+> count (§5.8), the `body:` `static_assert` is an existence check with the body's own
+> compilation as the type check (§9), and `getID` is skipped on every interface because the
+> id is the handle (§6.2, decision 23).
 
 ---
 
@@ -1176,7 +1177,10 @@ index — negligible next to the virtual call that follows.
 
 ### 6.2 Validity, and legitimate `BWAPI_NONE`
 
-`bwapi_unit_exists(id)` maps to `UnitInterface::exists()`. Handles need no explicit release:
+`bwapi_unit_exists(id)` maps to `UnitInterface::exists()`. `getID()` is not exported on any
+interface (decision 23): the id is the handle, so the export would return its argument, and its
+`int32` neutral of `0` is itself a valid id, which makes it the one accessor whose failure
+value is indistinguishable from an answer. Handles need no explicit release:
 they are indices into game-owned storage, nothing is retained, nothing leaks.
 
 **The header enumerates the functions that legitimately return `BWAPI_NONE`** — among them
@@ -1872,6 +1876,7 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 20 | Keep the BWEM `ResetInstance` patch once its crash rationale fell (R11.9)? | **Yes, as the teardown API BWEM lacks** (§8.2, §15.2). And `bwapi_bwem_initialize()` rejects partially overlapping neutrals with a latched error rather than let BWEM crash at match end (§8.3) |
 | 21 | Carry the §15.2 modifications as patch files or as forks? | **Forks.** Each submodule pins a `bwapi-c2-pin` branch on our fork of the dependency: the upstream commit plus the carried commits (§7, §10.3, §15.2). Clean working trees, no configure-time script, and `svnrev.h` committed on the BWAPI fork by a POSIX port of upstream's script, which removes the Windows step from a pin bump |
 | 22 | One neutral position for every scale, or the scale's own? | **The scale's own.** `Positions::None` from a pixel-scale function, `TilePositions::None` from a tile-scale one, `WalkPositions::None` from a walk-scale one (§4). Revision 4.4's single sentinel gave a tile-scale caller a pixel-scale value it would never test for; the emitter knows the kind, so this is one rule too, and a cheaper one before 1.0 than after |
+| 23 | Export `getID` on the interfaces? | **No; a rule-bearing `skip:` on every interface.** The id is the handle, so the export carries no information, and its `int32` neutral of `0` is a valid id, so a caller that used it as a validity probe would be misled without reading the latch (§6.2). `bwapi_unit_exists()` and the latch are the probes |
 ---
 
 ## 14. What a consumer sees

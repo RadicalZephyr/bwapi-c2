@@ -18,7 +18,7 @@ what changed and why in prose. For plan revisions, the body walks the sections t
 
 `bwapi-c2` is a flat C ABI over BWAPI (the C++ StarCraft: Brood War bot API) and BWEM (map
 analysis), so languages with a C FFI can drive both without C++. **Phases 0 and 1 of the
-implementation plan are done: the generator exists and the ABI has 246 exports** (the ABI's own
+implementation plan are done: the generator exists and the ABI has 245 exports** (the ABI's own
 surface, `Player`, the static type data and the bulk tables). The repository holds the design
 plan, the research that settled its premises, the license files, the two pinned submodules
 under `third_party/` (see `docs/pins.md`; both nest their sources one directory down, and

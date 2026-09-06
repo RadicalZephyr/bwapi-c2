@@ -329,29 +329,6 @@
       "doc": "1 while connected. Becomes 0 when the server goes away during bwapi_client_update()."
     },
     {
-      "c": "bwapi_player_get_id",
-      "section": "player",
-      "signature": "int32_t bwapi_player_get_id(bwapi_player_id player_id)",
-      "cpp": "PlayerInterface::getID",
-      "self": "player",
-      "params": [
-        {
-          "name": "player_id",
-          "type": "handle:player",
-          "c_type": "bwapi_player_id"
-        }
-      ],
-      "returns": {
-        "kind": "int32",
-        "c_type": "int32_t",
-        "neutral": "0"
-      },
-      "reentrant": "allowed",
-      "legit_none": false,
-      "generated": true,
-      "doc": "The player's id, which is the handle itself: 0..11, the slot in the game's player table."
-    },
-    {
       "c": "bwapi_player_get_name",
       "section": "player",
       "signature": "int32_t bwapi_player_get_name(bwapi_player_id player_id, char* buf, int32_t buf_len)",
