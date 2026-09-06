@@ -50,28 +50,53 @@ endif()
 include(cmake/closure.cmake)
 
 # ---------------------------------------------------------------------------------------------
-# The shared library: the closure plus src/. Named bwapi_c2.dll / libbwapi_c2.so; exports are
-# listed by name in bwapi_c2.def (section 4) and CI diffs dumpbin's view against it.
-add_library(BWAPI_C2 SHARED src/abi.cpp)
+# The ABI's own sources (section 7): the hand-written boundary, lifecycle and handles, and from
+# phase 1 on the generated *.gen.cpp. An object library rather than part of the shared library
+# directly, because the test suite links these same objects beside the fixture's copy of the
+# closure: one BroodwarPtr, one error latch, and every export exercised in-process without a
+# second copy of BWAPI. Every file is named; never glob.
+add_library(bwapi_c2_abi OBJECT
+  src/abi.cpp
+)
+target_link_libraries(bwapi_c2_abi PUBLIC bwapi_c2_closure)
+target_include_directories(bwapi_c2_abi
+  PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+# PUBLIC: a test that links these objects on Windows must see the same dllexport declarations
+# the objects were compiled against, or MSVC looks for __imp_ symbols that do not exist.
+target_compile_definitions(bwapi_c2_abi
+  PUBLIC BWAPI_C2_BUILDING=1
+  PRIVATE
+    BWAPI_C2_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    BWAPI_C2_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    BWAPI_C2_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+)
+set_target_properties(bwapi_c2_abi PROPERTIES
+  CXX_VISIBILITY_PRESET hidden
+  VISIBILITY_INLINES_HIDDEN ON
+  POSITION_INDEPENDENT_CODE ON
+)
+if(MSVC)
+  target_compile_options(bwapi_c2_abi PRIVATE /W4)
+else()
+  target_compile_options(bwapi_c2_abi PRIVATE -Wall -Wextra -pedantic)
+endif()
+
+# The shared library: the ABI objects plus the closure. Named bwapi_c2.dll / libbwapi_c2.so;
+# exports are listed by name in bwapi_c2.def (section 4) and CI diffs dumpbin's view against it.
+# Object libraries do not propagate their objects transitively, so both are linked here.
+add_library(BWAPI_C2 SHARED)
 set_target_properties(BWAPI_C2 PROPERTIES
   OUTPUT_NAME bwapi_c2
   CXX_VISIBILITY_PRESET hidden
   VISIBILITY_INLINES_HIDDEN ON
 )
-target_link_libraries(BWAPI_C2 PRIVATE bwapi_c2_closure)
+target_link_libraries(BWAPI_C2 PRIVATE bwapi_c2_abi bwapi_c2_closure)
 target_include_directories(BWAPI_C2 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_compile_definitions(BWAPI_C2 PRIVATE
-  BWAPI_C2_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
-  BWAPI_C2_VERSION_MINOR=${PROJECT_VERSION_MINOR}
-  BWAPI_C2_VERSION_PATCH=${PROJECT_VERSION_PATCH}
-  BWAPI_C2_BUILDING=1
-)
 if(MSVC)
   # CMake passes a .def listed among the sources to the linker as /DEF.
   target_sources(BWAPI_C2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/bwapi_c2.def")
-  target_compile_options(BWAPI_C2 PRIVATE /W4)
-else()
-  target_compile_options(BWAPI_C2 PRIVATE -Wall -Wextra -pedantic)
 endif()
 
 if(BWAPI_C2_BUILD_TESTS)

@@ -171,6 +171,7 @@ typedef int32_t bwapi_bwem_base_id; /* synthesised by the ABI, 0..N-1; BWEM has 
 #define BWAPI_ERR_NOT_CONNECTED         6 /* a game or unit call before connect, or after disconnect */
 #define BWAPI_ERR_BWEM_NOT_INITIALIZED  7 /* a bwapi_bwem_* query before bwapi_bwem_initialize() */
 #define BWAPI_ERR_BAD_BUFFER            8 /* a NULL buffer with a nonzero cap or buf_len, or a negative one */
+#define BWAPI_ERR_EXCEPTION             9 /* a C++ exception other than BWEM's escaped the wrapped call; what() is the message */
 
 /* ---- log levels ------------------------------------------------------------------------- */
 

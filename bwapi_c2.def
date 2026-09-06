@@ -4,3 +4,12 @@
 LIBRARY bwapi_c2
 EXPORTS
     bwapi_abi_version
+    bwapi_abi_version_string
+    bwapi_clear_last_error
+    bwapi_client_version
+    bwapi_is_debug
+    bwapi_last_error
+    bwapi_last_error_message
+    bwapi_revision
+    bwapi_set_error_callback
+    bwapi_set_log_callback
