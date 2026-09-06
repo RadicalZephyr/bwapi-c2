@@ -14345,7 +14345,7 @@
           "name": "unit_id",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the unit of the nine unit events, UnitDiscover through UnitComplete; BWAPI_NONE for every other type"
+          "doc": "the unit of the nine Unit* events (Discover, Evade, Show, Hide, Create, Destroy, Morph, Renegade, Complete); BWAPI_NONE for every other type, SaveGame included"
         },
         {
           "name": "player_id",

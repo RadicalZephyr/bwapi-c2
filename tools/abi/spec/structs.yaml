@@ -205,7 +205,7 @@
   doc: "One event of the current frame, as bwapi_game_get_event() fills it: the BWAPI_EVENT_* type, and whichever of a unit, a player, a position and a winner flag that type carries, with BWAPI_NONE or the pixel-scale None in the others. The text of a SendText, ReceiveText or SaveGame event is not in the struct; bwapi_game_event_text() returns it for the same index."
   fields:
     - {name: type, type: int32, doc: "the kind of event, a BWAPI_EVENT_* constant"}
-    - {name: unit_id, type: int32, doc: "the unit of the nine unit events, UnitDiscover through UnitComplete; BWAPI_NONE for every other type"}
+    - {name: unit_id, type: int32, doc: "the unit of the nine Unit* events (Discover, Evade, Show, Hide, Create, Destroy, Morph, Renegade, Complete); BWAPI_NONE for every other type, SaveGame included"}
     - {name: player_id, type: int32, doc: "the player of PlayerLeft and ReceiveText; BWAPI_NONE for every other type"}
     - {name: x, type: int32, doc: "the pixel x of a NukeDetect target; BWAPI_POSITION_NONE_X for every other type"}
     - {name: y, type: int32, doc: "the pixel y of a NukeDetect target; BWAPI_POSITION_NONE_Y for every other type"}

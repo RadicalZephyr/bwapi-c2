@@ -1537,7 +1537,7 @@ typedef struct bwapi_required_unit {
 typedef struct bwapi_event {
   int32_t size;      /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t type;      /* the kind of event, a BWAPI_EVENT_* constant */
-  int32_t unit_id;   /* the unit of the nine unit events, UnitDiscover through UnitComplete; BWAPI_NONE for every other type */
+  int32_t unit_id;   /* the unit of the nine Unit* events (Discover, Evade, Show, Hide, Create, Destroy, Morph, Renegade, Complete); BWAPI_NONE for every other type, SaveGame included */
   int32_t player_id; /* the player of PlayerLeft and ReceiveText; BWAPI_NONE for every other type */
   int32_t x;         /* the pixel x of a NukeDetect target; BWAPI_POSITION_NONE_X for every other type */
   int32_t y;         /* the pixel y of a NukeDetect target; BWAPI_POSITION_NONE_Y for every other type */
