@@ -102,6 +102,12 @@ class Fixture {
   // units' UnitDiscover events are already there.
   Fixture& event(BWAPI::EventType::Enum type, int v1 = -1, int v2 = -1);
 
+  // Queue an event that carries text: SendText and SaveGame take the text alone, ReceiveText
+  // the text and the player it came from. The text lands in data->eventStrings the way the
+  // server puts it there, in the next free slot and cut to the 255 bytes a slot holds, and the
+  // event carries the slot index. Any other type throws FixtureError.
+  Fixture& event(BWAPI::EventType::Enum type, const char* text, int player = -1);
+
   // ---- running --------------------------------------------------------------------------
 
   // Invariant 1, then GameImpl, then BroodwarPtr, then onMatchStart(). data()->frameCount is

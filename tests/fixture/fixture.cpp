@@ -240,6 +240,18 @@ Fixture& Fixture::event(BWAPI::EventType::Enum type, int v1, int v2) {
   return *this;
 }
 
+Fixture& Fixture::event(BWAPI::EventType::Enum type, const char* text, int player) {
+  const bool takes_player = type == BWAPI::EventType::ReceiveText;
+  if (!takes_player && type != BWAPI::EventType::SendText && type != BWAPI::EventType::SaveGame)
+    throw FixtureError("only SendText, ReceiveText and SaveGame events carry text");
+  if (data_->eventStringCount >= BWAPI::GameData::MAX_EVENT_STRINGS) throw FixtureError("event string table full");
+  const int slot = data_->eventStringCount++;
+  copy_string(data_->eventStrings[slot], sizeof data_->eventStrings[slot], text);
+  // makeEvent() reads the slot from v1, except for ReceiveText, where v1 is the player and v2
+  // the slot (BWAPIClient/Source/GameImpl.cpp).
+  return takes_player ? event(type, player, slot) : event(type, slot);
+}
+
 void Fixture::start() {
   require_not_started("start()");
   BWAPI::BWAPIClient.data = data_;           // invariant 1, before any UnitImpl exists
@@ -264,7 +276,8 @@ void Fixture::frame() {
   data_->stringCount = 0;
   data_->commandCount = 0;
   // Events queued since the last frame (by event()) stay; last frame's are gone. A MatchFrame
-  // event leads, as the server sends it.
+  // event leads, as the server sends it. eventStrings is left alone: a kept event may point at
+  // a slot, and the 1000 slots outlast any scenario.
   const int queued = data_->eventCount;
   std::vector<BWAPIC::Event> keep(data_->events + pending_consumed_, data_->events + queued);
   data_->eventCount = 0;
