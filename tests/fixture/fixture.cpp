@@ -231,7 +231,22 @@ int Fixture::neutral(BWAPI::UnitType type, int tx, int ty, int resources, bool s
   return id;
 }
 
+namespace {
+
+bool carries_text(BWAPI::EventType::Enum type) {
+  return type == BWAPI::EventType::SendText || type == BWAPI::EventType::ReceiveText ||
+         type == BWAPI::EventType::SaveGame;
+}
+
+}  // namespace
+
 Fixture& Fixture::event(BWAPI::EventType::Enum type, int v1, int v2) {
+  if (carries_text(type))
+    throw FixtureError("SendText, ReceiveText and SaveGame carry text; queue them with event(type, text, player)");
+  return queue(type, v1, v2);
+}
+
+Fixture& Fixture::queue(BWAPI::EventType::Enum type, int v1, int v2) {
   if (data_->eventCount >= BWAPI::GameData::MAX_EVENTS) throw FixtureError("event buffer full");
   auto& e = data_->events[data_->eventCount++];
   e.type = type;
@@ -241,15 +256,13 @@ Fixture& Fixture::event(BWAPI::EventType::Enum type, int v1, int v2) {
 }
 
 Fixture& Fixture::event(BWAPI::EventType::Enum type, const char* text, int player) {
-  const bool takes_player = type == BWAPI::EventType::ReceiveText;
-  if (!takes_player && type != BWAPI::EventType::SendText && type != BWAPI::EventType::SaveGame)
-    throw FixtureError("only SendText, ReceiveText and SaveGame events carry text");
+  if (!carries_text(type)) throw FixtureError("only SendText, ReceiveText and SaveGame events carry text");
   if (data_->eventStringCount >= BWAPI::GameData::MAX_EVENT_STRINGS) throw FixtureError("event string table full");
   const int slot = data_->eventStringCount++;
-  copy_string(data_->eventStrings[slot], sizeof data_->eventStrings[slot], text);
+  copy_string(data_->eventStrings[slot], sizeof data_->eventStrings[slot], text ? text : "");
   // makeEvent() reads the slot from v1, except for ReceiveText, where v1 is the player and v2
   // the slot (BWAPIClient/Source/GameImpl.cpp).
-  return takes_player ? event(type, player, slot) : event(type, slot);
+  return type == BWAPI::EventType::ReceiveText ? queue(type, player, slot) : queue(type, slot, -1);
 }
 
 void Fixture::start() {
@@ -281,8 +294,8 @@ void Fixture::frame() {
   const int queued = data_->eventCount;
   std::vector<BWAPIC::Event> keep(data_->events + pending_consumed_, data_->events + queued);
   data_->eventCount = 0;
-  event(BWAPI::EventType::MatchFrame);
-  for (const auto& e : keep) event(e.type, e.v1, e.v2);
+  queue(BWAPI::EventType::MatchFrame, -1, -1);
+  for (const auto& e : keep) queue(e.type, e.v1, e.v2);
   game_->onMatchFrame();
   pending_consumed_ = data_->eventCount;
 }

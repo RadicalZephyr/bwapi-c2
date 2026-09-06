@@ -287,9 +287,28 @@ TEST_CASE("the next frame replaces the snapshot and its indices") {
   }
 }
 
-TEST_CASE("the fixture refuses text on an event type that carries none") {
+TEST_CASE("a null text is the empty string, as upstream's Event::SendText(nullptr) makes it") {
   Fixture f;
+  f.player(0, Races::Terran);
+  f.event(EventType::SendText, nullptr);
+  f.start();
+  bwapi_c2::snapshot_events();
+  bwapi_clear_last_error();
+  REQUIRE(bwapi_game_event_count() == 1);
+  CHECK(get(0).type == BWAPI_EVENT_SEND_TEXT);
+  CHECK(bwapi_game_event_text(0, nullptr, 0) == 0);
+  CHECK(text_of(0).empty());
+  CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
+}
+
+TEST_CASE("the fixture pairs text with the types that carry it, and only those") {
+  Fixture f;
+  // Text on a type that carries none.
   CHECK_THROWS_AS(f.event(EventType::NukeDetect, "boom"), bwapi_c2::test::FixtureError);
+  // A text type without its text: the client would read eventStrings[-1].
+  CHECK_THROWS_AS(f.event(EventType::SendText), bwapi_c2::test::FixtureError);
+  CHECK_THROWS_AS(f.event(EventType::ReceiveText, 1), bwapi_c2::test::FixtureError);
+  CHECK_THROWS_AS(f.event(EventType::SaveGame, 0), bwapi_c2::test::FixtureError);
   CHECK(f.data()->eventCount == 0);
   CHECK(f.data()->eventStringCount == 0);
 }

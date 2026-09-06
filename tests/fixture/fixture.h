@@ -99,13 +99,16 @@ class Fixture {
   int neutral(BWAPI::UnitType type, int tx, int ty, int resources = 1500, bool stacked = false);
 
   // Queue an event for the next onMatchStart()/frame(). start() queues nothing itself: the
-  // units' UnitDiscover events are already there.
+  // units' UnitDiscover events are already there. The three text-carrying types are refused
+  // here with FixtureError, because with v1 defaulted the client would read eventStrings[-1];
+  // they go through the overload below.
   Fixture& event(BWAPI::EventType::Enum type, int v1 = -1, int v2 = -1);
 
   // Queue an event that carries text: SendText and SaveGame take the text alone, ReceiveText
   // the text and the player it came from. The text lands in data->eventStrings the way the
   // server puts it there, in the next free slot and cut to the 255 bytes a slot holds, and the
-  // event carries the slot index. Any other type throws FixtureError.
+  // event carries the slot index. A null text is the empty string, as upstream's own
+  // Event::SendText(nullptr) makes it. Any other type throws FixtureError.
   Fixture& event(BWAPI::EventType::Enum type, const char* text, int player = -1);
 
   // ---- running --------------------------------------------------------------------------
@@ -132,6 +135,7 @@ class Fixture {
 
  private:
   int allocate_unit(int owner, BWAPI::UnitType type, int x, int y, const UnitOptions& opts);
+  Fixture& queue(BWAPI::EventType::Enum type, int v1, int v2);
   void require_not_started(const char* what) const;
 
   BWAPI::GameData* data_ = nullptr;
