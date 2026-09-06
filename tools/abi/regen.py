@@ -30,7 +30,10 @@ def main():
     if failed:
         sys.exit(1)
     if not check:
-        run("emit_docs.py", [])
+        # The reference pages are gitignored, so nothing downstream diffs them; if the emitter
+        # fails, this exit code is the only place it shows.
+        if run("emit_docs.py", []) != 0:
+            sys.exit(1)
         static = os.path.join(REPO, "site", "static")
         os.makedirs(static, exist_ok=True)
         with open(os.path.join(REPO, "api.json"), "rb") as src, open(os.path.join(static, "api.json"), "wb") as dst:
