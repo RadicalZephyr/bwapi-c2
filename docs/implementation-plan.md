@@ -627,7 +627,7 @@ a step is a commit-sized unit.
 
 R12 found that §4's array convention aliased the caller's stride onto the field the callee
 overwrites, so a reused buffer came back corrupt from the second call. Revision 4.7 separated
-the two directions (decision 25). Sixteen shipping exports change signature, which has to happen
+the two directions (decision 25). Nine shipping exports change signature, which has to happen
 before any new struct-array export is written — and the events drain is the first of those, so
 the two land here as one step and two commits, in this order.
 
@@ -641,9 +641,11 @@ the two land here as one step and two commits, in this order.
   row loses "the caller's `size` on element zero is the stride". `emit_header.py`,
   `emit_source.py`, `emit_json.py` and `emit_docs.py` follow, and `api.json` grows the parameter
   so both raw layers get it without touching either `gen.py`.
-- Regenerate. Sixteen exports change signature — the flat requiredUnits table and the fifteen
-  per-class tables — so the headers, `*.gen.cpp` and `api.json` all diff; `bwapi_c2.def` does not,
-  since it carries names and not signatures. `tests/regen_check.sh` is the proof.
+- Regenerate. Nine exports change signature: the eight `struct_array` returns — the flat
+  requiredUnits table and the seven per-class type tables — gain `int32_t stride`, and the one
+  `struct_out:` parameter, `bwapi_game_get_event`, gains `int32_t out_size` before the second
+  commit removes it. The headers, `*.gen.cpp` and `api.json` diff; `bwapi_c2.def` does not, since
+  it carries names and not signatures. `tests/regen_check.sh` is the proof.
 - Tests, `tests/read_write/stride.cpp`: R12's three consumer/library pairings against a real
   table export, driving one buffer across two calls at a stride larger than the row and checking
   every row of the second call — the case that was corrupt and is the reason the step exists. A

@@ -11,9 +11,9 @@ count *out*, and the callee's write destroys the caller's value. §4's retry idi
 consumer to size one buffer and reuse it every frame, and nothing tells it that the `size` field
 must be re-set on every call. A consumer that sets it once reads corrupt rows from the second
 frame onward, silently, and only when its header is newer than the DLL it loaded.** That is precisely the forward-compatibility case the size prefix exists to
-serve, so the mechanism fails in the one situation it was added for. The flat requiredUnits
-table and the fifteen per-class tables ship this convention today; they escape it only because
-a type table is read once, not per frame.
+serve, so the mechanism fails in the one situation it was added for. Eight exports ship this
+convention today — the flat requiredUnits table and the seven per-class type tables — and they
+escape it only because a type table is read once, not per frame.
 
 ## 1. What was run
 
