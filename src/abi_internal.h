@@ -160,15 +160,19 @@ int32_t write_ids(int32_t* out, int32_t cap, const Range& range) {
   return static_cast<int32_t>(ids.size());
 }
 
-// The struct-evolution rule of section 4, in one place for both shapes it takes. The caller's
-// size is the stride: check_stride() is the up-front check, like check_buffer(), false having
-// latched BWAPI_ERR_BAD_BUFFER for a stride that cannot hold size itself; write_row() then
-// writes one row of that stride at dst: the fields it knows, size set to the bytes filled (so
-// BWAPI_HAS_FIELD on a returned row says what is valid), the rest of the stride zeroed, and
-// never a byte past it. Like cap, the stride is the caller's word for how much memory is there.
+// The struct-evolution rule of section 4, in one place for both shapes it takes. size is one
+// direction only: the callee writes it, and it means the bytes the callee filled, so
+// BWAPI_HAS_FIELD on a returned row says what is valid and reads the same on every row. The
+// caller's capacity never travels in the buffer - it arrives as a parameter, because the callee
+// would otherwise overwrite the field it had to read (R12: a reused buffer lost its stride and
+// came back corrupt from the second call). check_stride() is the up-front check, like
+// check_buffer(), false having latched BWAPI_ERR_BAD_BUFFER for a stride that cannot hold size
+// itself; write_row() then writes one row of that stride at dst: the fields it knows, size set
+// to the bytes filled, the rest of the stride zeroed, and never a byte past it. Like cap, the
+// stride is the caller's word for how much memory is there.
 inline bool check_stride(int32_t stride) {
   if (stride < static_cast<int32_t>(sizeof(int32_t))) {
-    latch(BWAPI_ERR_BAD_BUFFER, "struct out: size must be the caller's stride, and at least hold size itself");
+    latch(BWAPI_ERR_BAD_BUFFER, "struct out: the caller's stride must at least hold size itself");
     return false;
   }
   return true;
@@ -185,13 +189,12 @@ void write_row(void* dst, int32_t stride, Fill fill) {
   std::memset(bytes + filled, 0, static_cast<size_t>(stride) - filled);
 }
 
-// The struct-array convention: the caller sets size on element zero and that is the stride of
-// the whole array; the first cap rows are written by write_row() and the total returned. cap of
-// 0 is the size query and reads nothing.
+// The struct-array convention: the caller passes cap rows of stride bytes each, the first cap
+// rows are written by write_row() and the total returned. cap of 0 is the size query and reads
+// nothing, so it does not need a valid stride either.
 template <class Row, class Fill>
-int32_t write_rows(Row* out, int32_t cap, int32_t total, Fill fill) {
+int32_t write_rows(Row* out, int32_t cap, int32_t stride, int32_t total, Fill fill) {
   if (cap <= 0) return total;
-  const int32_t stride = out[0].size;
   if (!check_stride(stride)) return 0;
   char* dst = reinterpret_cast<char*>(out);
   const int32_t n = std::min(cap, total);
@@ -200,21 +203,22 @@ int32_t write_rows(Row* out, int32_t cap, int32_t total, Fill fill) {
   return total;
 }
 
-// The struct-out convention, one struct rather than an array: check_struct_out() is the
-// up-front check, NULL or a bad stride being BAD_BUFFER, and write_struct() is one write_row()
-// at the caller's size.
+// The struct-out convention, one struct rather than an array: the caller's size arrives as a
+// parameter here too, for the same reason and so that the two shapes read alike.
+// check_struct_out() is the up-front check, NULL or a bad size being BAD_BUFFER, and
+// write_struct() is one write_row() at that size.
 template <class Row>
-bool check_struct_out(const Row* out) {
+bool check_struct_out(const Row* out, int32_t size) {
   if (out == nullptr) {
     latch(BWAPI_ERR_BAD_BUFFER, "struct out: NULL");
     return false;
   }
-  return check_stride(out->size);
+  return check_stride(size);
 }
 
 template <class Row, class Fill>
-void write_struct(Row* out, Fill fill) {
-  write_row<Row>(out, out->size, fill);
+void write_struct(Row* out, int32_t size, Fill fill) {
+  write_row<Row>(out, size, fill);
 }
 
 // Packed positions in upstream's order (a chokepoint's geometry is a polyline), the first cap

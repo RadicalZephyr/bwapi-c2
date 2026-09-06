@@ -78,7 +78,7 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_client_is_connected(void) BWAPI_C2_NOEX
  * of Game::getEvents(), which is what bwapi_game_get_event() and bwapi_game_event_text() index. */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_event_count(void) BWAPI_C2_NOEXCEPT;
 /* Fills out with the event at index, 0 to bwapi_game_event_count() minus one, and returns 1. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_get_event(int32_t index, bwapi_event* out) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_get_event(int32_t index, bwapi_event* out, int32_t out_size) BWAPI_C2_NOEXCEPT;
 /* The text of the event at index: what was typed for SendText, what was received for
  * ReceiveText, the file name for SaveGame, and the empty string for every other type. */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_event_text(int32_t index, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;

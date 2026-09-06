@@ -40,13 +40,14 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_event_count(void) BWAPI_C2_NOEXCEP
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_get_event(int32_t index, bwapi_event* out) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_get_event(int32_t index, bwapi_event* out,
+                                                        int32_t out_size) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    if (!check_struct_out(out)) return 0;
+    if (!check_struct_out(out, out_size)) return 0;
     if (!game_ready("bwapi_game_get_event")) return 0;
     const BWAPI::Event* e = event_at(index, "bwapi_game_get_event");
     if (!e) return 0;
-    write_struct(out, [&](bwapi_event& row) {
+    write_struct(out, out_size, [&](bwapi_event& row) {
       row.type = static_cast<int32_t>(e->getType());
       // The accessors default to null and Positions::None for the types that do not carry
       // them, which id_of() and the raw x, y pass through as BWAPI_NONE and the pixel None.
@@ -75,7 +76,8 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_event_text(int32_t index, char* bu
 // ---- the flat requiredUnits table (section 5.8) -------------------------------------------------
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_units_table(bwapi_required_unit* out,
-                                                                        int32_t cap) BWAPI_C2_NOEXCEPT {
+                                                                        int32_t cap,
+                                                                        int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     // Every (type, required type, count) triple, ascending by type and then by required type:
@@ -86,7 +88,7 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_units_table(bwapi_req
     for (int32_t id = 0; id < types; ++id)
       for (const auto& req : BWAPI::UnitType(id).requiredUnits())
         rows.push_back({id, req.first.getID(), req.second});
-    return write_rows(out, cap, static_cast<int32_t>(rows.size()), [&](bwapi_required_unit& row, int32_t i) {
+    return write_rows(out, cap, stride, static_cast<int32_t>(rows.size()), [&](bwapi_required_unit& row, int32_t i) {
       row.type = rows[static_cast<size_t>(i)].type;
       row.required_type = rows[static_cast<size_t>(i)].required;
       row.count = rows[static_cast<size_t>(i)].count;

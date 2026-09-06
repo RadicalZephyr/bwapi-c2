@@ -329,11 +329,11 @@ def field_conversion(kind, expr):
 def table_entry(struct):
     """The function entry a table: struct declares (spec-format.md section 3): one row per id of
     the class, 0 to Unknown inclusive, each field filled from the accessor its from: names,
-    through the stride rule of section 4 (the caller's size on element zero)."""
+    through the stride rule of section 4 (the caller's stride, passed as a parameter)."""
     t = struct["table"]
     cls = t["class"]
     lines = [f"const int32_t total = id_count<BWAPI::{cls}>();",
-             f"return write_rows(out, cap, total, [](bwapi_{struct['name']}& row, int32_t id) {{",
+             f"return write_rows(out, cap, stride, total, [](bwapi_{struct['name']}& row, int32_t id) {{",
              f"  const BWAPI::{cls} t(id);", "  row.id = id;"]
     for f in struct["fields"][1:]:
         if "from" not in f:
@@ -390,6 +390,14 @@ def signature(entry):
         sig.append((f"bwapi_{entry['self']}_id", f"{entry['self']}_id"))
     for p in entry.get("params") or []:
         sig.append((c_param_type(p["type"]), c_param_name(p)))
+        # A struct the callee writes is followed by the caller's own size for it, the way a
+        # string out is followed by buf_len: the callee sets size to the bytes it filled, so the
+        # caller's capacity cannot also live in the field (plan section 4, R12). The cap of a
+        # struct_array_out is a parameter the entry names; its stride is paired here.
+        if p["type"].startswith("struct_out:"):
+            sig.append(("int32_t", f"{c_param_name(p)}_size"))
+        elif p["type"].startswith("struct_array_out:"):
+            sig.append(("int32_t", f"{c_param_name(p)}_stride"))
     r = entry["returns"]
     if r == "string_out":
         sig += [("char*", "buf"), ("int32_t", "buf_len")]
@@ -398,7 +406,9 @@ def signature(entry):
     elif r == "position_array":
         sig += [("bwapi_position*", "out"), ("int32_t", "cap")]
     elif r.startswith("struct_array:"):
-        sig += [(f"bwapi_{r.partition(':')[2]}*", "out"), ("int32_t", "cap")]
+        # cap is how many rows there is room for and stride is how far apart they are; both are
+        # the caller's, and neither travels in the buffer (plan section 4, R12).
+        sig += [(f"bwapi_{r.partition(':')[2]}*", "out"), ("int32_t", "cap"), ("int32_t", "stride")]
     return sig
 
 

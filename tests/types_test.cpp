@@ -374,8 +374,8 @@ TEST_CASE("every table row equals the accessor for the same id") {
   Clear c;
   SUBCASE("UnitType") {
     std::vector<bwapi_unittype_row> rows(static_cast<size_t>(id_count<UnitType>()));
-    rows[0].size = sizeof(bwapi_unittype_row);
-    const int32_t total = bwapi_unittype_table(rows.data(), static_cast<int32_t>(rows.size()));
+    const int32_t total = bwapi_unittype_table(rows.data(), static_cast<int32_t>(rows.size()),
+                                               sizeof(bwapi_unittype_row));
     REQUIRE(total == id_count<UnitType>());
     for (int32_t id = 0; id < total; ++id) {
       const auto& r = rows[static_cast<size_t>(id)];
@@ -404,7 +404,8 @@ TEST_CASE("every table row equals the accessor for the same id") {
   SUBCASE("WeaponType, TechType, UpgradeType") {
     std::vector<bwapi_weapontype_row> w(static_cast<size_t>(id_count<WeaponType>()));
     w[0].size = sizeof(bwapi_weapontype_row);
-    REQUIRE(bwapi_weapontype_table(w.data(), static_cast<int32_t>(w.size())) == id_count<WeaponType>());
+    REQUIRE(bwapi_weapontype_table(w.data(), static_cast<int32_t>(w.size()),
+                                   sizeof(bwapi_weapontype_row)) == id_count<WeaponType>());
     for (int32_t id = 0; id < id_count<WeaponType>(); ++id) {
       const auto& r = w[static_cast<size_t>(id)];
       CHECK(r.id == id);
@@ -417,7 +418,8 @@ TEST_CASE("every table row equals the accessor for the same id") {
     }
     std::vector<bwapi_techtype_row> t(static_cast<size_t>(id_count<TechType>()));
     t[0].size = sizeof(bwapi_techtype_row);
-    REQUIRE(bwapi_techtype_table(t.data(), static_cast<int32_t>(t.size())) == id_count<TechType>());
+    REQUIRE(bwapi_techtype_table(t.data(), static_cast<int32_t>(t.size()),
+                                 sizeof(bwapi_techtype_row)) == id_count<TechType>());
     for (int32_t id = 0; id < id_count<TechType>(); ++id) {
       const auto& r = t[static_cast<size_t>(id)];
       CHECK(r.id == id);
@@ -435,7 +437,8 @@ TEST_CASE("every table row equals the accessor for the same id") {
     }
     std::vector<bwapi_upgradetype_row> u(static_cast<size_t>(id_count<UpgradeType>()));
     u[0].size = sizeof(bwapi_upgradetype_row);
-    REQUIRE(bwapi_upgradetype_table(u.data(), static_cast<int32_t>(u.size())) == id_count<UpgradeType>());
+    REQUIRE(bwapi_upgradetype_table(u.data(), static_cast<int32_t>(u.size()),
+                                    sizeof(bwapi_upgradetype_row)) == id_count<UpgradeType>());
     for (int32_t id = 0; id < id_count<UpgradeType>(); ++id) {
       const auto& r = u[static_cast<size_t>(id)];
       CHECK(r.id == id);
@@ -447,7 +450,8 @@ TEST_CASE("every table row equals the accessor for the same id") {
   SUBCASE("Race, PlayerType, Color: every field") {
     std::vector<bwapi_race_row> races(static_cast<size_t>(id_count<Race>()));
     races[0].size = sizeof(bwapi_race_row);
-    REQUIRE(bwapi_race_table(races.data(), static_cast<int32_t>(races.size())) == id_count<Race>());
+    REQUIRE(bwapi_race_table(races.data(), static_cast<int32_t>(races.size()),
+                             sizeof(bwapi_race_row)) == id_count<Race>());
     for (int32_t id = 0; id < id_count<Race>(); ++id) {
       const auto& r = races[static_cast<size_t>(id)];
       CHECK(r.id == id);
@@ -459,14 +463,15 @@ TEST_CASE("every table row equals the accessor for the same id") {
     }
     std::vector<bwapi_playertype_row> pt(static_cast<size_t>(id_count<PlayerType>()));
     pt[0].size = sizeof(bwapi_playertype_row);
-    REQUIRE(bwapi_playertype_table(pt.data(), static_cast<int32_t>(pt.size())) == id_count<PlayerType>());
+    REQUIRE(bwapi_playertype_table(pt.data(), static_cast<int32_t>(pt.size()),
+                                   sizeof(bwapi_playertype_row)) == id_count<PlayerType>());
     for (int32_t id = 0; id < id_count<PlayerType>(); ++id) {
       CHECK(pt[static_cast<size_t>(id)].is_lobby_type == bwapi_playertype_is_lobby_type(id));
       CHECK(pt[static_cast<size_t>(id)].is_game_type == bwapi_playertype_is_game_type(id));
     }
     std::vector<bwapi_color_row> colors(256);
     colors[0].size = sizeof(bwapi_color_row);
-    REQUIRE(bwapi_color_table(colors.data(), 256) == 256);
+    REQUIRE(bwapi_color_table(colors.data(), 256, sizeof(bwapi_color_row)) == 256);
     for (int32_t id = 0; id < 256; ++id) {
       CHECK(colors[static_cast<size_t>(id)].red == bwapi_color_red(id));
       CHECK(colors[static_cast<size_t>(id)].green == bwapi_color_green(id));
@@ -477,15 +482,15 @@ TEST_CASE("every table row equals the accessor for the same id") {
 
 TEST_CASE("the stride rule on a table") {
   Clear c;
-  const int32_t total = bwapi_race_table(nullptr, 0);
+  const int32_t total = bwapi_race_table(nullptr, 0, 0);   // the size query reads nothing at all
   REQUIRE(total == id_count<Race>());
 
   SUBCASE("a shorter stride fills only the prefix the caller has room for") {
     // Two int32_t per row: size and id. A consumer compiled against an older header.
     struct OldRow { int32_t size, id; };
     std::vector<OldRow> old(static_cast<size_t>(total), OldRow{0, -5});
-    old[0].size = sizeof(OldRow);
-    CHECK(bwapi_race_table(reinterpret_cast<bwapi_race_row*>(old.data()), total) == total);
+    CHECK(bwapi_race_table(reinterpret_cast<bwapi_race_row*>(old.data()), total,
+                           sizeof(OldRow)) == total);
     for (int32_t i = 0; i < total; ++i) {
       CHECK(old[static_cast<size_t>(i)].size == sizeof(OldRow));
       CHECK(old[static_cast<size_t>(i)].id == i);
@@ -498,8 +503,8 @@ TEST_CASE("the stride rule on a table") {
     struct NewRow { bwapi_race_row known; int32_t future; };
     std::vector<NewRow> rows(static_cast<size_t>(total));
     for (auto& r : rows) r.future = 0x5a5a5a5a;
-    rows[0].known.size = sizeof(NewRow);
-    CHECK(bwapi_race_table(reinterpret_cast<bwapi_race_row*>(rows.data()), total) == total);
+    CHECK(bwapi_race_table(reinterpret_cast<bwapi_race_row*>(rows.data()), total,
+                           sizeof(NewRow)) == total);
     for (int32_t i = 0; i < total; ++i) {
       CHECK(rows[static_cast<size_t>(i)].known.size == sizeof(bwapi_race_row));
       CHECK(rows[static_cast<size_t>(i)].known.id == i);
@@ -509,21 +514,38 @@ TEST_CASE("the stride rule on a table") {
     CHECK(BWAPI_HAS_FIELD(bwapi_race_row, get_supply_provider, rows[0].known.size));
     CHECK_FALSE(BWAPI_HAS_FIELD(NewRow, future, rows[0].known.size));
   }
+  // R12: before revision 4.7 the stride arrived in element zero's size and the callee wrote the
+  // filled count over it, so the second call through one buffer read the library's row size as
+  // the caller's stride and packed the rows closer together than the caller indexes them. Row 0
+  // survived, row 1 came back shifted and row 2 was lost. Nothing is re-set between the calls
+  // here, because under the new rule nothing the callee writes is input to the next call.
+  SUBCASE("one buffer reused across two calls stays correct") {
+    struct NewRow { bwapi_race_row known; int32_t future; };
+    std::vector<NewRow> rows(static_cast<size_t>(total));
+    for (int32_t call = 0; call < 2; ++call) {
+      CHECK(bwapi_race_table(reinterpret_cast<bwapi_race_row*>(rows.data()), total,
+                             sizeof(NewRow)) == total);
+      for (int32_t i = 0; i < total; ++i) {
+        CHECK(rows[static_cast<size_t>(i)].known.size == sizeof(bwapi_race_row));
+        CHECK(rows[static_cast<size_t>(i)].known.id == i);
+        CHECK(rows[static_cast<size_t>(i)].known.get_worker == bwapi_race_get_worker(i));
+      }
+    }
+    CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
+  }
   SUBCASE("a short cap holds the first cap rows and reports the total") {
     bwapi_race_row two[2];
-    two[0].size = sizeof(bwapi_race_row);
     two[1].id = -9;
-    CHECK(bwapi_race_table(two, 1) == total);
+    CHECK(bwapi_race_table(two, 1, sizeof(bwapi_race_row)) == total);
     CHECK(two[0].id == 0);
     CHECK(two[1].id == -9);
   }
   SUBCASE("a stride too small for size itself is a bad buffer") {
     bwapi_race_row one;
-    one.size = 0;
-    CHECK(bwapi_race_table(&one, 1) == 0);
+    CHECK(bwapi_race_table(&one, 1, 0) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
     bwapi_clear_last_error();
-    CHECK(bwapi_race_table(nullptr, 3) == 0);
+    CHECK(bwapi_race_table(nullptr, 3, sizeof(bwapi_race_row)) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
     bwapi_clear_last_error();
   }
@@ -531,11 +553,11 @@ TEST_CASE("the stride rule on a table") {
 
 TEST_CASE("the flat requiredUnits table is every type's requirements, sorted") {
   Clear c;
-  const int32_t total = bwapi_unittype_required_units_table(nullptr, 0);
+  const int32_t total = bwapi_unittype_required_units_table(nullptr, 0, 0);
   REQUIRE(total > 100);
   std::vector<bwapi_required_unit> rows(static_cast<size_t>(total));
-  rows[0].size = sizeof(bwapi_required_unit);
-  REQUIRE(bwapi_unittype_required_units_table(rows.data(), total) == total);
+  REQUIRE(bwapi_unittype_required_units_table(rows.data(), total,
+                                              sizeof(bwapi_required_unit)) == total);
 
   int32_t expected = 0;
   for (int32_t id = 0; id < id_count<UnitType>(); ++id) expected += static_cast<int32_t>(UnitType(id).requiredUnits().size());

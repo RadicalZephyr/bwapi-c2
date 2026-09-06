@@ -5,7 +5,7 @@
     {
       "c": "bwapi_unittype_required_units_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_unittype_required_units_table(bwapi_required_unit* out, int32_t cap)",
+      "signature": "int32_t bwapi_unittype_required_units_table(bwapi_required_unit* out, int32_t cap, int32_t stride)",
       "cpp": "UnitType::requiredUnits",
       "self": "none",
       "params": [
@@ -17,6 +17,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -348,7 +353,7 @@
     {
       "c": "bwapi_game_get_event",
       "section": "game",
-      "signature": "int32_t bwapi_game_get_event(int32_t index, bwapi_event* out)",
+      "signature": "int32_t bwapi_game_get_event(int32_t index, bwapi_event* out, int32_t out_size)",
       "cpp": "Event::getType",
       "self": "game",
       "params": [
@@ -361,6 +366,11 @@
           "name": "out",
           "type": "struct_out:event",
           "c_type": "bwapi_event*"
+        },
+        {
+          "name": "out_size",
+          "type": "array_out",
+          "c_type": "int32_t"
         }
       ],
       "returns": {
@@ -1789,7 +1799,7 @@
     {
       "c": "bwapi_unittype_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_unittype_table(bwapi_unittype_row* out, int32_t cap)",
+      "signature": "int32_t bwapi_unittype_table(bwapi_unittype_row* out, int32_t cap, int32_t stride)",
       "cpp": null,
       "self": "none",
       "params": [
@@ -1801,6 +1811,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -1817,7 +1832,7 @@
     {
       "c": "bwapi_weapontype_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_weapontype_table(bwapi_weapontype_row* out, int32_t cap)",
+      "signature": "int32_t bwapi_weapontype_table(bwapi_weapontype_row* out, int32_t cap, int32_t stride)",
       "cpp": null,
       "self": "none",
       "params": [
@@ -1829,6 +1844,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -1845,7 +1865,7 @@
     {
       "c": "bwapi_techtype_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_techtype_table(bwapi_techtype_row* out, int32_t cap)",
+      "signature": "int32_t bwapi_techtype_table(bwapi_techtype_row* out, int32_t cap, int32_t stride)",
       "cpp": null,
       "self": "none",
       "params": [
@@ -1857,6 +1877,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -1873,7 +1898,7 @@
     {
       "c": "bwapi_upgradetype_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_upgradetype_table(bwapi_upgradetype_row* out, int32_t cap)",
+      "signature": "int32_t bwapi_upgradetype_table(bwapi_upgradetype_row* out, int32_t cap, int32_t stride)",
       "cpp": null,
       "self": "none",
       "params": [
@@ -1885,6 +1910,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -1901,7 +1931,7 @@
     {
       "c": "bwapi_race_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_race_table(bwapi_race_row* out, int32_t cap)",
+      "signature": "int32_t bwapi_race_table(bwapi_race_row* out, int32_t cap, int32_t stride)",
       "cpp": null,
       "self": "none",
       "params": [
@@ -1913,6 +1943,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -1929,7 +1964,7 @@
     {
       "c": "bwapi_playertype_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_playertype_table(bwapi_playertype_row* out, int32_t cap)",
+      "signature": "int32_t bwapi_playertype_table(bwapi_playertype_row* out, int32_t cap, int32_t stride)",
       "cpp": null,
       "self": "none",
       "params": [
@@ -1941,6 +1976,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -1957,7 +1997,7 @@
     {
       "c": "bwapi_color_table",
       "section": "bulk",
-      "signature": "int32_t bwapi_color_table(bwapi_color_row* out, int32_t cap)",
+      "signature": "int32_t bwapi_color_table(bwapi_color_row* out, int32_t cap, int32_t stride)",
       "cpp": null,
       "self": "none",
       "params": [
@@ -1969,6 +2009,11 @@
         {
           "name": "cap",
           "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "stride",
+          "type": "array_out",
           "c_type": "int32_t"
         }
       ],
@@ -13279,7 +13324,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "id",
@@ -13807,7 +13852,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "id",
@@ -13992,7 +14037,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "id",
@@ -14093,7 +14138,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "id",
@@ -14159,7 +14204,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "id",
@@ -14218,7 +14263,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "id",
@@ -14256,7 +14301,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "id",
@@ -14301,7 +14346,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "type",
@@ -14333,7 +14378,7 @@
           "name": "size",
           "type": "int32",
           "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+          "doc": "the struct-evolution prefix: the bytes the writer of this struct filled"
         },
         {
           "name": "type",

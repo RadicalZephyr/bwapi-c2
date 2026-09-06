@@ -51,7 +51,7 @@ bwapi_event get(int32_t index) {
   bwapi_event e;
   std::memset(&e, 0x5a, sizeof e);
   e.size = sizeof e;
-  REQUIRE(bwapi_game_get_event(index, &e) == 1);
+  REQUIRE(bwapi_game_get_event(index, &e, sizeof e) == 1);
   return e;
 }
 
@@ -187,7 +187,7 @@ TEST_CASE("an out-of-range index is the neutral value plus INVALID_HANDLE, with 
     bwapi_event e;
     std::memset(&e, 0x5a, sizeof e);
     e.size = sizeof e;
-    CHECK(bwapi_game_get_event(bad, &e) == 0);
+    CHECK(bwapi_game_get_event(bad, &e, sizeof e) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_INVALID_HANDLE);
     CHECK(message().find("bwapi_game_get_event") != std::string::npos);
     CHECK(message().find("10 events") != std::string::npos);
@@ -213,8 +213,7 @@ TEST_CASE("the struct-out rule: the caller's size is honoured going in and comin
       int32_t extra[4];
     } b;
     std::memset(&b, 0xab, sizeof b);
-    b.e.size = sizeof b;
-    REQUIRE(bwapi_game_get_event(3, &b.e) == 1);
+    REQUIRE(bwapi_game_get_event(3, &b.e, sizeof b) == 1);
     CHECK(b.e.size == static_cast<int32_t>(sizeof(bwapi_event)));
     CHECK(b.e.type == BWAPI_EVENT_NUKE_DETECT);
     CHECK(b.e.x == 640);
@@ -225,8 +224,8 @@ TEST_CASE("the struct-out rule: the caller's size is honoured going in and comin
   SUBCASE("a smaller size, an older consumer's, is written only that far") {
     bwapi_event e;
     std::memset(&e, 0x5a, sizeof e);
-    e.size = static_cast<int32_t>(offsetof(bwapi_event, unit_id));  // size and type only
-    REQUIRE(bwapi_game_get_event(0, &e) == 1);
+    // size and type only, as an older consumer's struct would be
+    REQUIRE(bwapi_game_get_event(0, &e, offsetof(bwapi_event, unit_id)) == 1);
     CHECK(e.size == static_cast<int32_t>(offsetof(bwapi_event, unit_id)));
     CHECK(e.type == BWAPI_EVENT_UNIT_DISCOVER);
     CHECK(e.unit_id == 0x5a5a5a5a);  // never written past the caller's size
@@ -235,17 +234,16 @@ TEST_CASE("the struct-out rule: the caller's size is honoured going in and comin
     CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
   }
   SUBCASE("NULL, or a size that cannot hold size itself, is BAD_BUFFER before the index is looked at") {
-    CHECK(bwapi_game_get_event(0, nullptr) == 0);
+    CHECK(bwapi_game_get_event(0, nullptr, sizeof(bwapi_event)) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
     bwapi_clear_last_error();
     bwapi_event e;
-    e.size = 3;
-    CHECK(bwapi_game_get_event(0, &e) == 0);
+    std::memset(&e, 0x5a, sizeof e);
+    CHECK(bwapi_game_get_event(0, &e, 3) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
-    CHECK(e.size == 3);
+    CHECK(e.size == 0x5a5a5a5a);  // and wrote nothing
     bwapi_clear_last_error();
-    e.size = 0;
-    CHECK(bwapi_game_get_event(-1, &e) == 0);
+    CHECK(bwapi_game_get_event(-1, &e, 0) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
   }
 }
@@ -262,7 +260,7 @@ TEST_CASE("the next frame replaces the snapshot and its indices") {
     // Last frame's indices are gone with it.
     bwapi_event e;
     e.size = sizeof e;
-    CHECK(bwapi_game_get_event(5, &e) == 0);
+    CHECK(bwapi_game_get_event(5, &e, sizeof e) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_INVALID_HANDLE);
   }
   SUBCASE("events queued between frames follow the MatchFrame") {
@@ -313,13 +311,13 @@ TEST_CASE("before the game exists every event call is NOT_CONNECTED, behind BAD_
   bwapi_clear_last_error();
   bwapi_event e;
   e.size = sizeof e;
-  CHECK(bwapi_game_get_event(0, &e) == 0);
+  CHECK(bwapi_game_get_event(0, &e, sizeof e) == 0);
   CHECK(bwapi_last_error() == BWAPI_ERR_NOT_CONNECTED);
   bwapi_clear_last_error();
   CHECK(bwapi_game_event_text(0, nullptr, 0) == 0);
   CHECK(bwapi_last_error() == BWAPI_ERR_NOT_CONNECTED);
   bwapi_clear_last_error();
-  CHECK(bwapi_game_get_event(0, nullptr) == 0);
+  CHECK(bwapi_game_get_event(0, nullptr, sizeof(bwapi_event)) == 0);
   CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
   bwapi_clear_last_error();
 }
