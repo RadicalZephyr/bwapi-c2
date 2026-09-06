@@ -598,14 +598,88 @@ a step is a commit-sized unit.
 ### 2.1 Events
 
 - `bwapi_event` struct in `bwapi_c2_types.h` with the size prefix; `bwapi_game_event_count`,
-  `bwapi_game_get_event`, `bwapi_game_event_text` over the vector `update()` already fills.
+  `bwapi_game_get_events`, `bwapi_game_event_text` over the vector `update()` already fills.
 - The fixture builder's `event()` populates `data->events[]` and `eventCount`; `frame()`
   re-runs the pump.
-- Tests: three events of different kinds round-trip; the text of a `SendText` event through
-  the string convention; an out-of-range index is the neutral value plus latch; an output
-  struct with a larger `size` is zero-filled past the known fields.
+- Tests: several events of different kinds round-trip through one drain, in the fixture's own
+  order rather than sorted; the text of a `SendText` event through the string convention; a
+  `cap` short of the count returns the total and writes nothing past `cap`; a stride larger
+  than `sizeof(bwapi_event)` is zero-filled past the known fields; an out-of-range index to
+  `bwapi_game_event_text()` is the neutral value plus latch.
+- **Done**, three commits: the exports, the fixture's text events, the suite. `bwapi_event` is
+  the first non-table struct in `structs.yaml` and `spec/game.yaml` opens with the three
+  `source:` entries into `src/bulk.cpp` plus the 28 skips for the rest of `BWAPI::Event`; the
+  ABI has 248 exports and the backlog 706 entries. The second bullet was already true of the
+  0.10 builder except for text: an `event(type, text, player)` overload fills
+  `data->eventStrings` the way the server does. The out-of-range latch is `INVALID_HANDLE`,
+  the struct-out check is `check_struct_out()` over the one `write_row()` the tables use too,
+  and the fixture runs the library's `after_pump()` behind `start()` and `frame()` (§7 rows 18
+  and 19). Seven kinds in one frame, 9 cases, 266 assertions, the whole tree 19 tests,
+  sanitizers green. A `/code-review` of the PR moved the step's second landing: the seam, the
+  pointer snapshot, the shared row writer, two fixture guards and the C# `ref` mapping.
+- **A fourth landing, moved to 2.2**, from a later review: those three commits shipped no bulk
+  form, so `bwapi_game_get_event()` was the only way to drain a frame and a host paid a crossing
+  per event (§5.6, decision 24). Drafting the how-to for it turned up R12, and the drain is the
+  first struct-array export written after that convention changes, so it lands in 2.2 beside the
+  change rather than here. 2.1 is otherwise closed.
 
-### 2.2 Bulk grids
+### 2.2 The struct-array stride, and the events drain
+
+R12 found that §4's array convention aliased the caller's stride onto the field the callee
+overwrites, so a reused buffer came back corrupt from the second call. Revision 4.7 separated
+the two directions (decision 25). Nine shipping exports change signature, which has to happen
+before any new struct-array export is written — and the events drain is the first of those, so
+the two land here as one step and two commits, in this order.
+
+- **The convention.** `src/abi_internal.h`: `write_rows()` takes the stride as a parameter
+  instead of reading `out[0].size`, and `write_struct()` takes the caller's size the same way,
+  so `check_struct_out()` stops reading it out of the buffer and `check_stride()` validates a
+  parameter. `write_row()` is untouched — it already writes only the filled count, which is now
+  the field's one meaning.
+- **The signature builder.** `docs/spec-format.md` §1.5 gains `int32_t stride` after `cap` for
+  `struct_array`, and `struct_out:` gains `int32_t size` after its pointer; §1.4's `struct_array`
+  row loses "the caller's `size` on element zero is the stride". `emit_header.py`,
+  `emit_source.py`, `emit_json.py` and `emit_docs.py` follow, and `api.json` grows the parameter
+  so both raw layers get it without touching either `gen.py`.
+- Regenerate. Nine exports change signature: the eight `struct_array` returns — the flat
+  requiredUnits table and the seven per-class type tables — gain `int32_t stride`, and the one
+  `struct_out:` parameter, `bwapi_game_get_event`, gains `int32_t out_size` before the second
+  commit removes it. The headers, `*.gen.cpp` and `api.json` diff; `bwapi_c2.def` does not, since
+  it carries names and not signatures. `tests/regen_check.sh` is the proof.
+- Tests: R12's three consumer/library pairings against a real table export, driving one buffer
+  across two calls at a stride larger than the row and checking every row of the second call —
+  the case that was corrupt and is the reason the step exists. A `cap` shorter than the total; a
+  stride too small to hold `size` itself latching `BWAPI_ERR_BAD_BUFFER`; a stride larger than
+  the row zero-filled past the known fields.
+- **Then the drain**, as the second commit. One spec entry, `returns: struct_array:event` with
+  `self: game` and `source: src/bulk.cpp`, over the new `write_rows()` with the fill lambda
+  `write_struct()` uses today. `bwapi_game_get_event()` goes (decision 24), so `Game::getEvents`
+  backs both the count and the table the way `UnitType::requiredUnits` backs an accessor and a
+  table (`abispec.py`'s uniqueness check already permits it), and `Event::getType` joins the
+  other four field accessors as a `skip:`, whose four strings restate the new name. Exports stay
+  248, skips go 28 to 29, the backlog stays 706. `tests/read_write/events.cpp` moves its
+  round-trips onto the drain and its out-of-range latch onto `bwapi_game_event_text()`, which is
+  then the only index-taking event export.
+- `struct_out:` is left with no user either way, which is unremarkable: `struct_in:` and
+  `struct_array_out:` have had none since the format was written in 1.2, and 3.1's
+  `bwapi_unit_command` is the first. Its helpers stay in `abi_internal.h` as the convention's
+  wrappers, now carrying the caller's size as a parameter.
+- Then the how-to §16.2 plans, as a third commit: draining a frame's events, in C and over the
+  generated Python raw layer, under `site/content/how-to/`.
+- **Done**, three commits. The stride test landed in `tests/types_test.cpp`'s existing "the
+  stride rule on a table" case rather than a new `tests/read_write/stride.cpp`: that case already
+  drove the older- and newer-consumer pairings against `bwapi_race_table`, so it wanted the reuse
+  subcase added, not a second file duplicating it. Reverting `write_rows()` to the old aliasing
+  makes that subcase fail on its first assertion, which is how the regression is known to be
+  load-bearing. The event suite's struct-out cases became struct-array cases on the drain — queue
+  order against the fixture's seven kinds, `cap` of 0 with NULL, a short `cap`, both strides, the
+  reuse, and the `BAD_BUFFER` pair — and its out-of-range latch moved to
+  `bwapi_game_event_text()`. 9 cases, 369 assertions, the whole tree 19 tests, `regen_check`
+  green. The predicted numbers all held: 248 exports, `game.yaml`'s skips 28 to 29, backlog 706.
+  The how-to shows the drain where it sits rather than inside §4.1's loop, because
+  `bwapi_game_is_in_game()` is a 2.6 getter and the page compiles against what exists today.
+
+### 2.3 Bulk grids
 
 - `src/bulk.cpp`: the six copy functions (`walkability`, `buildability`, `visibility`,
   `explored`, `creep`, `ground_height`) with `out_w/out_h`, cropped to the live map, row-major;
@@ -614,7 +688,7 @@ a step is a commit-sized unit.
 - Tests: a 64×64 fixture copies 64×64 (tile) and 256×256 (walk) cells; `cap` short returns the
   true size and fills nothing past `cap`; the scalar and bulk forms agree on every cell.
 
-### 2.3 Snapshots and bullets
+### 2.4 Snapshots and bullets
 
 - `bwapi_unit_snapshot`, `bwapi_player_snapshot`, `bwapi_bullet` PODs with the exact v1 field
   lists from §5.10 and §6.3; the `BWAPI_UF_*` flag bits. `bwapi_game_snapshot_units`,
@@ -626,7 +700,7 @@ a step is a commit-sized unit.
   snapshot's supply arrays; two bullets, one dead, one returned.
 - A `bwapi_game_unit_count`, `event_count`, `bullet_count` trio as the cheap counters §4 names.
 
-### 2.4 Collections and the closest queries
+### 2.5 Collections and the closest queries
 
 - `bwapi_game_get_all_units`, `get_units_in_rectangle`, `get_units_in_radius`,
   `get_units_on_tile`, `player_get_units`, `game_get_minerals/geysers/neutral_units/
@@ -639,7 +713,7 @@ a step is a commit-sized unit.
   the lowest `cap` ids; two units equidistant from a point return the lower id every time
   across ten runs; a radius query's result equals a brute-force filter over the snapshot.
 
-### 2.5 The generated getters
+### 2.6 The generated getters
 
 Now the volume, one spec file and one `*.gen.cpp` per interface, in this order: `Unit`
 (largest, most tested downstream), `Game`, `Force` and `Region` together. For each:
@@ -657,7 +731,7 @@ Now the volume, one spec file and one `*.gen.cpp` per interface, in this order: 
   exit check for how that is measured.
 - Commits: one per interface for the spec, one for the tests.
 
-### 2.6 The `can_*` family
+### 2.7 The `can_*` family
 
 - `spec/unit_can.yaml`: all 88 base declarations, `checkCommandibility` suppressed by not
   spelling it. Each `cpp` names its overload explicitly.
@@ -667,13 +741,13 @@ Now the volume, one spec file and one `*.gen.cpp` per interface, in this order: 
   with the same call on the C++ `Unit` from the fixture so the wrapper cannot disagree with
   upstream. About one test per distinct name, 57.
 
-### 2.7 Draw, text and the remaining `Game` writes that are reads for testing purposes
+### 2.8 Draw, text and the remaining `Game` writes that are reads for testing purposes
 
 - The eight draw primitives with `ctype` (§5.2) and the four text functions (§5.1), in
   `spec/game_draw.yaml`. Tests check that `data->shapes[]` and `data->commands[]` receive what
   was sent and that a 300-byte string arrives truncated at 256 (§15 #10).
 
-### 2.8 The fuzz harness
+### 2.9 The fuzz harness
 
 - `tests/fuzz/gen_fuzz.py` reads `api.json` and emits `fuzz.cpp`: for every export, calls
   with: no connection; each handle parameter at `-1`, `INT_MIN`, `INT_MAX`, and one past its
@@ -692,7 +766,7 @@ Now the volume, one spec file and one `*.gen.cpp` per interface, in this order: 
 | llvm-cov function coverage of `*.gen.cpp` is 100% under the fixture suites (the fuzz run is excluded from this measure, since bad input is not "exercised") | linux CI, reported not gated until the number is 100 |
 | Fuzz green under sanitizers | linux CI |
 | `check_coverage.py` backlog contains only phase-3 items (commands, BWEM reads) | by hand |
-| Reference pages exist for every export (automatic from `emit_docs.py`); the frame-loop page and the "size buffers with the retry idiom" and "latch or callback" how-tos are written, since phase 2 is when their subject matter lands | docs CI, review |
+| Reference pages exist for every export (automatic from `emit_docs.py`); the frame-loop page and the "size buffers with the retry idiom", "drain a frame's events" and "latch or callback" how-tos are written, since phase 2 is when their subject matter lands | docs CI, review |
 
 ---
 
@@ -974,6 +1048,8 @@ changes a §4 convention.
 | 15 | The per-class bulk tables are generated from `spec/structs.yaml`, each field naming the accessor it mirrors in `from:` and a `table:` block declaring the function (1.5) | Hand-written in `src/bulk.cpp`, as 1.5 said | A row that is a pure function of the spec is what the generator exists for; the test that checks every row against the accessor of the same id is the same either way, and 72 fields typed by hand is 72 places to be wrong. The flat `requiredUnits` table stays hand-written: it is the one shape a `from:` cannot express |
 | 16 | The Python and C# raw layers are generated in CI from `api.json` and never committed (1.7) | Check them in under rule 2 | Rule 2 names the ABI's own outputs, which something compiles against; a raw layer is a pure function of `api.json` that CI regenerates on every run, and committing it would put the same diff in two places. `regen.py` leaves them alone; the `gen.py` of each binding is the only way to make one |
 | 17 | The spec's `self` has `game` and `bwem_map` beside the plan's list, and entries may carry `source:` instead of `body:` (1.2) | `none` for everything without a handle; hand-written functions specced with an empty `body:` | Without `game`, a `Game::mapName()` wrapper and a `UnitType::maxHitPoints()` wrapper are both `none` and the emitter cannot tell which needs the connected check; without `source:`, a hand-written definition would have to be pasted into YAML to be declared. Both are format, documented in `docs/spec-format.md` |
+| 18 | Everything `bwapi_client_update()` does after the pump is one internal, `bwapi_c2::after_pump()` (the event snapshot now, BWEM's `UnitDestroy` dispatch in 3.2), and the `Fixture` runs it after `start()`, after every `frame()` and once at teardown, through a hook `tests/support/doctest_main.cpp` installs once per test binary (2.1) | The fixture calls `bwapi_client_update()`; the accessors snapshot `getEvents()` lazily, keyed on a frame-count change or on a dirty flag `update()` sets; or each suite calls the snapshot step by hand and sees `src/` for it | `update()` blocks on the pipe, and the fixture links the closure, not the ABI. A lazy snapshot keyed on the frame count would serve a stale list across the menu-frame updates that do not advance it. A dirty flag set in `update()` escapes that, and R13 measured it instead: an ordinary frame's snapshot is 4.9 ns and a `MatchStart`-sized one 427 ns, 70–95% of which is the list walk rather than the vector, so laziness saves a host that never reads events about 118 ns per second of game time and nothing once BWEM is initialised, because §8.2 walks the same list every frame regardless. Eager, for a flag and a filled/unfilled state the boundary would otherwise carry. Calling the step by hand was the first landing; review showed that 3.2 adds a second post-pump step and every pumping suite would then replay `update()`'s order itself, and that a snapshot could outlive the `GameImpl` it pointed into between two fixtures in one binary. The hook puts the order in one place and the teardown run empties the snapshot |
+| 19 | An event index outside the frame's events latches `BWAPI_ERR_INVALID_HANDLE` (2.1) | A new `BWAPI_ERR_OUT_OF_RANGE` | The index is checked the way §6.2 checks a handle, against the range it could be in, which for an event is the snapshot's size; the message carries the index and the count. A fifth ABI-own code would be one more line for the header to explain and for a wrapper to map, for a distinction the message already makes. Review asked where §6.2's "was valid, no longer is" outcome leaves last frame's index; §5.6 now states the rule (an index is a position, not a handle) so 2.4's bullets and 3.2's BWEM ids apply it rather than decide it again |
 
 ### Questions worth settling before 0.2
 

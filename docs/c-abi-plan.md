@@ -97,6 +97,25 @@ This is a design/roadmap document. No production code is included.
 > count (§5.8), the `body:` `static_assert` is an existence check with the body's own
 > compilation as the type check (§9), and `getID` is skipped on every interface because the
 > id is the handle (§6.2, decision 23).
+>
+> **Revision 4.6** gives §5.6's events a bulk drain. `bwapi_game_get_events()` fills the
+> frame's whole snapshot in one crossing under §4's struct-array convention, and the per-index
+> `bwapi_game_get_event()` is dropped rather than kept beside it (decision 24); the rows come
+> back in BWAPI's arrival order rather than §4's ID sort, and `bwapi_game_event_text()` is
+> unchanged. §5.10 now states as a rule what it had argued only for units and players: every
+> collection a host reads per frame ships a bulk form, and per-item accessors are additive to
+> it. A review of implementation step 2.1 found the gap; the plan had already contained the
+> argument against its own §5.6.
+>
+> **Revision 4.7** separates the two directions that shared a struct's `size` field. R12 measured
+> a live defect in §4's struct-array convention: element zero's `size` carried the caller's
+> stride in and the callee's filled byte count out, the callee's write destroyed the caller's
+> value, and a consumer reusing one buffer across frames as the retry idiom instructs read
+> corrupt rows from the second frame onward — silently, and only when its header was newer than
+> the DLL, which is the one case the size prefix exists to serve. `size` now means the bytes
+> whoever wrote the struct filled, in one direction only, and a reader's capacity is a
+> parameter: array-out functions gain a `stride`, single struct outs a `size` (§4, decision 25).
+> §5.6, §5.10 and §14 carry the new signatures.
 
 ---
 
@@ -645,17 +664,38 @@ append-only policy covers function signatures and says nothing about struct layo
 contracts compiled into every consumer — and `ctypes` and P/Invoke consumers hardcode those
 layouts in script and never recompile.
 
-- The caller sets `size` on input structs. The callee validates it, reads only the prefix it
-  understands, and ignores the rest.
-- The callee sets `size` on output structs, writes the fields it knows, zero-fills the remainder
-  up to the caller's `size`, and never writes past it.
-- **For array-out functions the caller sets `size` on element zero, and that value is the
-  uniform stride for the whole array.** No separate `elem_size` parameter — one mechanism, no
-  redundancy.
+**`size` is written by whoever writes the struct, and always means the bytes that writer
+filled.** One direction, one meaning, in every shape:
+
+- **Input structs** (`bwapi_unit_command`): the caller writes the struct, so the caller sets
+  `size`. The callee validates it, reads only that prefix, and ignores the rest.
+- **Output structs and the rows of an array**: the callee writes them, so the callee sets `size`,
+  writes the fields it knows, zero-fills the remainder of the caller's capacity, and never
+  writes past it. `BWAPI_HAS_FIELD` against a returned `size` says which fields are valid — on
+  every row alike, since the meaning does not change with the row's position.
+- **A reader's capacity never travels in the buffer; it is a parameter.** An array-out function
+  takes `(<elem>* out, int32_t cap, int32_t stride)` and a single struct out takes
+  `(bwapi_<name>* out, int32_t size)`. `cap` is how many rows there is room for and `stride` is
+  how far apart the caller's rows are — the two are independent and both are the caller's word
+  for how much memory is there.
 
 Applied uniformly, including to `bwapi_unit_command`. The per-call cost is setting one field on
 a struct most bots never touch (§5.3's ~40 convenience functions are the real command path), and
 uniformity is worth more than four bytes.
+
+**Revision 4.7 separated those directions; before it they shared element zero's `size`, and that
+was a live defect.** The rule read *"for array-out functions the caller sets `size` on element
+zero, and that value is the uniform stride for the whole array — no separate `elem_size`
+parameter, one mechanism, no redundancy."* It was never one mechanism. It was two directions
+aliased onto one field, and R12 measured what that costs: the callee's per-row write lands on
+element zero and destroys the stride. The retry idiom above tells a consumer to size one buffer
+and reuse it every frame, and nothing said the field had to be re-set on every call, so a
+consumer that set it once read **corrupt rows from the second frame onward** — row 0 surviving,
+row 1 shifted, row 2 lost. It failed silently, it failed only when the consumer's header was
+newer than the DLL it loaded, and that is exactly the forward-compatibility case the size prefix
+exists to serve. §14's example escaped it by re-setting the field inside the frame loop, without
+saying that doing so was load-bearing. The redundancy §4 refused was the
+thing holding the two directions apart. Decision 25 records the alternatives.
 
 `bwapi_c2_types.h` ships one capability macro, LibreOfficeKit's `LIBREOFFICEKIT_HAS_MEMBER`
 under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) +
@@ -985,9 +1025,20 @@ memory. Revisit only with a measured need.
 ### 5.6 Events
 
 `Broodwar->getEvents()` returns a **`std::list<Event>`**, and `BWAPI::Event` holds a heap
-`std::string*`. Indexing a `std::list` directly would be O(n²) over a frame's events, so **the
-event list is snapshotted into a vector during `bwapi_client_update()`, and indices are stable
-until the next one.**
+`std::string*`. **`bwapi_client_update()` snapshots that list's nodes into a vector, and a
+position in it means the same thing to every export until the next update.** One description of
+the frame's events, which the drain below, `bwapi_game_event_text()`'s index and §8.2's BWEM
+dispatch all read.
+
+The snapshot is **eager, and stays eager** (R13). An earlier draft justified it as avoiding
+O(n²) indexing of a `std::list`; that was an argument about the per-index accessor decision 24
+deleted, and it no longer applies. The live question is the opposite one — whether a host that
+never reads events should pay for a snapshot at all — and it is answered by measurement: an
+ordinary frame costs **4.9 ns** and a `MatchStart`-sized one **427 ns**, of which 70–95% is the
+list walk rather than the vector. Filling it lazily on first use would save such a host about
+118 ns per second of game time, and nothing at all once BWEM is initialised, since §8.2's
+`UnitDestroy` dispatch walks the same list every frame whether the host asks or not. §7 row 18
+carries the variants.
 
 ```c
 typedef struct bwapi_event {
@@ -999,13 +1050,54 @@ typedef struct bwapi_event {
 } bwapi_event;
 
 int32_t bwapi_game_event_count(void);
-int32_t bwapi_game_get_event(int32_t index, bwapi_event* out);
+int32_t bwapi_game_get_events(bwapi_event* out, int32_t cap, int32_t stride);
 int32_t bwapi_game_event_text(int32_t index, char* buf, int32_t buf_len);
 ```
 
-No `text_len` field — `bwapi_game_event_text()` already returns the needed length under the §4
-string convention. Polling rather than callbacks: it is the natural client-mode shape, avoids
-re-entrancy entirely, and every host language can build its own callback dispatch on top.
+**A frame drains in one call.** A previous draft shipped only `bwapi_game_get_event(int32_t
+index, bwapi_event* out)`, so a host paid a crossing per event — guard, thread check, buffer
+check, one `memcpy` — which is the bill §5.5 and §5.10 exist to refuse, charged to exactly the
+languages §1.9 names as primary. It also falls due on the frames a bot can least afford it: a
+`MatchStart` frame carries a `UnitDiscover` per initial unit beside the `MatchStart` itself, a
+big engagement carries a `UnitDestroy` burst, and `GameData` bounds the list at `MAX_EVENTS` =
+10,000. Unlike unit count, it is not a number the host paces. §5.10 states the rule this section
+originally missed; **the per-index accessor is dropped rather than kept beside the drain**
+(decision 24), so `bwapi_game_get_events()` is the only way to read an event's fields.
+
+Standard §4 struct-array convention: fills up to `cap` rows at `stride` bytes apart, returns the
+total, `cap == 0` with `NULL` is the size query. **No offset parameter, because
+sizing is not a real problem here**: `sizeof(bwapi_event)` is 28 bytes, so the 10,000-row worst
+case is 280 KB, and a host that allocates it once at connect never retries and can never fail to
+reach the tail. `bwapi_game_event_count()` is the cheap counter for a host that would rather
+size per frame under §4's retry idiom.
+
+**The order is BWAPI's, not §4's sort.** §4 sorts collection output ascending by ID because
+`Unitset` iteration hashes pointers and ASLR makes it nondeterministic run to run. A
+`std::list<Event>` has neither problem, and its order is arrival order, which carries
+information a sort would destroy — `UnitCreate` before `UnitDestroy` for one unit is a fact a
+host may rely on. So the rows come back in the order BWAPI produced them. §4 states the sort as
+the rule for collection output generally, so the exception is stated here rather than left to a
+reader to infer from the source container.
+
+**Text stays per index, and stays cheap.** A variable-length string cannot live in a
+fixed-stride row, so `bwapi_game_event_text(index, …)` returns it under the §4 string
+convention, indexing the same snapshot by the row's position — and no `text_len` field on the
+struct, since that convention already returns the needed length. Only `SendText`, `ReceiveText`
+and `SaveGame` carry text and they arrive at human typing rate, so this costs a handful of
+crossings per game rather than per frame.
+
+Polling rather than callbacks: it is the natural client-mode shape, avoids re-entrancy entirely,
+and every host language can build its own callback dispatch on top. That is the second reason
+the drain matters — a host fanning events out to its own subscribers wants the frame's list in
+hand, not a cursor over the boundary.
+
+**An event index is a position in this frame's snapshot, not a handle.** It has no identity
+across frames the way a unit id does, so §6.2's third outcome ("was valid, no longer is, no
+latch") does not apply to it: an index outside `0..count-1`, last frame's included, is checked
+the way §6.2 checks a handle's range and latches `BWAPI_ERR_INVALID_HANDLE`, with the index and
+the count in the message. `bwapi_game_event_text()` is the only export that takes one. The same
+rule holds for every per-frame index the ABI adds later, a row's position in a bulk result
+included; ids that BWEM assigns per analysis are a different case and §8.2 decides them.
 
 The same event pump is where the ABI drives BWEM's three destruction hooks internally (§8), so
 a host that never calls them still gets a correct map.
@@ -1073,15 +1165,29 @@ it forces every host to re-derive accessor semantics the ABI already knows.
 for exactly the languages that pay most per crossing. Apply the same fix where it matters most.
 
 ```c
-int32_t bwapi_game_snapshot_units(bwapi_unit_snapshot* out, int32_t cap);
-int32_t bwapi_game_snapshot_players(bwapi_player_snapshot* out, int32_t cap);
+int32_t bwapi_game_snapshot_units(bwapi_unit_snapshot* out, int32_t cap, int32_t stride);
+int32_t bwapi_game_snapshot_players(bwapi_player_snapshot* out, int32_t cap, int32_t stride);
 ```
 
-Same convention as every other collection (§4): fills up to `cap`, returns the total, sorted
-ascending by ID, **existing units only**, `cap == 0` with `NULL` is the size query, and element
-zero's `size` is the uniform stride. `UnitData` is already pointer-free, so this is a
+Same convention as every other collection (§4): fills up to `cap` rows at `stride` bytes apart,
+returns the total, sorted ascending by ID, **existing units only**, and `cap == 0` with `NULL`
+is the size query. `UnitData` is already pointer-free, so this is a
 field-select copy loop, not new logic. (`last_command_frame` is the one field that comes from
 the interface rather than `UnitData` — it is a client-side `UnitImpl` member.)
+
+**Stated once, as a rule: every collection a host reads per frame ships a bulk form, and
+per-item accessors are additive to it, never the only way in.** Units and players satisfy it
+here, bullets in §6.3, terrain in §5.5. §5.6's events did not until revision 4.6 added the
+drain — the argument above was already on the page and the section that needed it predated it,
+which is the whole reason the rule is worth writing down instead of rediscovering per
+collection. It binds forward, to every per-frame collection the ABI adds, with one freedom: the
+bulk form's *order* is §4's ID sort only where §4's nondeterminism argument applies, and §5.6
+shows what it looks like when it does not.
+
+The rule also terminates rather than growing without limit. BWEM's 85 scalar accessors (§8.1)
+are outside it because the analysis is read once per match, not per frame, and §8.1 already
+measures its grid traffic at ~2%. Its six grids ship a bulk form regardless, under §5.5's rule
+for grids rather than this one.
 
 **Booleans in the snapshot are bits in a `uint32_t flags`, not fields**: `exists`,
 `is_completed`, `is_constructing`, `is_idle`, `is_moving`, `is_attacking`, `is_cloaked`,
@@ -1877,6 +1983,8 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 21 | Carry the §15.2 modifications as patch files or as forks? | **Forks.** Each submodule pins a `bwapi-c2-pin` branch on our fork of the dependency: the upstream commit plus the carried commits (§7, §10.3, §15.2). Clean working trees, no configure-time script, and `svnrev.h` committed on the BWAPI fork by a POSIX port of upstream's script, which removes the Windows step from a pin bump |
 | 22 | One neutral position for every scale, or the scale's own? | **The scale's own.** `Positions::None` from a pixel-scale function, `TilePositions::None` from a tile-scale one, `WalkPositions::None` from a walk-scale one (§4). Revision 4.4's single sentinel gave a tile-scale caller a pixel-scale value it would never test for; the emitter knows the kind, so this is one rule too, and a cheaper one before 1.0 than after |
 | 23 | Export `getID` on the interfaces? | **No; a rule-bearing `skip:` on every interface.** The id is the handle, so the export carries no information, and its `int32` neutral of `0` is a valid id, so a caller that used it as a validity probe would be misled without reading the latch (§6.2). `bwapi_unit_exists()` and the latch are the probes |
+| 24 | Does a host drain a frame's events per index, or in one call? | **In one call**, and the per-index accessor is dropped rather than kept beside it. `bwapi_game_get_events()` under §4's struct-array convention (§5.6); `bwapi_game_event_text()` is unchanged, since a variable-length string has no fixed-stride row and only three event types carry one. A review of 2.1 found the per-index-only shape charged a crossing per event to the languages §5.10 exists to protect, on the frames that carry the most of them. §5.10 had already made that argument for units and players and §5.6 predated it, so revision 4.6 states it once as a rule there rather than settling it a third time at bullets. The rows keep BWAPI's arrival order rather than §4's ID sort, because §4 sorts to defeat `Unitset`'s ASLR nondeterminism and a `std::list<Event>` has none |
+| 25 | One `size` field carrying the caller's stride in and the callee's filled bytes out, or two directions separated? | **Separated** (§4, R12). `size` means the bytes whoever wrote the struct filled, and a reader's capacity is a parameter: `(<elem>* out, int32_t cap, int32_t stride)` for an array, `(bwapi_<name>* out, int32_t size)` for a single struct. R12 measured the alias: the callee's per-row write lands on element zero, so a reused buffer loses its stride and rows 1 onward come back corrupt, silently, only for a consumer whose header is newer than the DLL. Three alternatives rejected. **Document a "re-set `size` every call" rule** — leaves the footgun armed in every consumer, in exactly the case the prefix exists for, and the ABI would be relying on a sentence rather than a signature. **Have the callee restore element zero's stride before returning** — makes row zero's `size` mean the caller's stride while every other row's means bytes filled, so `BWAPI_HAS_FIELD` is wrong on precisely that row; a silent inconsistency for a silent corruption. **Keep the convention and add a test** — a test proves the defect exists, it does not stop a consumer meeting it. §4's original objection was that an `elem_size` parameter is redundancy; R12 shows the redundancy was the thing holding the two directions apart, so the parameter is the fix and not the cost. Nine shipping exports change signature — the eight struct-array tables and `bwapi_game_get_event`, which decision 24 removes in the same step — which is cheap now and not after 1.0 |
 ---
 
 ## 14. What a consumer sees
@@ -1898,11 +2006,16 @@ for (;;) {
         bwapi_clear_last_error();
 
         /* size to last frame's count plus slack; call once; grow only on overflow (§4) */
-        if (cap == 0) cap = bwapi_game_unit_count() + 64;
-        units = realloc(units, cap * sizeof *units);
-        units[0].size = sizeof *units;
-        int32_t n = bwapi_game_snapshot_units(units, cap);
-        if (n > cap) { cap = n + 64; continue; }        /* rare: re-run this frame's read */
+        if (cap == 0) {
+            cap = bwapi_game_unit_count() + 64;
+            units = realloc(units, cap * sizeof *units);
+        }
+        int32_t n = bwapi_game_snapshot_units(units, cap, sizeof *units);
+        if (n > cap) {                                 /* rare: grow, re-run this frame's read */
+            cap = n + 64;
+            units = realloc(units, cap * sizeof *units);
+            continue;
+        }
 
         for (int32_t i = 0; i < n; ++i)
             if (units[i].type == BWAPI_UNIT_TERRAN_SCV && (units[i].flags & BWAPI_UF_IDLE))
@@ -1917,7 +2030,9 @@ for (;;) {
 Two things the example is careful about, both from §4: the snapshot buffer is sized from a
 cheap counter and reused across frames, never preflighted with `cap == 0`; and the error
 callback is installed so a debug build stops at the offending call, while the sticky latch
-remains the once-per-frame check a release build relies on. `bwapi_bwem_reset()` does not
+remains the once-per-frame check a release build relies on. The buffer is allocated once and the
+stride passed on every call — under revision 4.7 nothing the callee writes into the buffer is
+input to the next call, so reuse needs no ceremony and there is no per-frame `realloc`. `bwapi_bwem_reset()` does not
 appear, because `initialize` performs it (§8.2) and `disconnect` performs it (§4.1).
 
 **Python** (`ctypes`, generated from `api.json`):
@@ -1935,7 +2050,7 @@ once per frame, and `numpy` views over the bulk grids and snapshots.
 [DllImport("bwapi_c2", CallingConvention = CallingConvention.Cdecl)]
 static extern long bwapi_unit_get_position(int unit);
 [DllImport("bwapi_c2", CallingConvention = CallingConvention.Cdecl)]
-static extern int bwapi_game_snapshot_units([Out] UnitSnapshot[] buf, int cap);
+static extern int bwapi_game_snapshot_units([Out] UnitSnapshot[] buf, int cap, int stride);
 ```
 …wrapped into `BwapiC2` with `Span<T>` over the snapshot buffer and a `Unit` struct newtype.
 
@@ -2062,7 +2177,7 @@ section is rewritten until it does:
 | Section | Job | First contents |
 |---|---|---|
 | **Tutorials** | Learning by doing, one path, guaranteed to work | A first bot in C (the §14 loop, explained); a first bot in Python over the raw layer |
-| **How-to guides** | A task the reader already has | Consume the DLL from C, Python, C#, Rust; size buffers with the retry idiom; choose between the latch and the error callback; initialise BWEM and find the natural; run the differential test against a real installation; bump a pin |
+| **How-to guides** | A task the reader already has | Consume the DLL from C, Python, C#, Rust; size buffers with the retry idiom; drain a frame's events and fan them out to a host's own subscribers (§5.6); choose between the latch and the error callback; initialise BWEM and find the natural; run the differential test against a real installation; bump a pin |
 | **Reference** | The facts, generated (16.1) | Every function, constant family, struct and error code; the frame loop; `api.json`'s fields; the divergence register |
 | **Explanation** | Why it is the way it is | Why a C ABI over the real `Game` rather than another protocol port; why client mode; why integer handles; why the error channel is sticky; why positions pack; why the fixtures are synthetic; what the license asks of a bot author |
 

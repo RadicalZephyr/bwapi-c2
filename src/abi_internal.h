@@ -160,30 +160,65 @@ int32_t write_ids(int32_t* out, int32_t cap, const Range& range) {
   return static_cast<int32_t>(ids.size());
 }
 
-// The struct-array convention (section 4): the caller sets size on element zero and that is the
-// stride of the whole array; the callee writes the fields it knows into each row, zero-fills
-// the remainder of the caller's stride, sets each row's size to the bytes it filled (so
-// BWAPI_HAS_FIELD on a returned row says what is valid), and never writes past cap rows or
-// past the stride. Returns the total. A stride that cannot hold size itself is BAD_BUFFER.
-template <class Row, class Fill>
-int32_t write_rows(Row* out, int32_t cap, int32_t total, Fill fill) {
-  if (cap <= 0) return total;
-  const int32_t stride = out[0].size;
+// The struct-evolution rule of section 4, in one place for both shapes it takes. size is one
+// direction only: the callee writes it, and it means the bytes the callee filled, so
+// BWAPI_HAS_FIELD on a returned row says what is valid and reads the same on every row. The
+// caller's capacity never travels in the buffer - it arrives as a parameter, because the callee
+// would otherwise overwrite the field it had to read (R12: a reused buffer lost its stride and
+// came back corrupt from the second call). check_stride() is the up-front check, like
+// check_buffer(), false having latched BWAPI_ERR_BAD_BUFFER for a stride that cannot hold size
+// itself; write_row() then writes one row of that stride at dst: the fields it knows, size set
+// to the bytes filled, the rest of the stride zeroed, and never a byte past it. Like cap, the
+// stride is the caller's word for how much memory is there.
+inline bool check_stride(int32_t stride) {
   if (stride < static_cast<int32_t>(sizeof(int32_t))) {
-    latch(BWAPI_ERR_BAD_BUFFER, "struct array: size on element zero must be the caller's stride");
-    return 0;
+    latch(BWAPI_ERR_BAD_BUFFER, "struct out: the caller's stride must at least hold size itself");
+    return false;
   }
+  return true;
+}
+
+template <class Row, class Fill>
+void write_row(void* dst, int32_t stride, Fill fill) {
   const size_t filled = std::min(static_cast<size_t>(stride), sizeof(Row));
+  Row row{};
+  fill(row);
+  row.size = static_cast<int32_t>(filled);
+  char* bytes = static_cast<char*>(dst);
+  std::memcpy(bytes, &row, filled);
+  std::memset(bytes + filled, 0, static_cast<size_t>(stride) - filled);
+}
+
+// The struct-array convention: the caller passes cap rows of stride bytes each, the first cap
+// rows are written by write_row() and the total returned. cap of 0 is the size query and reads
+// nothing, so it does not need a valid stride either.
+template <class Row, class Fill>
+int32_t write_rows(Row* out, int32_t cap, int32_t stride, int32_t total, Fill fill) {
+  if (cap <= 0) return total;
+  if (!check_stride(stride)) return 0;
   char* dst = reinterpret_cast<char*>(out);
   const int32_t n = std::min(cap, total);
-  for (int32_t i = 0; i < n; ++i, dst += stride) {
-    Row row{};
-    fill(row, i);
-    row.size = static_cast<int32_t>(filled);
-    std::memset(dst, 0, static_cast<size_t>(stride));
-    std::memcpy(dst, &row, filled);
-  }
+  for (int32_t i = 0; i < n; ++i, dst += stride)
+    write_row<Row>(dst, stride, [&](Row& row) { fill(row, i); });
   return total;
+}
+
+// The struct-out convention, one struct rather than an array: the caller's size arrives as a
+// parameter here too, for the same reason and so that the two shapes read alike.
+// check_struct_out() is the up-front check, NULL or a bad size being BAD_BUFFER, and
+// write_struct() is one write_row() at that size.
+template <class Row>
+bool check_struct_out(const Row* out, int32_t size) {
+  if (out == nullptr) {
+    latch(BWAPI_ERR_BAD_BUFFER, "struct out: NULL");
+    return false;
+  }
+  return check_stride(size);
+}
+
+template <class Row, class Fill>
+void write_struct(Row* out, int32_t size, Fill fill) {
+  write_row<Row>(out, size, fill);
 }
 
 // Packed positions in upstream's order (a chokepoint's geometry is a polyline), the first cap
@@ -212,6 +247,25 @@ BWAPI::Region resolve_region(bwapi_region_id id, const char* fn);
 
 // What disconnect() runs before the client goes: BWEM's teardown. A no-op until phase 3.
 void teardown_bwem();
+
+// ---- after the pump (client.cpp) ---------------------------------------------------------------
+
+// Everything bwapi_client_update() does once the frame is in, in the order it does it: today
+// the event snapshot of section 5.6, in phase 3 the UnitDestroy dispatch to BWEM's filtered
+// hooks (section 8.2). One function, so the order lives in one place. The fixture-driven tests
+// pump through GameImpl directly, with no server, and run this same step through the hook
+// tests/support/doctest_main.cpp installs on the Fixture once per test binary; no suite replays
+// update() by hand, and the Fixture runs it at teardown too, so a snapshot never outlives the
+// game it was taken from. With no game the step leaves nothing behind.
+void after_pump();
+
+// The frame's events: Game::getEvents() is a std::list, so after_pump() snapshots its nodes
+// into this vector and the event exports index it (section 5.6). Pointers, not copies: the
+// list lives in the client GameImpl and is cleared only by the next pump, which is when this
+// vector is cleared too, so the pointers are valid for exactly the window the plan gives the
+// indices, and a frame of ten thousand events costs one walk and no Event copy (an Event copy
+// allocates its text). Stable until the next after_pump().
+const std::vector<const BWAPI::Event*>& frame_events();
 
 // ---- packing ---------------------------------------------------------------------------------
 

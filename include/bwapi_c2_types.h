@@ -1354,7 +1354,7 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
 /* One row of the UnitType table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_unittype_table(). */
 typedef struct bwapi_unittype_row {
-  int32_t size;                    /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;                    /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t id;                      /* the type id, which is also the row's index */
   int32_t get_race;                /* UnitType::getRace() */
   int32_t required_tech;           /* UnitType::requiredTech() */
@@ -1433,7 +1433,7 @@ typedef struct bwapi_unittype_row {
 /* One row of the WeaponType table: every scalar accessor of the class for one id, in one
  * crossing. Filled by bwapi_weapontype_table(). */
 typedef struct bwapi_weapontype_row {
-  int32_t size;                 /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;                 /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t id;                   /* the type id, which is also the row's index */
   int32_t get_tech;             /* WeaponType::getTech() */
   int32_t what_uses;            /* WeaponType::whatUses() */
@@ -1463,7 +1463,7 @@ typedef struct bwapi_weapontype_row {
 /* One row of the TechType table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_techtype_table(). */
 typedef struct bwapi_techtype_row {
-  int32_t size;             /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;             /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t id;               /* the type id, which is also the row's index */
   int32_t get_race;         /* TechType::getRace() */
   int32_t mineral_price;    /* TechType::mineralPrice() */
@@ -1481,7 +1481,7 @@ typedef struct bwapi_techtype_row {
 /* One row of the UpgradeType table: every scalar accessor of the class for one id, in one
  * crossing. Filled by bwapi_upgradetype_table(). */
 typedef struct bwapi_upgradetype_row {
-  int32_t size;                 /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;                 /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t id;                   /* the type id, which is also the row's index */
   int32_t get_race;             /* UpgradeType::getRace() */
   int32_t mineral_price_factor; /* UpgradeType::mineralPriceFactor() */
@@ -1494,7 +1494,7 @@ typedef struct bwapi_upgradetype_row {
 /* One row of the Race table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_race_table(). */
 typedef struct bwapi_race_row {
-  int32_t size;                /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;                /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t id;                  /* the type id, which is also the row's index */
   int32_t get_worker;          /* Race::getWorker() */
   int32_t get_resource_depot;  /* Race::getResourceDepot() */
@@ -1506,7 +1506,7 @@ typedef struct bwapi_race_row {
 /* One row of the PlayerType table: every scalar accessor of the class for one id, in one
  * crossing. Filled by bwapi_playertype_table(). */
 typedef struct bwapi_playertype_row {
-  int32_t size;          /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;          /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t id;            /* the type id, which is also the row's index */
   int32_t is_lobby_type; /* PlayerType::isLobbyType() */
   int32_t is_game_type;  /* PlayerType::isGameType() */
@@ -1515,7 +1515,7 @@ typedef struct bwapi_playertype_row {
 /* One row of the Color table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_color_table(). */
 typedef struct bwapi_color_row {
-  int32_t size;  /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;  /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t id;    /* the type id, which is also the row's index */
   int32_t red;   /* Color::red() */
   int32_t green; /* Color::green() */
@@ -1525,11 +1525,24 @@ typedef struct bwapi_color_row {
 /* One requirement of one unit type, for the flat requiredUnits table: the type, the type it
  * requires, and how many of it. */
 typedef struct bwapi_required_unit {
-  int32_t size;          /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t size;          /* the struct-evolution prefix: the bytes the writer of this struct filled */
   int32_t type;          /* the unit type that has the requirement */
   int32_t required_type; /* the unit type it requires */
   int32_t count;         /* how many of the required type */
 } bwapi_required_unit;
+
+/* One event of the current frame, as bwapi_game_get_events() fills it: the BWAPI_EVENT_* type,
+ * and whichever of a unit, a player, a position and a winner flag that type carries, with
+ * BWAPI_NONE or the pixel-scale None in the others. */
+typedef struct bwapi_event {
+  int32_t size;      /* the struct-evolution prefix: the bytes the writer of this struct filled */
+  int32_t type;      /* the kind of event, a BWAPI_EVENT_* constant */
+  int32_t unit_id;   /* the unit of the nine Unit* events (Discover, Evade, Show, Hide, Create, Destroy, Morph, Renegade, Complete); BWAPI_NONE for every other type, SaveGame included */
+  int32_t player_id; /* the player of PlayerLeft and ReceiveText; BWAPI_NONE for every other type */
+  int32_t x;         /* the pixel x of a NukeDetect target; BWAPI_POSITION_NONE_X for every other type */
+  int32_t y;         /* the pixel y of a NukeDetect target; BWAPI_POSITION_NONE_Y for every other type */
+  int32_t is_winner; /* 1 when a MatchEnd event says the bot's player won; 0 for a lost match and for every other type */
+} bwapi_event;
 
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,
  * WeaponType, ... accessors, one export each, plus the bulk tables. Unlike everything in
@@ -1928,28 +1941,28 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_text_is_color(int32_t c) BWAPI_C2_NOEXC
 
 /* Every unit type requirement in the game as a flat table of (type, required_type, count) rows,
  * ascending by type and then by required type, up to cap; returns the total number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_units_table(bwapi_required_unit* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_units_table(bwapi_required_unit* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 /* Fills one bwapi_unittype_row per UnitType id, 0 to Unknown inclusive, up to cap, and returns
  * the total number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_table(bwapi_unittype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_table(bwapi_unittype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 /* Fills one bwapi_weapontype_row per WeaponType id, 0 to Unknown inclusive, up to cap, and
  * returns the total number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_table(bwapi_weapontype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_table(bwapi_weapontype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 /* Fills one bwapi_techtype_row per TechType id, 0 to Unknown inclusive, up to cap, and returns
  * the total number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_table(bwapi_techtype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_table(bwapi_techtype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 /* Fills one bwapi_upgradetype_row per UpgradeType id, 0 to Unknown inclusive, up to cap, and
  * returns the total number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_table(bwapi_upgradetype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_table(bwapi_upgradetype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 /* Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap, and returns the total
  * number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_table(bwapi_race_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_table(bwapi_race_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 /* Fills one bwapi_playertype_row per PlayerType id, 0 to Unknown inclusive, up to cap, and
  * returns the total number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_table(bwapi_playertype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_table(bwapi_playertype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 /* Fills one bwapi_color_row per Color id, 0 to Unknown inclusive, up to cap, and returns the
  * total number of rows. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_table(bwapi_color_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_table(bwapi_color_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT;
 
 #ifdef __cplusplus
 } /* extern "C" */

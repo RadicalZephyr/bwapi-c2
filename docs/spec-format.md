@@ -101,7 +101,7 @@ declaration with every parameter explicit; the per-language wrapper re-adds the 
 | `string_in` | `const char*` | Passed through, no transcoding (plan §4) |
 | `int32_out`, `double_out`, `position_out` | `int32_t*`, `double*`, `bwapi_position*` | One value written. NULL is allowed and skips the write |
 | `int32_array_out`, `int16_array_out`, `uint8_array_out`, `position_array_out` | `int32_t*`, `int16_t*`, `uint8_t*`, `bwapi_position*` | An array the body fills; the `cap` that sizes it is a separate `int32` parameter the entry names |
-| `struct_in:<name>`, `struct_out:<name>`, `struct_array_out:<name>` | `const bwapi_<name>*`, `bwapi_<name>*` | Size-prefixed PODs from `structs.yaml` (plan §4) |
+| `struct_in:<name>`, `struct_out:<name>`, `struct_array_out:<name>` | `const bwapi_<name>*`, `bwapi_<name>*` | Size-prefixed PODs from `structs.yaml` (plan §4). The two out kinds are followed by the caller's size or stride; see §1.5 |
 | `callback:<typedef>` | the typedef | `bwapi_log_callback`, `bwapi_error_callback` |
 | `void_ptr` | `void*` | The `user` beside a callback, and nothing else |
 
@@ -125,7 +125,7 @@ kind, and the emitter writes it into every wrapper and every reference page.
 | `string_out` | `int32_t` | an empty string (one NUL, when `buf_len > 0`) and `0` | `write_string(buf, buf_len, std::string)` |
 | `id_array` | `int32_t` | nothing written, `0` | fills `out` with the ids of a set of interfaces sorted ascending, up to `cap`; returns the total |
 | `position_array` | `int32_t` | nothing written, `0` | fills `out` with packed positions **in upstream's order** (a chokepoint's geometry is a polyline; sorting it would destroy it), up to `cap`; returns the total |
-| `struct_array:<name>` | `int32_t` | nothing written, `0` | `body:` or `source:` only; the caller's `size` on element zero is the stride |
+| `struct_array:<name>` | `int32_t` | nothing written, `0` | `body:` or `source:` only; the caller's stride is a parameter, never a field (plan §4, R12) |
 | `void` | `void` | nothing | none |
 
 The three position kinds share one C type and one rule for the neutral value: the packed
@@ -148,8 +148,14 @@ The emitter never reads a signature from the spec; it builds one, in this order:
 
 1. the handle, when `self` is a handle kind: `bwapi_<kind>_id <kind>_id`;
 2. every entry of `params`, in order;
-3. for `string_out`: `char* buf, int32_t buf_len`; for `id_array`, `position_array` and
-   `struct_array`: `<elem>* out, int32_t cap`.
+3. for `string_out`: `char* buf, int32_t buf_len`; for `id_array` and `position_array`:
+   `<elem>* out, int32_t cap`; for `struct_array`: `<elem>* out, int32_t cap, int32_t stride`.
+
+A `struct_out:` parameter is followed by the caller's own size for it, `int32_t <name>_size`, and
+a `struct_array_out:` parameter by `int32_t <name>_stride` (its `cap` is a parameter the entry
+names, like the other `*_array_out` kinds). The pairing is the same one `buf`/`buf_len` uses, and
+it exists because the callee sets `size` to the bytes it filled, so the caller's capacity cannot
+also live in that field (plan §4, R12).
 
 So a spec entry never spells `buf`, `buf_len`, `out` or `cap`, and no two functions can disagree
 about their order or their names. A function with no parameters at all is declared `(void)`.

@@ -17,12 +17,12 @@ static_assert(sizeof(&BWAPI::UnitType::requiredUnits) > 0, "spec/bulk.yaml bwapi
 
 extern "C" {
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_table(bwapi_unittype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_table(bwapi_unittype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     auto body = [&] {
       const int32_t total = id_count<BWAPI::UnitType>();
-      return write_rows(out, cap, total, [](bwapi_unittype_row& row, int32_t id) {
+      return write_rows(out, cap, stride, total, [](bwapi_unittype_row& row, int32_t id) {
         const BWAPI::UnitType t(id);
         row.id = id;
         row.get_race = (t.getRace()).getID();
@@ -103,12 +103,12 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_table(bwapi_unittype_row* out,
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_table(bwapi_weapontype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_table(bwapi_weapontype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     auto body = [&] {
       const int32_t total = id_count<BWAPI::WeaponType>();
-      return write_rows(out, cap, total, [](bwapi_weapontype_row& row, int32_t id) {
+      return write_rows(out, cap, stride, total, [](bwapi_weapontype_row& row, int32_t id) {
         const BWAPI::WeaponType t(id);
         row.id = id;
         row.get_tech = (t.getTech()).getID();
@@ -140,12 +140,12 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_table(bwapi_weapontype_row* 
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_table(bwapi_techtype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_table(bwapi_techtype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     auto body = [&] {
       const int32_t total = id_count<BWAPI::TechType>();
-      return write_rows(out, cap, total, [](bwapi_techtype_row& row, int32_t id) {
+      return write_rows(out, cap, stride, total, [](bwapi_techtype_row& row, int32_t id) {
         const BWAPI::TechType t(id);
         row.id = id;
         row.get_race = (t.getRace()).getID();
@@ -165,12 +165,12 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_table(bwapi_techtype_row* out,
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_table(bwapi_upgradetype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_table(bwapi_upgradetype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     auto body = [&] {
       const int32_t total = id_count<BWAPI::UpgradeType>();
-      return write_rows(out, cap, total, [](bwapi_upgradetype_row& row, int32_t id) {
+      return write_rows(out, cap, stride, total, [](bwapi_upgradetype_row& row, int32_t id) {
         const BWAPI::UpgradeType t(id);
         row.id = id;
         row.get_race = (t.getRace()).getID();
@@ -185,12 +185,12 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_table(bwapi_upgradetype_row
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_table(bwapi_race_row* out, int32_t cap) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_table(bwapi_race_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     auto body = [&] {
       const int32_t total = id_count<BWAPI::Race>();
-      return write_rows(out, cap, total, [](bwapi_race_row& row, int32_t id) {
+      return write_rows(out, cap, stride, total, [](bwapi_race_row& row, int32_t id) {
         const BWAPI::Race t(id);
         row.id = id;
         row.get_worker = (t.getWorker()).getID();
@@ -204,12 +204,12 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_table(bwapi_race_row* out, int32_t
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_table(bwapi_playertype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_table(bwapi_playertype_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     auto body = [&] {
       const int32_t total = id_count<BWAPI::PlayerType>();
-      return write_rows(out, cap, total, [](bwapi_playertype_row& row, int32_t id) {
+      return write_rows(out, cap, stride, total, [](bwapi_playertype_row& row, int32_t id) {
         const BWAPI::PlayerType t(id);
         row.id = id;
         row.is_lobby_type = (t.isLobbyType()) ? 1 : 0;
@@ -220,12 +220,12 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_table(bwapi_playertype_row* 
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_table(bwapi_color_row* out, int32_t cap) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_table(bwapi_color_row* out, int32_t cap, int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_buffer(out, cap)) return 0;
     auto body = [&] {
       const int32_t total = id_count<BWAPI::Color>();
-      return write_rows(out, cap, total, [](bwapi_color_row& row, int32_t id) {
+      return write_rows(out, cap, stride, total, [](bwapi_color_row& row, int32_t id) {
         const BWAPI::Color t(id);
         row.id = id;
         row.red = static_cast<int32_t>(t.red());

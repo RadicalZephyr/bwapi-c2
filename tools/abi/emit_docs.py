@@ -73,7 +73,10 @@ def latches(fn):
         out.append(LATCH_BWEM)
     if takes_handle:
         out.append(LATCH_HANDLE)
-    if fn["returns"]["kind"] in ("string_out", "id_array", "position_array") or fn["returns"]["kind"].startswith("struct_array:"):
+    # The buffer rule covers a struct parameter too: NULL, or a size that cannot hold size
+    # itself, is BAD_BUFFER before anything else (abi_internal.h's check_struct_out()).
+    takes_struct = any(p["type"].startswith(("struct_in:", "struct_out:", "struct_array_out:")) for p in fn["params"])
+    if fn["returns"]["kind"] in ("string_out", "id_array", "position_array") or fn["returns"]["kind"].startswith("struct_array:") or takes_struct:
         out.append(LATCH_BUFFER)
     out.append(LATCH_EXCEPTION)
     return out

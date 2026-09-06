@@ -32,7 +32,10 @@ def cs_name(name):
     return "@" + name if name in CS_KEYWORDS else name
 
 
-def cstype(c_type, structs, callbacks):
+def cstype(c_type, structs, callbacks, kind=""):
+    """The C# spelling of a C type. A pointer to a struct is an array for the struct_array kinds
+    (the caller sets size on element zero) and a ref for a single struct_in:/struct_out: (the
+    caller sets size on the one struct); the spec kind, not the C type, tells the two apart."""
     if c_type in SCALARS:
         return SCALARS[c_type]
     if c_type.startswith("bwapi_") and c_type.endswith("_id"):
@@ -41,6 +44,10 @@ def cstype(c_type, structs, callbacks):
         return c_type
     base = c_type.rstrip("*").replace("const ", "").strip()
     if c_type.endswith("*") and base in structs:
+        if kind.startswith("struct_out:"):
+            return f"ref {base}"
+        if kind.startswith("struct_in:"):
+            return f"in {base}"
         return f"{base}[]"
     raise SystemExit(f"gen.py: no C# mapping for {c_type!r}")
 
@@ -100,7 +107,7 @@ def render(api):
         out.append("        }")
         out.append("")
     for fn in api["functions"]:
-        params = ", ".join(f"{cstype(p['c_type'], structs, callbacks)} {cs_name(p['name'])}" for p in fn["params"])
+        params = ", ".join(f"{cstype(p['c_type'], structs, callbacks, p['type'])} {cs_name(p['name'])}" for p in fn["params"])
         ret = "void" if fn["returns"]["c_type"] == "void" else cstype(fn["returns"]["c_type"], structs, callbacks)
         out.append(f"        [DllImport(Library, CallingConvention = CallingConvention.Cdecl, EntryPoint = \"{fn['c']}\")]")
         out.append(f"        public static extern {ret} {fn['c']}({params});")

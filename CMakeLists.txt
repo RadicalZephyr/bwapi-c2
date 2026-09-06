@@ -65,6 +65,7 @@ add_library(bwapi_c2_abi OBJECT
   src/bulk.gen.cpp
   src/client.gen.cpp
   src/constants.gen.cpp
+  src/game.gen.cpp
   src/player.gen.cpp
   src/types.gen.cpp
 )

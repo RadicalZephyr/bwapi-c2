@@ -138,7 +138,7 @@ def struct_block(spec):
         return "/* (no structs yet: spec/structs.yaml arrives with the first POD that crosses the boundary) */"
     blocks = []
     for st in spec.structs:
-        rows = [("int32_t", "size", "", "the struct-evolution prefix: the caller's stride in, the bytes filled out")]
+        rows = [("int32_t", "size", "", "the struct-evolution prefix: the bytes the writer of this struct filled")]
         for f in st["fields"]:
             ctype, suffix = abispec.c_field_type(f["type"])
             note = f.get("doc") or (f.get("from", "") and f"{f['from']}()")

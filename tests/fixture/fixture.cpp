@@ -6,12 +6,15 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <utility>
 
 namespace bwapi_c2::test {
 
 namespace {
 
 constexpr int kNeutralPlayer = 11;
+
+std::function<void()> g_after_pump;
 
 // snprintf rather than strncpy: always NUL-terminates, and MSVC does not deprecate it (C4996).
 void copy_string(char* dst, size_t cap, const char* src) {
@@ -53,6 +56,14 @@ Fixture::~Fixture() {
   BWAPI::BroodwarPtr = nullptr;
   BWAPI::BWAPIClient.data = nullptr;
   std::free(data_);
+  // With no game the library's step keeps nothing, so a snapshot cannot outlive the GameImpl.
+  run_after_pump();
+}
+
+void Fixture::set_after_pump(std::function<void()> hook) { g_after_pump = std::move(hook); }
+
+void Fixture::run_after_pump() {
+  if (g_after_pump) g_after_pump();
 }
 
 void Fixture::require_not_started(const char* what) const {
@@ -231,13 +242,38 @@ int Fixture::neutral(BWAPI::UnitType type, int tx, int ty, int resources, bool s
   return id;
 }
 
+namespace {
+
+bool carries_text(BWAPI::EventType::Enum type) {
+  return type == BWAPI::EventType::SendText || type == BWAPI::EventType::ReceiveText ||
+         type == BWAPI::EventType::SaveGame;
+}
+
+}  // namespace
+
 Fixture& Fixture::event(BWAPI::EventType::Enum type, int v1, int v2) {
+  if (carries_text(type))
+    throw FixtureError("SendText, ReceiveText and SaveGame carry text; queue them with event(type, text, player)");
+  return queue(type, v1, v2);
+}
+
+Fixture& Fixture::queue(BWAPI::EventType::Enum type, int v1, int v2) {
   if (data_->eventCount >= BWAPI::GameData::MAX_EVENTS) throw FixtureError("event buffer full");
   auto& e = data_->events[data_->eventCount++];
   e.type = type;
   e.v1 = v1;
   e.v2 = v2;
   return *this;
+}
+
+Fixture& Fixture::event(BWAPI::EventType::Enum type, const char* text, int player) {
+  if (!carries_text(type)) throw FixtureError("only SendText, ReceiveText and SaveGame events carry text");
+  if (data_->eventStringCount >= BWAPI::GameData::MAX_EVENT_STRINGS) throw FixtureError("event string table full");
+  const int slot = data_->eventStringCount++;
+  copy_string(data_->eventStrings[slot], sizeof data_->eventStrings[slot], text ? text : "");
+  // makeEvent() reads the slot from v1, except for ReceiveText, where v1 is the player and v2
+  // the slot (BWAPIClient/Source/GameImpl.cpp).
+  return type == BWAPI::EventType::ReceiveText ? queue(type, player, slot) : queue(type, slot, -1);
 }
 
 void Fixture::start() {
@@ -247,6 +283,7 @@ void Fixture::start() {
   BWAPI::BroodwarPtr = game_.get();
   game_->onMatchStart();
   pending_consumed_ = data_->eventCount;  // onMatchStart pumped everything queued so far
+  run_after_pump();
 }
 
 BWAPI::GameImpl& Fixture::game() {
@@ -264,14 +301,16 @@ void Fixture::frame() {
   data_->stringCount = 0;
   data_->commandCount = 0;
   // Events queued since the last frame (by event()) stay; last frame's are gone. A MatchFrame
-  // event leads, as the server sends it.
+  // event leads, as the server sends it. eventStrings is left alone: a kept event may point at
+  // a slot, and the 1000 slots outlast any scenario.
   const int queued = data_->eventCount;
   std::vector<BWAPIC::Event> keep(data_->events + pending_consumed_, data_->events + queued);
   data_->eventCount = 0;
-  event(BWAPI::EventType::MatchFrame);
-  for (const auto& e : keep) event(e.type, e.v1, e.v2);
+  queue(BWAPI::EventType::MatchFrame, -1, -1);
+  for (const auto& e : keep) queue(e.type, e.v1, e.v2);
   game_->onMatchFrame();
   pending_consumed_ = data_->eventCount;
+  run_after_pump();
 }
 
 }  // namespace bwapi_c2::test
