@@ -158,9 +158,12 @@ BWAPI_C2_API void BWAPI_C2_CALL bwapi_abi_version(int32_t* major, int32_t* minor
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_abi_version_string(char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT {
   char s[32];
-  const int n = std::snprintf(s, sizeof s, "%d.%d.%d", BWAPI_C2_VERSION_MAJOR, BWAPI_C2_VERSION_MINOR,
-                              BWAPI_C2_VERSION_PATCH);
-  return write_string(buf, buf_len, s, n > 0 ? static_cast<size_t>(n) : 0);
+  // snprintf returns the length the string WOULD need, which is not the length it wrote; passing
+  // that straight on would have write_string() read past s were the version ever long enough to
+  // truncate. std::strlen is what is actually there.
+  std::snprintf(s, sizeof s, "%d.%d.%d", BWAPI_C2_VERSION_MAJOR, BWAPI_C2_VERSION_MINOR,
+                BWAPI_C2_VERSION_PATCH);
+  return write_string(buf, buf_len, s, std::strlen(s));
 }
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_client_version(void) BWAPI_C2_NOEXCEPT {
