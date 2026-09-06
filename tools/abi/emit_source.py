@@ -175,6 +175,10 @@ def signature_assertion(entry, stem):
         return f'static_assert(sizeof(&{cls}::{method}) > 0, "{where} not found");'
     args = ", ".join(f"std::declval<{qualify_type(p)}>()" for p in params)
     expr = f"std::declval<{cls}&>().{method}({args})"
+    # A well-formedness probe, not a comparison: decltype(expr) exists only if some overload
+    # accepts those argument types, and comparing it with itself is the one static_assert
+    # operand that also works when the call returns void, which sizeof(decltype(expr)) would
+    # not. Nothing about the return type is checked (docs/spec-format.md section 1.6).
     return (f"static_assert(std::is_same_v<decltype({expr}), decltype({expr})>,\n"
             f'              "{where} not found with that signature");')
 
