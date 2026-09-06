@@ -13,9 +13,11 @@
 //      starts at -1.
 //   3. isPowered and isInterruptible both gate canMove and both default false in memory. A unit
 //      the scenario wants commandable gets them set.
-//   4. Neutrals reach GameImpl through the UnitDiscover event stream, not a scan of
-//      data->units, and PlayerImpl::isNeutral() reads a PlayerData flag. neutral() synthesises
-//      the event and the fixture marks player 11 neutral.
+//   4. Units reach GameImpl's per-player sets through the UnitDiscover event stream, not a
+//      scan of data->units: onMatchStart() fills only accessibleUnits from initialUnitCount,
+//      and the server queues a UnitDiscover for every initial unit beside MatchStart. unit()
+//      and neutral() both synthesise the event; PlayerImpl::isNeutral() reads a PlayerData
+//      flag, so the fixture marks player 11 neutral.
 //   5. Neutrals occupy their own tiles unless deliberately stacked with an identical footprint
 //      and type. A partial overlap is a map-editor accident BWEM accepts silently and crashes
 //      on at teardown (R11.9); neutral() refuses it by throwing FixtureError.
@@ -85,7 +87,8 @@ class Fixture {
 
   // A unit at a pixel position. Returns its id, which is also its index in data->units and in
   // data->unitArray; the builder stops at that table's 1700 slots. Every index field is -1
-  // (invariant 2); powered and interruptible by default (invariant 3).
+  // (invariant 2); powered and interruptible by default (invariant 3); delivered through a
+  // synthesised UnitDiscover event (invariant 4), so it is in its owner's getUnits() too.
   int unit(int owner, BWAPI::UnitType type, int x, int y, const UnitOptions& opts = {});
 
   // A neutral (mineral field, geyser, static building) whose footprint's top-left tile is
@@ -96,7 +99,7 @@ class Fixture {
   int neutral(BWAPI::UnitType type, int tx, int ty, int resources = 1500, bool stacked = false);
 
   // Queue an event for the next onMatchStart()/frame(). start() queues nothing itself: the
-  // neutrals' UnitDiscover events are already there.
+  // units' UnitDiscover events are already there.
   Fixture& event(BWAPI::EventType::Enum type, int v1 = -1, int v2 = -1);
 
   // ---- running --------------------------------------------------------------------------

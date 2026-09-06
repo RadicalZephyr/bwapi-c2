@@ -42,6 +42,12 @@ TEST_CASE("the real client reads the synthetic GameData") {
   CHECK(Broodwar->self()->getRace() == Races::Terran);
   CHECK(Broodwar->enemy()->getRace() == Races::Zerg);
   CHECK(Broodwar->getAllUnits().size() == 1);
+  // Invariant 4: the unit arrived by UnitDiscover, so the per-player sets know it too.
+  CHECK(Broodwar->self()->getUnits().size() == 1);
+  CHECK(Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) == 1);
+  CHECK(Broodwar->self()->completedUnitCount(UnitTypes::Terran_SCV) == 1);
+  CHECK(Broodwar->self()->allUnitCount(UnitTypes::Terran_Marine) == 0);
+  CHECK(Broodwar->enemy()->getUnits().empty());
 
   Unit scv = Broodwar->getUnit(s.scv);
   REQUIRE(scv != nullptr);

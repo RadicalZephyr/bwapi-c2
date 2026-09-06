@@ -159,13 +159,24 @@ int Fixture::allocate_unit(int owner, BWAPI::UnitType type, int x, int y, const 
   u.upgrade = BWAPI::UpgradeTypes::None;
   data_->unitArray[id] = id;
   data_->initialUnitCount = unit_count_;
+  // The server keeps per-type tallies in PlayerData that nothing derives from the unit sets.
+  auto& tally = data_->players[owner];
+  ++tally.allUnitCount[type];
+  ++tally.visibleUnitCount[type];
+  if (opts.completed) ++tally.completedUnitCount[type];
   return id;
 }
 
 int Fixture::unit(int owner, BWAPI::UnitType type, int x, int y, const UnitOptions& opts) {
   require_not_started("unit()");
   if (owner < 0 || owner >= 12) throw FixtureError("unit owner must be a player id 0..11");
-  return allocate_unit(owner, type, x, y, opts);
+  const int id = allocate_unit(owner, type, x, y, opts);
+  // What the server does for every unit alive at match start: Server::update() queues the
+  // frame's UnitDiscover events beside MatchStart, and only that event path puts a unit into
+  // its PlayerImpl::units. onMatchStart() alone fills accessibleUnits, so without the event
+  // getAllUnits() would see the unit and self()->getUnits() would not.
+  event(BWAPI::EventType::UnitDiscover, id);
+  return id;
 }
 
 bool Fixture::partially_overlaps(const Footprint& a, const Footprint& b) {
