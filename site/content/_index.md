@@ -48,7 +48,8 @@ of a bot author](@/explanation/license-for-bot-authors.md) says exactly what.
 
 ## The documentation
 
-Four sections, each with one job.
+This project follows the [Diátaxis][https://diataxis.fr/] approach for
+technical documentation. Four sections, each with one job.
 
 - **[Tutorials](@/tutorials/_index.md)**: learning by doing, one path, guaranteed to work.
 - **[How-to guides](@/how-to/_index.md)**: a task you already have, done.
