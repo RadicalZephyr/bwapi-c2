@@ -263,9 +263,9 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
 - Nothing in either job downloads anything but the submodules. Recursive submodule fetch is off.
 - Commit: *"Add CI: Linux suite with sanitizers, Windows DLL build and export check"*.
   **Done**, and the golden-`.def` check (`tests/exports/check_exports.py`, dumpbin or nm) is a
-  CTest test on every platform rather than a CI-only step. **Unverified until the first run:**
-  the Windows job, and the sanitizer configuration; neither MSVC nor clang's sanitizer runtimes
-  exist on the machine that wrote them.
+  CTest test on every platform rather than a CI-only step. The first run passed on Linux, plain
+  and sanitized, and failed on Windows only on two `/W4 /WX` warnings in test code; the second
+  run is green on all four jobs.
 
 ### 0.12 The site skeleton and its deploy workflow
 
@@ -317,10 +317,11 @@ Explanation pages can be written alongside the code they explain instead of afte
 | Headers compile as C99, C++17, and twice in one TU | both |
 | The landing page and two Explanation pages are live on Pages; `zola check` clean | docs CI |
 
-**Where the checklist stands** after the phase-0 commits: every Linux row passes locally
-(fourteen CTest tests plus valgrind over the two fixture suites), and `zola check` and
-`zola build` pass locally on the pinned Zola. The Windows row, the sanitizer configuration and
-the Pages deploy wait on the first CI run against `main` and on the Pages source setting.
+**Where the checklist stands** after the phase-0 commits: every row but the last is green in
+CI on the PR branch. Linux passes plain and under ASan/UBSan; both Windows jobs build the DLL,
+run the suite and check the exports (the first run found two MSVC warnings-as-errors in test
+code, `strncpy` and constant conditions, both fixed); `zola check` and `zola build` pass. The
+Pages deploy waits on the Pages source setting and on the branch reaching `main`.
 
 What phase 0 does **not** do: write any wrapper beyond `bwapi_abi_version`; touch the
 generator; add constants. The temptation is to hand-write `bwapi_game_map_name` "just to see
