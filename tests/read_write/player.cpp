@@ -84,10 +84,8 @@ std::string name_of(int32_t player) {
 
 }  // namespace
 
-TEST_CASE("identity: id, name, race, type, force, colour") {
+TEST_CASE("identity: name, race, type, force, colour") {
   PlayerScenario s;
-  CHECK(bwapi_player_get_id(0) == 0);
-  CHECK(bwapi_player_get_id(11) == 11);
   CHECK(name_of(0) == "FixtureBot");
   CHECK(name_of(1) == "Opponent");
   CHECK(name_of(11) == "Neutral");
@@ -308,7 +306,8 @@ TEST_CASE("a bad player id returns the neutral value of every kind and latches o
     CHECK(bwapi_player_get_type(bad) == PlayerTypes::Unknown.getID());
     CHECK(bwapi_player_get_color(bad) == 255);
     CHECK(bwapi_player_get_force(bad) == BWAPI_NONE);
-    CHECK(bwapi_player_get_start_location(bad) == BWAPI_POSITION_NONE);
+    // The neutral of a tile-scale function is the tile-scale sentinel, not the pixel one.
+    CHECK(bwapi_player_get_start_location(bad) == BWAPI_TILEPOSITION_NONE);
     CHECK(bwapi_player_top_speed(bad, UnitTypes::Terran_Marine.getID()) == 0.0);
     CHECK(bwapi_player_get_units(bad, nullptr, 0) == 0);
     CHECK(bwapi_player_get_name(bad, nullptr, 0) == 0);

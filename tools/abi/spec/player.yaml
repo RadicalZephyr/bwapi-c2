@@ -1,16 +1,16 @@
 # PlayerInterface (BWAPI/Player.h): the proving ground for the generator (implementation plan
-# 1.4), because it is small and dull. Every method exports; nothing here needs a body except
-# the two that take a second player and the one whose default argument the C caller spells.
+# 1.4), because it is small and dull. Every method but getID exports; nothing here needs a body
+# except the two that take a second player and the one whose default argument the C caller
+# spells.
 #
 # A player id is 0..11. Ids out of that range latch BWAPI_ERR_INVALID_HANDLE; a slot that no
 # player occupies is in range and answers as BWAPI answers for it, mostly 0 and None.
 
+# The id is the handle (plan section 6.2, decision 23): an export would return its own argument,
+# and its int32 neutral of 0 is a valid player id, so a caller using it as a validity probe would
+# be misled without the latch. The same skip goes on every interface.
 - cpp: "PlayerInterface::getID"
-  c: bwapi_player_get_id
-  self: player
-  returns: int32
-  doc: >-
-    The player's id, which is the handle itself: 0..11, the slot in the game's player table.
+  skip: "§6.2: the id is the handle; bwapi_unit_exists() and the latch are the probes"
 
 - cpp: "PlayerInterface::getName"
   c: bwapi_player_get_name

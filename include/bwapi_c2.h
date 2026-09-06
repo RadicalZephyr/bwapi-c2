@@ -74,8 +74,6 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_client_is_connected(void) BWAPI_C2_NOEX
 
 /* ---- Player -------------------------------------------------------------------------------------- */
 
-/* The player's id, which is the handle itself: 0..11, the slot in the game's player table. */
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_id(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT;
 /* The player's name, as the game reports it. */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_name(bwapi_player_id player_id, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
 /* The ids of every unit the player owns, incomplete units included, ascending. */

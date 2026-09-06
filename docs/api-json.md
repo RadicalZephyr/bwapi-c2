@@ -20,7 +20,7 @@ is bumped when a field changes meaning or goes away, and never when one is added
 | `abi_version` | string | `bwapi_abi_version()` of the library this file describes, `"major.minor.patch"`, from `project(VERSION)` in `CMakeLists.txt` |
 | `functions` | array | Every exported function, in spec order (§2) |
 | `constants` | array | Every constant family (§3) |
-| `structs` | array | Every POD that crosses the boundary (§4). Empty until phase 2 |
+| `structs` | array | Every POD that crosses the boundary (§4): the bulk table rows from phase 1, the events, bullets and snapshots from phase 2 |
 
 ## 2. A function
 
@@ -91,10 +91,20 @@ documented packing (x in the low 32 bits, y in the high 32, two's complement), w
 
 ## 4. A struct
 
-Empty until phase 2 lands `bwapi_event`, `bwapi_bullet` and the snapshots. The shape is fixed
-now: `{name, c_type, doc, fields: [{name, type, doc}], flags: [{name, bit, doc}]}`, where
-`c_type` is `bwapi_<name>`, `fields` omits the leading `int32_t size` every struct carries, and
-`flags` names the bits of a `uint32_t flags` field where there is one.
+One entry per struct in `structs.yaml` (`docs/spec-format.md` §3), in spec order.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `name` | string | The spec name (`unittype_row`, `required_unit`, …) |
+| `c_type` | string | `bwapi_<name>`, the typedef a parameter's `c_type` points at |
+| `doc` | string | What the struct is, one paragraph |
+| `fields` | array | Every field in declaration order, **`size` first**: `{name, type, c_type, doc}`, plus `from` on a table row's fields. `type` is the spec type (`int32`, `bool32`, `double`, `int16`, `uint8`, `uint32`, `type:<Class>`, with an `[N]` suffix for a fixed array); `c_type` is its C spelling with the array suffix attached; `from` is the C++ accessor the field mirrors (`UnitType::maxHitPoints`) |
+| `flags` | array | The bits of a `uint32_t flags` field, `{name, bit, doc}`, when the struct has one; empty otherwise |
+| `table` | object | Present on a bulk table row only: `{class, c}`, the type class the rows enumerate and the function that fills them (`bwapi_unittype_table`) |
+
+A generator declares the struct with every field in order, `size` included, at the C types
+given; a consumer sets `size` on element zero before an array-out call (plan §4) and reads it
+back per row to learn what the DLL filled.
 
 ## 5. What a generator should and should not do
 

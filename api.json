@@ -329,29 +329,6 @@
       "doc": "1 while connected. Becomes 0 when the server goes away during bwapi_client_update()."
     },
     {
-      "c": "bwapi_player_get_id",
-      "section": "player",
-      "signature": "int32_t bwapi_player_get_id(bwapi_player_id player_id)",
-      "cpp": "PlayerInterface::getID",
-      "self": "player",
-      "params": [
-        {
-          "name": "player_id",
-          "type": "handle:player",
-          "c_type": "bwapi_player_id"
-        }
-      ],
-      "returns": {
-        "kind": "int32",
-        "c_type": "int32_t",
-        "neutral": "0"
-      },
-      "reentrant": "allowed",
-      "legit_none": false,
-      "generated": true,
-      "doc": "The player's id, which is the handle itself: 0..11, the slot in the game's player table."
-    },
-    {
       "c": "bwapi_player_get_name",
       "section": "player",
       "signature": "int32_t bwapi_player_get_name(bwapi_player_id player_id, char* buf, int32_t buf_len)",
@@ -588,7 +565,7 @@
       "returns": {
         "kind": "tile_position",
         "c_type": "bwapi_position",
-        "neutral": "BWAPI_POSITION_NONE",
+        "neutral": "BWAPI_TILEPOSITION_NONE",
         "scale": "tile"
       },
       "reentrant": "allowed",
@@ -2609,7 +2586,7 @@
       "returns": {
         "kind": "tile_position",
         "c_type": "bwapi_position",
-        "neutral": "BWAPI_POSITION_NONE",
+        "neutral": "BWAPI_TILEPOSITION_NONE",
         "scale": "tile"
       },
       "reentrant": "allowed",
@@ -6269,7 +6246,7 @@
       "family": "position_sentinel",
       "prefix": "BWAPI",
       "cpp": null,
-      "doc": "BWAPI's own position sentinels (BWAPI/Position.h) in unpacked form, for the pixel, walk (scale 8) and tile (scale 32) scales. The packed forms are BWAPI_POS_MAKE of each pair; packing is lossless, so a C++ bot sees the same values. BWAPI_POSITION_NONE packed is the neutral return of every position-returning function.",
+      "doc": "BWAPI's own position sentinels (BWAPI/Position.h) in unpacked form, for the pixel, walk (scale 8) and tile (scale 32) scales. The packed forms are BWAPI_POS_MAKE of each pair; packing is lossless, so a C++ bot sees the same values. The packed None of a function's own scale (BWAPI_POSITION_NONE, BWAPI_WALKPOSITION_NONE or BWAPI_TILEPOSITION_NONE) is its neutral return.",
       "values": [
         {
           "name": "BWAPI_POSITION_INVALID_X",

@@ -111,7 +111,6 @@ bool check_string_buffer(const char* buf, int32_t buf_len) {
 }
 
 int32_t write_string(char* buf, int32_t buf_len, const char* s, size_t len) {
-  if (!check_string_buffer(buf, buf_len)) return 0;
   if (buf_len > 0) {
     const size_t room = static_cast<size_t>(buf_len) - 1;
     const size_t n = len < room ? len : room;
@@ -157,6 +156,7 @@ BWAPI_C2_API void BWAPI_C2_CALL bwapi_abi_version(int32_t* major, int32_t* minor
 }
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_abi_version_string(char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT {
+  if (!check_string_buffer(buf, buf_len)) return 0;
   char s[32];
   // snprintf returns the length the string WOULD need, which is not the length it wrote; passing
   // that straight on would have write_string() read past s were the version ever long enough to
@@ -186,6 +186,7 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_last_error(void) BWAPI_C2_NOEXCEPT {
 }
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_last_error_message(char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT {
+  if (!check_string_buffer(buf, buf_len)) return 0;
   std::string copy;
   {
     std::lock_guard<std::mutex> lock(g_mutex);

@@ -45,7 +45,6 @@ EXPORTS
     bwapi_player_get_color
     bwapi_player_get_custom_score
     bwapi_player_get_force
-    bwapi_player_get_id
     bwapi_player_get_kill_score
     bwapi_player_get_max_upgrade_level
     bwapi_player_get_name

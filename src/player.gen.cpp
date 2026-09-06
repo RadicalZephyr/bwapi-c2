@@ -13,15 +13,6 @@ using namespace bwapi_c2;
 
 extern "C" {
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_id(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT {
-  return guard<int32_t>(0, [&]() -> int32_t {
-    if (!game_ready("bwapi_player_get_id")) return 0;
-    BWAPI::Player self = resolve_player(player_id, "bwapi_player_get_id");
-    if (!self) return 0;
-    return static_cast<int32_t>(self->getID());
-  });
-}
-
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_name(bwapi_player_id player_id, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     if (!check_string_buffer(buf, buf_len)) return 0;
@@ -44,19 +35,19 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_units(bwapi_player_id player
 }
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_race(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT {
-  return guard<int32_t>(BWAPI::Race(-1).getID(), [&]() -> int32_t {
-    if (!game_ready("bwapi_player_get_race")) return BWAPI::Race(-1).getID();
+  return guard<int32_t>(unknown_id<BWAPI::Race>(), [&]() -> int32_t {
+    if (!game_ready("bwapi_player_get_race")) return unknown_id<BWAPI::Race>();
     BWAPI::Player self = resolve_player(player_id, "bwapi_player_get_race");
-    if (!self) return BWAPI::Race(-1).getID();
+    if (!self) return unknown_id<BWAPI::Race>();
     return (self->getRace()).getID();
   });
 }
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_type(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT {
-  return guard<int32_t>(BWAPI::PlayerType(-1).getID(), [&]() -> int32_t {
-    if (!game_ready("bwapi_player_get_type")) return BWAPI::PlayerType(-1).getID();
+  return guard<int32_t>(unknown_id<BWAPI::PlayerType>(), [&]() -> int32_t {
+    if (!game_ready("bwapi_player_get_type")) return unknown_id<BWAPI::PlayerType>();
     BWAPI::Player self = resolve_player(player_id, "bwapi_player_get_type");
-    if (!self) return BWAPI::PlayerType(-1).getID();
+    if (!self) return unknown_id<BWAPI::PlayerType>();
     return (self->getType()).getID();
   });
 }
@@ -102,10 +93,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_is_neutral(bwapi_player_id playe
 }
 
 BWAPI_C2_API bwapi_position BWAPI_C2_CALL bwapi_player_get_start_location(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT {
-  return guard<bwapi_position>(BWAPI_POSITION_NONE, [&]() -> bwapi_position {
-    if (!game_ready("bwapi_player_get_start_location")) return BWAPI_POSITION_NONE;
+  return guard<bwapi_position>(BWAPI_TILEPOSITION_NONE, [&]() -> bwapi_position {
+    if (!game_ready("bwapi_player_get_start_location")) return BWAPI_TILEPOSITION_NONE;
     BWAPI::Player self = resolve_player(player_id, "bwapi_player_get_start_location");
-    if (!self) return BWAPI_POSITION_NONE;
+    if (!self) return BWAPI_TILEPOSITION_NONE;
     return pack(self->getStartLocation());
   });
 }
@@ -336,10 +327,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_is_upgrading(bwapi_player_id pla
 }
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_get_color(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT {
-  return guard<int32_t>(BWAPI::Color(-1).getID(), [&]() -> int32_t {
-    if (!game_ready("bwapi_player_get_color")) return BWAPI::Color(-1).getID();
+  return guard<int32_t>(unknown_id<BWAPI::Color>(), [&]() -> int32_t {
+    if (!game_ready("bwapi_player_get_color")) return unknown_id<BWAPI::Color>();
     BWAPI::Player self = resolve_player(player_id, "bwapi_player_get_color");
-    if (!self) return BWAPI::Color(-1).getID();
+    if (!self) return unknown_id<BWAPI::Color>();
     return (self->getColor()).getID();
   });
 }

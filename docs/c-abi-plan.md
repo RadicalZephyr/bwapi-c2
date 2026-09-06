@@ -88,6 +88,15 @@ This is a design/roadmap document. No production code is included.
 > now pin (§7, §10.3, §15.2). BWAPI's fork also carries a POSIX `revisionUpdate.sh` and the
 > generated `svnrev.h`, so there is no `vendor/svnrev.h` in this tree and no Windows step at a
 > pin bump (§10.3). The record of what each fork carries is `docs/pins.md`.
+>
+> **Revision 4.5** is the phase-1 sanity check folded back. One convention moves: the neutral
+> return of a position-returning function is the packed `None` of its own scale, not
+> `Positions::None` for every scale (§4, decision 22). The rest is the plan catching up with
+> the header where phase 1 improved on it: `BWAPI_HAS_FIELD` tests the field's end (§4), the
+> handle typedefs carry an `_id` suffix (§6), `whatBuilds` returns the builder and writes the
+> count (§5.8), the `body:` `static_assert` is an existence check with the body's own
+> compilation as the type check (§9), and `getID` is skipped on every interface because the
+> id is the handle (§6.2, decision 23).
 
 ---
 
@@ -573,7 +582,12 @@ Packing is lossless, so the sentinels survive unchanged: emit `Positions::Invali
 `Unknown`, `Origin` and their tile and walk equivalents in **both** unpacked
 (`BWAPI_POSITION_NONE_X` / `_Y`) and packed (`BWAPI_POSITION_NONE`) forms. Do not invent a new
 invalid bit pattern. **The neutral return for a position-returning function given a bad handle
-is packed `Positions::None`** — one rule, matching the invalid-handle policy below.
+is the packed `None` of the function's own scale** — `Positions::None` from a pixel-scale
+function, `TilePositions::None` from a tile-scale one, `WalkPositions::None` from a walk-scale
+one — so the caller tests the sentinel it was already going to test. Revision 4.4 said
+`Positions::None` for all three scales, as "one rule"; it was one rule that handed a tile-scale
+consumer a pixel-scale sentinel it had no reason to look for, and the generator knows each
+function's scale, so the scale-correct sentinel is free (revision 4.5).
 
 **Naming.** `bwapi_<subject>_<verb>[_<disambiguator>]`, snake_case:
 `bwapi_unit_get_hit_points`, `bwapi_unit_attack_position`, `bwapi_unit_attack_unit`,
@@ -644,9 +658,11 @@ a struct most bots never touch (§5.3's ~40 convenience functions are the real c
 uniformity is worth more than four bytes.
 
 `bwapi_c2_types.h` ships one capability macro, LibreOfficeKit's `LIBREOFFICEKIT_HAS_MEMBER`
-under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) <
-size` — so a consumer compiled against a newer header can test whether the DLL it loaded filled
-a field before reading it. The size prefix makes that possible; the macro makes it one line.
+under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) +
+sizeof(field) <= size` — so a consumer compiled against a newer header can test whether the DLL
+it loaded filled a field before reading it. The size prefix makes that possible; the macro
+makes it one line. It tests the field's end rather than LibreOfficeKit's start: a field the
+DLL half-filled is not present, and with every field `int32_t`-aligned the two agree anyway.
 
 **Invalid handles.** Never dereference. Validate, then return a documented neutral value (`0` /
 `-1` / packed `Positions::None` / empty) and latch it in the ABI error channel. Rationale: a
@@ -1017,7 +1033,8 @@ Zig bot's 650. Five hand transcriptions, at least two wrong. `bwapi-c` shipped n
 its own example bot is reduced to `case 7: // SCV`. **This block is the product.**
 
 The few that return containers need out-buffers: `requiredUnits()` → `std::map<UnitType,int>`
-→ parallel `(type[], count[])` arrays; `whatBuilds()` → `std::pair` → two out-params;
+→ parallel `(type[], count[])` arrays; `whatBuilds()` → `std::pair` → the builder type
+returned and the count through one out-param that may be `NULL`;
 `abilities()`/`upgrades()`/`buildsWhat()` → ID arrays.
 
 **Shipped three ways.** The 185 accessors ship as **functions**, because that is what the 1,671
@@ -1133,22 +1150,24 @@ checklist.
 ## 6. Handle model in detail
 
 ```c
-typedef int32_t bwapi_unit;    /* Game::getUnit(id)   — O(1) */
-typedef int32_t bwapi_player;  /* Game::getPlayer(id) — 0..11 */
-typedef int32_t bwapi_force;   /* Game::getForce(id)  — 0..4 */
-typedef int32_t bwapi_region;  /* Game::getRegion(id) */
+typedef int32_t bwapi_unit_id;    /* Game::getUnit(id)   — O(1) */
+typedef int32_t bwapi_player_id;  /* Game::getPlayer(id) — 0..11 */
+typedef int32_t bwapi_force_id;   /* Game::getForce(id)  — 0..4 */
+typedef int32_t bwapi_region_id;  /* Game::getRegion(id) */
 #define BWAPI_NONE (-1)
 ```
 
 Distinct typedefs (even though all are `int32_t`) so generated wrappers can newtype them and
-catch a unit ID passed where a player ID belongs. BWEM adds `bwapi_bwem_area`,
-`bwapi_bwem_choke` and `bwapi_bwem_base` (§8); neutrals are `bwapi_unit`.
+catch a unit ID passed where a player ID belongs. The `_id` suffix is deliberate: a bare
+`bwapi_unit` reads as an object, and the header has nothing that is one. BWEM adds
+`bwapi_bwem_area_id`, `bwapi_bwem_choke_id` and `bwapi_bwem_base_id` (§8); neutrals are
+`bwapi_unit_id`.
 
 ### 6.1 Resolution
 
 One internal helper per kind:
 ```cpp
-inline BWAPI::Unit resolve(bwapi_unit id) {
+inline BWAPI::Unit resolve(bwapi_unit_id id) {
   if (id < 0 || !BWAPI::BroodwarPtr) return nullptr;
   return BWAPI::BroodwarPtr->getUnit(id);
 }
@@ -1158,7 +1177,10 @@ index — negligible next to the virtual call that follows.
 
 ### 6.2 Validity, and legitimate `BWAPI_NONE`
 
-`bwapi_unit_exists(id)` maps to `UnitInterface::exists()`. Handles need no explicit release:
+`bwapi_unit_exists(id)` maps to `UnitInterface::exists()`. `getID()` is not exported on any
+interface (decision 23): the id is the handle, so the export would return its argument, and its
+`int32` neutral of `0` is itself a valid id, which makes it the one accessor whose failure
+value is indistinguishable from an answer. Handles need no explicit release:
 they are indices into game-owned storage, nothing is retained, nothing leaks.
 
 **The header enumerates the functions that legitimately return `BWAPI_NONE`** — among them
@@ -1517,8 +1539,10 @@ bool)"` is overload resolution by string match; assert uniqueness in the generat
 bind the wrong overload eventually.
 
 **`body:` entries still declare full types, and CI emits a `static_assert` that the referenced
-C++ overload exists with the declared signature.** Otherwise an opaque C++ body is a hole in both
-the coverage audit and `api.json`.
+C++ overload exists.** Otherwise an opaque C++ body is a hole in both the coverage audit and
+`api.json`. The assertion is an existence check and nothing more: the spec carries no C++
+signature to compare against, so a changed return type is caught by the body's own compilation,
+which converts the call's result to the return kind (`docs/spec-format.md` §1.6).
 
 **The `.def` file is the golden symbol artifact.** Generate it, check it in, and have CI assert
 `dumpbin /exports` matches. Assign no ordinals; binding is by name only.
@@ -1851,7 +1875,8 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 19 | Documentation | **Reference emitted from `api.json`, no Doxygen; one Zola site, Diátaxis-structured, on GitHub Pages, deployed from CI; the design record linked, not rendered** (§16) |
 | 20 | Keep the BWEM `ResetInstance` patch once its crash rationale fell (R11.9)? | **Yes, as the teardown API BWEM lacks** (§8.2, §15.2). And `bwapi_bwem_initialize()` rejects partially overlapping neutrals with a latched error rather than let BWEM crash at match end (§8.3) |
 | 21 | Carry the §15.2 modifications as patch files or as forks? | **Forks.** Each submodule pins a `bwapi-c2-pin` branch on our fork of the dependency: the upstream commit plus the carried commits (§7, §10.3, §15.2). Clean working trees, no configure-time script, and `svnrev.h` committed on the BWAPI fork by a POSIX port of upstream's script, which removes the Windows step from a pin bump |
-
+| 22 | One neutral position for every scale, or the scale's own? | **The scale's own.** `Positions::None` from a pixel-scale function, `TilePositions::None` from a tile-scale one, `WalkPositions::None` from a walk-scale one (§4). Revision 4.4's single sentinel gave a tile-scale caller a pixel-scale value it would never test for; the emitter knows the kind, so this is one rule too, and a cheaper one before 1.0 than after |
+| 23 | Export `getID` on the interfaces? | **No; a rule-bearing `skip:` on every interface.** The id is the handle, so the export carries no information, and its `int32` neutral of `0` is a valid id, so a caller that used it as a validity probe would be misled without reading the latch (§6.2). `bwapi_unit_exists()` and the latch are the probes |
 ---
 
 ## 14. What a consumer sees
@@ -2098,7 +2123,7 @@ typedef struct bwapi_bot_vtable {
   void (BWAPI_C2_CALL *on_start)(void* bot);
   void (BWAPI_C2_CALL *on_end)(void* bot, int32_t is_winner);
   void (BWAPI_C2_CALL *on_frame)(void* bot);
-  void (BWAPI_C2_CALL *on_unit_create)(void* bot, bwapi_unit u);
+  void (BWAPI_C2_CALL *on_unit_create)(void* bot, bwapi_unit_id u);
   /* … one per AIModule virtual … */
   void (BWAPI_C2_CALL *destroy)(void* bot);
 } bwapi_bot_vtable;

@@ -29,10 +29,11 @@
  *   - Every POD that crosses the boundary begins with int32_t size (see BWAPI_HAS_FIELD).
  *   - Handles are int32_t ids in disjoint spaces, with one exception: a BWEM neutral IS a
  *     BWAPI unit and is addressed by its unit id. BWAPI_NONE (-1) is the neutral id value.
- *   - A handle that could never have been valid (negative, out of range, wrong kind, used
- *     before connect) returns the documented neutral value AND latches BWAPI_ERR_INVALID_HANDLE.
- *     A handle to a unit that has since died returns what BWAPI returns for a dead unit, with
- *     no latch; bwapi_unit_exists() tells the two apart.
+ *   - A handle that could never have been valid (negative, out of range, wrong kind) returns
+ *     the documented neutral value AND latches BWAPI_ERR_INVALID_HANDLE; any handle used before
+ *     connect or after disconnect does the same and latches BWAPI_ERR_NOT_CONNECTED. A handle
+ *     to a unit that has since died returns what BWAPI returns for a dead unit, with no latch;
+ *     bwapi_unit_exists() tells the two apart.
  *   - Every export is a noexcept boundary: an exception inside latches an error and returns
  *     the neutral value. Nothing unwinds into the host.
  *   - All calls happen on the thread that calls bwapi_client_update(); any other thread gets
@@ -86,9 +87,11 @@ typedef int64_t bwapi_position;
 #define BWAPI_POS_MAKE(x, y) ((bwapi_position)(((uint64_t)(uint32_t)(y) << 32) | (uint32_t)(x)))
 
 /* BWAPI's own sentinels (BWAPI/Position.h), in both forms. Packing is lossless, so these are
- * the same values a C++ bot sees; no new bit pattern is invented. Positions::None packed is the
- * neutral return of every position-returning function given an invalid handle, whatever its
- * scale. Pixel scale, then walk (scale 8), then tile (scale 32). */
+ * the same values a C++ bot sees; no new bit pattern is invented. The packed None of a
+ * function's own scale is its neutral return when it does not run: BWAPI_POSITION_NONE from a
+ * pixel-scale function, BWAPI_WALKPOSITION_NONE from a walk-scale one, BWAPI_TILEPOSITION_NONE
+ * from a tile-scale one, so a caller compares against the sentinel of the scale it asked for.
+ * Pixel scale, then walk (scale 8), then tile (scale 32). */
 @POSITION_SENTINELS@
 
 /* ---- handles -------------------------------------------------------------------------- */
@@ -156,8 +159,6 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
  * the scalar accessors of one type class each, one row per id; bwapi_<class>_table() fills
  * them under the stride rule stated above. */
 @STRUCTS@
-
-/* ---- static type data ------------------------------------------------------------------- */
 
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,
  * WeaponType, ... accessors, one export each, plus the bulk tables. Unlike everything in

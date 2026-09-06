@@ -332,7 +332,7 @@ def table_entry(struct):
     through the stride rule of section 4 (the caller's size on element zero)."""
     t = struct["table"]
     cls = t["class"]
-    lines = [f"const int32_t total = BWAPI::{cls}(-1).getID() + 1;",
+    lines = [f"const int32_t total = id_count<BWAPI::{cls}>();",
              f"return write_rows(out, cap, total, [](bwapi_{struct['name']}& row, int32_t id) {{",
              f"  const BWAPI::{cls} t(id);", "  row.id = id;"]
     for f in struct["fields"][1:]:
@@ -413,9 +413,9 @@ def neutral_c(kind):
     return {
         "int32": "0", "bool32": "0", "double": "0.0", "string_out": "0", "id_array": "0",
         "position_array": "0", "struct_array": "0", "void": "",
-        "position": "BWAPI_POSITION_NONE", "tile_position": "BWAPI_POSITION_NONE",
-        "walk_position": "BWAPI_POSITION_NONE", "handle": "BWAPI_NONE",
-        "type": f"BWAPI::{arg}(-1).getID()",
+        "position": "BWAPI_POSITION_NONE", "tile_position": "BWAPI_TILEPOSITION_NONE",
+        "walk_position": "BWAPI_WALKPOSITION_NONE", "handle": "BWAPI_NONE",
+        "type": f"unknown_id<BWAPI::{arg}>()",
     }[base]
 
 
@@ -431,8 +431,8 @@ def neutral_doc(kind):
         "string_out": "an empty string, and 0",
         "id_array": "nothing written, and 0", "position_array": "nothing written, and 0",
         "struct_array": "nothing written, and 0", "void": "nothing",
-        "position": "BWAPI_POSITION_NONE", "tile_position": "BWAPI_POSITION_NONE",
-        "walk_position": "BWAPI_POSITION_NONE", "handle": "BWAPI_NONE",
+        "position": "BWAPI_POSITION_NONE", "tile_position": "BWAPI_TILEPOSITION_NONE",
+        "walk_position": "BWAPI_WALKPOSITION_NONE", "handle": "BWAPI_NONE",
     }[base]
 
 
@@ -487,7 +487,8 @@ ABI_CONSTANTS = [
     {"family": "position_sentinel", "prefix": "BWAPI", "doc": "BWAPI's own position sentinels "
      "(BWAPI/Position.h) in unpacked form, for the pixel, walk (scale 8) and tile (scale 32) scales. "
      "The packed forms are BWAPI_POS_MAKE of each pair; packing is lossless, so a C++ bot sees the same "
-     "values. BWAPI_POSITION_NONE packed is the neutral return of every position-returning function.",
+     "values. The packed None of a function's own scale (BWAPI_POSITION_NONE, BWAPI_WALKPOSITION_NONE or "
+     "BWAPI_TILEPOSITION_NONE) is its neutral return.",
      "values": [
          ("POSITION_INVALID_X", 32000, ""), ("POSITION_INVALID_Y", 32000, ""),
          ("POSITION_NONE_X", 32000, ""), ("POSITION_NONE_Y", 32032, ""),

@@ -93,20 +93,39 @@ void guard(Fn&& fn) noexcept {
 
 // ---- buffers (abi.cpp) -------------------------------------------------------------------------
 
+// The buffer rule, checked once and up front so a malformed buffer never reaches BWAPI and
+// BAD_BUFFER is latched before NOT_CONNECTED or INVALID_HANDLE could be: false having latched
+// BWAPI_ERR_BAD_BUFFER when (buf, buf_len) or (out, cap) is NULL with a nonzero length, or
+// negative. The generated prologue calls one of these first; a hand-written export does the
+// same; and every writer below assumes it passed.
+bool check_string_buffer(const char* buf, int32_t buf_len);
+bool check_buffer(const void* out, int32_t cap);
+
 // The snprintf convention in one place (section 4): writes at most buf_len bytes including the
-// NUL and returns the length the string needs, excluding it. A NULL buffer with a nonzero
-// length, or a negative length, latches BWAPI_ERR_BAD_BUFFER, writes nothing and returns 0.
+// NUL and returns the length the string needs, excluding it. Assumes check_string_buffer()
+// passed, as write_ids() assumes check_buffer() did.
 int32_t write_string(char* buf, int32_t buf_len, const char* s, size_t len);
 int32_t write_string(char* buf, int32_t buf_len, const std::string& s);
 
 // The neutral value of a string_out return: an empty string when there is room for one, and 0.
 int32_t empty_string(char* buf, int32_t buf_len);
 
-// The buffer rule checked up front, before the call, so a malformed buffer never reaches BWAPI:
-// false having latched BWAPI_ERR_BAD_BUFFER when (buf, buf_len) or (out, cap) is NULL with a
-// nonzero length, or negative.
-bool check_string_buffer(const char* buf, int32_t buf_len);
-bool check_buffer(const void* out, int32_t cap);
+// ---- type ids ------------------------------------------------------------------------------------
+
+// The Unknown id of a type class, and how many ids the class has (0 to Unknown inclusive). Both
+// rest on one fact about upstream: Type<>'s constructor clamps any id outside 0..UnknownId to
+// UnknownId, so T(-1) is Unknown for every class, Color included, which has no Unknown
+// enumerator to name. That fact is spelled here and nowhere else; the neutral of a type: return,
+// the isValid bodies and the table emitter all go through these.
+template <class T>
+inline int32_t unknown_id() {
+  return T(-1).getID();
+}
+
+template <class T>
+inline int32_t id_count() {
+  return unknown_id<T>() + 1;
+}
 
 // ---- conversions the generated wrappers apply (spec-format.md section 1.4) --------------------
 

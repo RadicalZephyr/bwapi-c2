@@ -17,11 +17,14 @@ There are three kinds of spec file, all YAML, all under `tools/abi/spec/`:
 |---|---|---|
 | `<interface>.yaml` — `client`, `player`, `game`, `unit`, `force_region`, `types`, `bwem`, … | Function entries, one per export or per skipped declaration | phase 1 |
 | `constants.yaml` | The constant families: which enums export, under which prefix, with their values | phase 1 |
-| `structs.yaml` | The PODs that cross the boundary: fields, types, flag bits | phase 2 |
+| `structs.yaml` | The PODs that cross the boundary: fields, types, flag bits, and the bulk tables (§3) | phase 1 |
 
-Files are read in sorted name order and concatenated; the file a function lives in decides
-nothing about its output. The header groups by `self`, the `.def` sorts by name, `api.json`
-lists in spec order, and the source emitter writes one `src/<file>.gen.cpp` per spec file.
+Files are read in sorted name order and concatenated. The file a function lives in decides
+which header section it lands in and which `src/<file>.gen.cpp` defines it, and nothing else:
+`emit_header.py` groups the declarations by spec file, in the order its section list gives
+(`client`, `game`, `player`, `unit`, `force_region` into `bwapi_c2.h`; `types` and `bulk` into
+`bwapi_c2_types.h`; `bwem*` into `bwapi_c2_bwem.h`), the `.def` sorts by name, and `api.json`
+lists in spec order with the file as each function's `section`.
 
 ## 1. A function entry
 
@@ -116,8 +119,8 @@ kind, and the emitter writes it into every wrapper and every reference page.
 | `int32` | `int32_t` | `0` | `static_cast<int32_t>` |
 | `bool32` | `int32_t` | `0` | `? 1 : 0` |
 | `double` | `double` | `0.0` | none |
-| `type:<Class>` | `int32_t` | the class's `Unknown` id: `BWAPI::<Class>(-1).getID()`, which `Type<>`'s constructor clamps to its `UnknownId` argument (`UnitTypes::Unknown` = 234, `Races::Unknown` = 8, `Color(-1)` = 255, …) | `.getID()` |
-| `position`, `tile_position`, `walk_position` | `bwapi_position` | packed `Positions::None` (`BWAPI_POSITION_NONE`, 32000/32032), for all three scales | `BWAPI_POS_MAKE(p.x, p.y)` |
+| `type:<Class>` | `int32_t` | the class's `Unknown` id, `unknown_id<BWAPI::<Class>>()` from `abi_internal.h`, which is `<Class>(-1).getID()` because `Type<>`'s constructor clamps to its `UnknownId` argument (`UnitTypes::Unknown` = 233, `Races::Unknown` = 8, `Color(-1)` = 255, …); `id_count<T>()` beside it is one more, the number of ids a body iterates | `.getID()` |
+| `position`, `tile_position`, `walk_position` | `bwapi_position` | the packed `None` of the kind's own scale: `BWAPI_POSITION_NONE` (32000/32032), `BWAPI_TILEPOSITION_NONE` (1000/1001), `BWAPI_WALKPOSITION_NONE` (4000/4004) | `BWAPI_POS_MAKE(p.x, p.y)` |
 | `handle:<kind>` | `bwapi_<kind>_id` | `BWAPI_NONE` | the kind's id: `getID()`, BWEM `Id()` / `Index()`, the base table, `Unit()->getID()` |
 | `string_out` | `int32_t` | an empty string (one NUL, when `buf_len > 0`) and `0` | `write_string(buf, buf_len, std::string)` |
 | `id_array` | `int32_t` | nothing written, `0` | fills `out` with the ids of a set of interfaces sorted ascending, up to `cap`; returns the total |
@@ -125,10 +128,14 @@ kind, and the emitter writes it into every wrapper and every reference page.
 | `struct_array:<name>` | `int32_t` | nothing written, `0` | `body:` or `source:` only; the caller's `size` on element zero is the stride |
 | `void` | `void` | nothing | none |
 
-The three position kinds share one C type and one neutral value (plan §4: "one rule, matching
-the invalid-handle policy"). They differ only in what the documentation says the scale is. The
-consequence for a tile-scale consumer is stated here so it is not discovered: after a latch, the
-value to compare against is `BWAPI_POSITION_NONE`, not `BWAPI_TILEPOSITION_NONE`.
+The three position kinds share one C type and one rule for the neutral value: the packed
+`None` of the function's own scale (plan §4). They differ in which sentinel that is and in what
+the documentation says the scale is, and the kind is the whole reason there are three: a
+tile-scale caller compares against `BWAPI_TILEPOSITION_NONE` after a latch, which is the
+sentinel it would compare against anyway. An earlier draft made `BWAPI_POSITION_NONE` the
+neutral for all three scales in the name of one rule; that was one rule with a foot-gun in it,
+since a tile-scale consumer would never think to test for a pixel-scale sentinel, and the
+emitter knows the kind, so the scale-correct sentinel costs nothing.
 
 `id_array` is the `int32_t` member of the array family; `position_array` and `struct_array` are
 the other two. All three expand the same way (§1.5) and follow the same rule for a short buffer:
@@ -184,10 +191,14 @@ A `body:` never re-implements the prologue, never `try`s and never touches the e
 except to latch. Everything a body could get wrong about the boundary is generated around it.
 
 For every `body:` and `source:` entry the emitter also writes a `static_assert` that the `cpp`
-declaration exists with the signature the spec claims (plan §9): a `body:` is opaque to the
-coverage audit, and this is what keeps it from being a hole. The assertion is on the member
-pointer's type, so a changed return type or parameter list at a pin bump fails the build of
-`*.gen.cpp` rather than the audit.
+declaration exists (plan §9): a `body:` is opaque to the coverage audit, and this is what keeps
+it from being a hole. The assertion proves existence and no more. For an unoverloaded name it
+takes the member's address, which fails to compile when the name is gone; for an overloaded one
+it forms a call with the parameter types the spec spells, which fails when no overload accepts
+them. Neither checks the return type, because the spec never states a C++ signature to check
+against. What catches a changed return type at a pin bump is the body itself: it is fully typed
+C++ that converts the call's result to the return kind, so a `UnitType` that became a
+`std::pair` fails the build of `*.gen.cpp` in the body, not in the assertion.
 
 ### 1.7 `doc` is reference-shaped by rule
 
@@ -250,12 +261,36 @@ same way.
 
 ## 3. Structs
 
-`structs.yaml` arrives with the first POD that crosses the boundary (phase 2: `bwapi_event`,
-`bwapi_bullet`, the snapshots). Its shape is fixed now so `api.json` can carry it from the
-start: a list of `{name, doc, fields: [{name, type, doc}], flags: [{name, bit, doc}]}`, where
-`type` is one of the parameter types of §1.3 without the pointer forms plus `int32[3]`-style
-fixed arrays, `size` is always the first field and never listed, and `flags` names the bits of
-a `uint32_t flags` field when the struct has one.
+`structs.yaml` holds every POD that crosses the boundary: from phase 1 the bulk type table rows
+of plan §5.8 and the flat `requiredUnits` row; from phase 2 `bwapi_event`, `bwapi_bullet` and
+the snapshots. A struct is `{name, doc, fields: [{name, type, doc}], flags: [{name, bit, doc}]}`,
+where `type` is one of `int32`, `bool32`, `double`, `int16`, `uint8`, `uint32`, `type:<Class>`
+(an `int32_t` holding a type id), any of those with an `int32[3]`-style fixed-array suffix;
+`size` is always the first field and never listed; and `flags` names the bits of a
+`uint32_t flags` field when the struct has one. The C type is `bwapi_<name>`.
+
+A struct that is one row of a bulk table also carries a `table: {class, c, doc}` block, and
+each field after `id` a `from:` naming the accessor it mirrors:
+
+```yaml
+- name: race_row
+  doc: "One row of the Race table: every scalar accessor of the class for one id."
+  table:
+    class: Race
+    c: bwapi_race_table
+    doc: "Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap; returns the total."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: get_worker, type: "type:UnitType", from: "Race::getWorker"}
+```
+
+The `table:` block declares a function the loader adds to the `bulk` section as a `body:` entry
+(`bwapi_race_table(bwapi_race_row* out, int32_t cap)`, `self: none`, `returns:
+struct_array:race_row`): one row per id of the class, `0` to `Unknown` inclusive, each field
+filled by the accessor its `from:` names and converted by the field's type, through the stride
+rule of plan §4. `from:` is meaningful only under a `table:`, and a table row's first field is
+always `id`. The one table a `from:` cannot express, the flat `requiredUnits` table, is a
+hand-written `source:` entry in `bulk.yaml` over a plain struct.
 
 ## 4. What is deliberately not in the format
 
