@@ -24,3 +24,9 @@
 
 # Python bytecode caches from the generator.
 __pycache__/
+
+# The raw layers are generated from api.json by bindings/*/gen.py, in CI and locally; never committed.
+/bindings/python/bwapi_c2/_raw.py
+/bindings/csharp/BwapiC2.Raw/Native.cs
+/bindings/csharp/BwapiC2.Raw/bin/
+/bindings/csharp/BwapiC2.Raw/obj/
