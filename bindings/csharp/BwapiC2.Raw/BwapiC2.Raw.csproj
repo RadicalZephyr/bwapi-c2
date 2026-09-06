@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The raw P/Invoke layer over bwapi_c2.dll (plan section 7). Native.cs is generated from
+       api.json by bindings/csharp/gen.py and is not checked in; run the generator first. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RootNamespace>BwapiC2.Raw</RootNamespace>
+    <Version>0.0.0</Version>
+  </PropertyGroup>
+</Project>
