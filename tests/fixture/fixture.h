@@ -83,8 +83,9 @@ class Fixture {
 
   Fixture& start_location(int tx, int ty);
 
-  // A unit at a pixel position. Returns its id (its index in data->units). Every index field
-  // is -1 (invariant 2); powered and interruptible by default (invariant 3).
+  // A unit at a pixel position. Returns its id, which is also its index in data->units and in
+  // data->unitArray; the builder stops at that table's 1700 slots. Every index field is -1
+  // (invariant 2); powered and interruptible by default (invariant 3).
   int unit(int owner, BWAPI::UnitType type, int x, int y, const UnitOptions& opts = {});
 
   // A neutral (mineral field, geyser, static building) whose footprint's top-left tile is

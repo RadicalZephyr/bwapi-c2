@@ -113,6 +113,17 @@ TEST_CASE("a command lands in the outgoing GameData buffer") {
   }
 }
 
+TEST_CASE("the builder stops at the unit index table") {
+  // unitArray has 1700 slots against units' 10000; id is index here, so the 1701st unit has no
+  // index and is refused rather than written over slot 0.
+  Fixture f;
+  f.player(0, Races::Terran);
+  for (int i = 0; i < 1700; ++i) f.unit(0, UnitTypes::Terran_Marine, 100, 100);
+  CHECK_THROWS_AS(f.unit(0, UnitTypes::Terran_Marine, 100, 100), bwapi_c2::test::FixtureError);
+  CHECK(f.data()->unitArray[0] == 0);
+  CHECK(f.data()->unitArray[1699] == 1699);
+}
+
 TEST_CASE("the fixture refuses to be built after start()") {
   ScvScenario s;
   s.f.start();

@@ -122,7 +122,14 @@ Fixture& Fixture::start_location(int tx, int ty) {
 }
 
 int Fixture::allocate_unit(int owner, BWAPI::UnitType type, int x, int y, const UnitOptions& opts) {
-  if (unit_count_ >= 10000) throw FixtureError("GameData holds at most 10000 units");
+  // The builder identifies a unit's id with its index in unitArray, and that table has 1700
+  // slots (Brood War's concurrent-unit limit) against units' 10000 (ids over a whole game). A
+  // 1701st unit would have no index and indexToUnit() could never name it, so refuse it rather
+  // than write its id somewhere it does not belong.
+  constexpr int kIndexTableSize = sizeof(data_->unitArray) / sizeof(data_->unitArray[0]);
+  if (unit_count_ >= kIndexTableSize)
+    throw FixtureError("GameData::unitArray indexes at most " + std::to_string(kIndexTableSize) +
+                       " units; the builder identifies id with index");
   const int id = unit_count_++;
   auto& u = data_->units[id];
   u.id = id;
@@ -150,7 +157,7 @@ int Fixture::allocate_unit(int owner, BWAPI::UnitType type, int x, int y, const 
   u.buildType = BWAPI::UnitTypes::None;
   u.tech = BWAPI::TechTypes::None;
   u.upgrade = BWAPI::UpgradeTypes::None;
-  data_->unitArray[id < 1700 ? id : 0] = id;
+  data_->unitArray[id] = id;
   data_->initialUnitCount = unit_count_;
   return id;
 }
