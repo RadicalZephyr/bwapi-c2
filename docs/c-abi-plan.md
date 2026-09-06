@@ -88,6 +88,14 @@ This is a design/roadmap document. No production code is included.
 > now pin (§7, §10.3, §15.2). BWAPI's fork also carries a POSIX `revisionUpdate.sh` and the
 > generated `svnrev.h`, so there is no `vendor/svnrev.h` in this tree and no Windows step at a
 > pin bump (§10.3). The record of what each fork carries is `docs/pins.md`.
+>
+> **Revision 4.5** is the phase-1 sanity check folded back. One convention moves: the neutral
+> return of a position-returning function is the packed `None` of its own scale, not
+> `Positions::None` for every scale (§4, decision 22). The rest is the plan catching up with
+> the header where phase 1 improved on it: `BWAPI_HAS_FIELD` tests the field's end (§4), the
+> handle typedefs carry an `_id` suffix (§6), `whatBuilds` returns the builder and writes the
+> count (§5.8), and the `body:` `static_assert` is an existence check with the body's own
+> compilation as the type check (§9).
 
 ---
 
@@ -573,7 +581,12 @@ Packing is lossless, so the sentinels survive unchanged: emit `Positions::Invali
 `Unknown`, `Origin` and their tile and walk equivalents in **both** unpacked
 (`BWAPI_POSITION_NONE_X` / `_Y`) and packed (`BWAPI_POSITION_NONE`) forms. Do not invent a new
 invalid bit pattern. **The neutral return for a position-returning function given a bad handle
-is packed `Positions::None`** — one rule, matching the invalid-handle policy below.
+is the packed `None` of the function's own scale** — `Positions::None` from a pixel-scale
+function, `TilePositions::None` from a tile-scale one, `WalkPositions::None` from a walk-scale
+one — so the caller tests the sentinel it was already going to test. Revision 4.4 said
+`Positions::None` for all three scales, as "one rule"; it was one rule that handed a tile-scale
+consumer a pixel-scale sentinel it had no reason to look for, and the generator knows each
+function's scale, so the scale-correct sentinel is free (revision 4.5).
 
 **Naming.** `bwapi_<subject>_<verb>[_<disambiguator>]`, snake_case:
 `bwapi_unit_get_hit_points`, `bwapi_unit_attack_position`, `bwapi_unit_attack_unit`,
@@ -1858,7 +1871,7 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 19 | Documentation | **Reference emitted from `api.json`, no Doxygen; one Zola site, Diátaxis-structured, on GitHub Pages, deployed from CI; the design record linked, not rendered** (§16) |
 | 20 | Keep the BWEM `ResetInstance` patch once its crash rationale fell (R11.9)? | **Yes, as the teardown API BWEM lacks** (§8.2, §15.2). And `bwapi_bwem_initialize()` rejects partially overlapping neutrals with a latched error rather than let BWEM crash at match end (§8.3) |
 | 21 | Carry the §15.2 modifications as patch files or as forks? | **Forks.** Each submodule pins a `bwapi-c2-pin` branch on our fork of the dependency: the upstream commit plus the carried commits (§7, §10.3, §15.2). Clean working trees, no configure-time script, and `svnrev.h` committed on the BWAPI fork by a POSIX port of upstream's script, which removes the Windows step from a pin bump |
-
+| 22 | One neutral position for every scale, or the scale's own? | **The scale's own.** `Positions::None` from a pixel-scale function, `TilePositions::None` from a tile-scale one, `WalkPositions::None` from a walk-scale one (§4). Revision 4.4's single sentinel gave a tile-scale caller a pixel-scale value it would never test for; the emitter knows the kind, so this is one rule too, and a cheaper one before 1.0 than after |
 ---
 
 ## 14. What a consumer sees

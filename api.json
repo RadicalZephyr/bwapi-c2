@@ -588,7 +588,7 @@
       "returns": {
         "kind": "tile_position",
         "c_type": "bwapi_position",
-        "neutral": "BWAPI_POSITION_NONE",
+        "neutral": "BWAPI_TILEPOSITION_NONE",
         "scale": "tile"
       },
       "reentrant": "allowed",
@@ -2609,7 +2609,7 @@
       "returns": {
         "kind": "tile_position",
         "c_type": "bwapi_position",
-        "neutral": "BWAPI_POSITION_NONE",
+        "neutral": "BWAPI_TILEPOSITION_NONE",
         "scale": "tile"
       },
       "reentrant": "allowed",
@@ -6269,7 +6269,7 @@
       "family": "position_sentinel",
       "prefix": "BWAPI",
       "cpp": null,
-      "doc": "BWAPI's own position sentinels (BWAPI/Position.h) in unpacked form, for the pixel, walk (scale 8) and tile (scale 32) scales. The packed forms are BWAPI_POS_MAKE of each pair; packing is lossless, so a C++ bot sees the same values. BWAPI_POSITION_NONE packed is the neutral return of every position-returning function.",
+      "doc": "BWAPI's own position sentinels (BWAPI/Position.h) in unpacked form, for the pixel, walk (scale 8) and tile (scale 32) scales. The packed forms are BWAPI_POS_MAKE of each pair; packing is lossless, so a C++ bot sees the same values. The packed None of a function's own scale (BWAPI_POSITION_NONE, BWAPI_WALKPOSITION_NONE or BWAPI_TILEPOSITION_NONE) is its neutral return.",
       "values": [
         {
           "name": "BWAPI_POSITION_INVALID_X",

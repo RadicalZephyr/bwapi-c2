@@ -217,7 +217,7 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_tile_height(int32_t unit_type)
 }
 
 BWAPI_C2_API bwapi_position BWAPI_C2_CALL bwapi_unittype_tile_size(int32_t unit_type) BWAPI_C2_NOEXCEPT {
-  return guard<bwapi_position>(BWAPI_POSITION_NONE, [&]() -> bwapi_position {
+  return guard<bwapi_position>(BWAPI_TILEPOSITION_NONE, [&]() -> bwapi_position {
     return pack(BWAPI::UnitType(unit_type).tileSize());
   });
 }

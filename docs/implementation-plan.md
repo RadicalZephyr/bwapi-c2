@@ -407,8 +407,8 @@ Every generated function begins with the same prologue, so it exists before any 
   value, when it latches. No guidance, no examples; those are pages under `guides`. The spec
   format document says so, and a review that finds a "you should" in a `doc:` moves it.
 - The neutral value per return kind, stated once here: `0`, `0`, `0.0`, the type's `Unknown`
-  or `None` id, packed `Positions::None`, `BWAPI_NONE`, `0` written and `0` returned, `0`,
-  nothing.
+  or `None` id, the packed `None` of the function's own scale, `BWAPI_NONE`, `0` written and
+  `0` returned, `0`, nothing.
 - How a `string_out` and an `id_array` entry expand into `(buf, buf_len)` and `(out, cap)`
   parameter pairs, so the spec never spells them.
 - Commit: *"Document the spec format"*.

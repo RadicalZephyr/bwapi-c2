@@ -102,10 +102,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_player_is_neutral(bwapi_player_id playe
 }
 
 BWAPI_C2_API bwapi_position BWAPI_C2_CALL bwapi_player_get_start_location(bwapi_player_id player_id) BWAPI_C2_NOEXCEPT {
-  return guard<bwapi_position>(BWAPI_POSITION_NONE, [&]() -> bwapi_position {
-    if (!game_ready("bwapi_player_get_start_location")) return BWAPI_POSITION_NONE;
+  return guard<bwapi_position>(BWAPI_TILEPOSITION_NONE, [&]() -> bwapi_position {
+    if (!game_ready("bwapi_player_get_start_location")) return BWAPI_TILEPOSITION_NONE;
     BWAPI::Player self = resolve_player(player_id, "bwapi_player_get_start_location");
-    if (!self) return BWAPI_POSITION_NONE;
+    if (!self) return BWAPI_TILEPOSITION_NONE;
     return pack(self->getStartLocation());
   });
 }

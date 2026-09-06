@@ -87,9 +87,11 @@ typedef int64_t bwapi_position;
 #define BWAPI_POS_MAKE(x, y) ((bwapi_position)(((uint64_t)(uint32_t)(y) << 32) | (uint32_t)(x)))
 
 /* BWAPI's own sentinels (BWAPI/Position.h), in both forms. Packing is lossless, so these are
- * the same values a C++ bot sees; no new bit pattern is invented. Positions::None packed is the
- * neutral return of every position-returning function given an invalid handle, whatever its
- * scale. Pixel scale, then walk (scale 8), then tile (scale 32). */
+ * the same values a C++ bot sees; no new bit pattern is invented. The packed None of a
+ * function's own scale is its neutral return when it does not run: BWAPI_POSITION_NONE from a
+ * pixel-scale function, BWAPI_WALKPOSITION_NONE from a walk-scale one, BWAPI_TILEPOSITION_NONE
+ * from a tile-scale one, so a caller compares against the sentinel of the scale it asked for.
+ * Pixel scale, then walk (scale 8), then tile (scale 32). */
 @POSITION_SENTINELS@
 
 /* ---- handles -------------------------------------------------------------------------- */

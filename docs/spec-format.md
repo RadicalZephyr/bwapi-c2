@@ -120,7 +120,7 @@ kind, and the emitter writes it into every wrapper and every reference page.
 | `bool32` | `int32_t` | `0` | `? 1 : 0` |
 | `double` | `double` | `0.0` | none |
 | `type:<Class>` | `int32_t` | the class's `Unknown` id: `BWAPI::<Class>(-1).getID()`, which `Type<>`'s constructor clamps to its `UnknownId` argument (`UnitTypes::Unknown` = 234, `Races::Unknown` = 8, `Color(-1)` = 255, …) | `.getID()` |
-| `position`, `tile_position`, `walk_position` | `bwapi_position` | packed `Positions::None` (`BWAPI_POSITION_NONE`, 32000/32032), for all three scales | `BWAPI_POS_MAKE(p.x, p.y)` |
+| `position`, `tile_position`, `walk_position` | `bwapi_position` | the packed `None` of the kind's own scale: `BWAPI_POSITION_NONE` (32000/32032), `BWAPI_TILEPOSITION_NONE` (1000/1001), `BWAPI_WALKPOSITION_NONE` (4000/4004) | `BWAPI_POS_MAKE(p.x, p.y)` |
 | `handle:<kind>` | `bwapi_<kind>_id` | `BWAPI_NONE` | the kind's id: `getID()`, BWEM `Id()` / `Index()`, the base table, `Unit()->getID()` |
 | `string_out` | `int32_t` | an empty string (one NUL, when `buf_len > 0`) and `0` | `write_string(buf, buf_len, std::string)` |
 | `id_array` | `int32_t` | nothing written, `0` | fills `out` with the ids of a set of interfaces sorted ascending, up to `cap`; returns the total |
@@ -128,10 +128,14 @@ kind, and the emitter writes it into every wrapper and every reference page.
 | `struct_array:<name>` | `int32_t` | nothing written, `0` | `body:` or `source:` only; the caller's `size` on element zero is the stride |
 | `void` | `void` | nothing | none |
 
-The three position kinds share one C type and one neutral value (plan §4: "one rule, matching
-the invalid-handle policy"). They differ only in what the documentation says the scale is. The
-consequence for a tile-scale consumer is stated here so it is not discovered: after a latch, the
-value to compare against is `BWAPI_POSITION_NONE`, not `BWAPI_TILEPOSITION_NONE`.
+The three position kinds share one C type and one rule for the neutral value: the packed
+`None` of the function's own scale (plan §4). They differ in which sentinel that is and in what
+the documentation says the scale is, and the kind is the whole reason there are three: a
+tile-scale caller compares against `BWAPI_TILEPOSITION_NONE` after a latch, which is the
+sentinel it would compare against anyway. An earlier draft made `BWAPI_POSITION_NONE` the
+neutral for all three scales in the name of one rule; that was one rule with a foot-gun in it,
+since a tile-scale consumer would never think to test for a pixel-scale sentinel, and the
+emitter knows the kind, so the scale-correct sentinel costs nothing.
 
 `id_array` is the `int32_t` member of the array family; `position_array` and `struct_array` are
 the other two. All three expand the same way (§1.5) and follow the same rule for a short buffer:
