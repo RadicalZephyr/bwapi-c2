@@ -1,6 +1,6 @@
 # The bwapi-c2 site (plan section 16): one Zola site, our own templates, Diátaxis sections, and
 # the reference emitted into content/reference/ at build time from api.json (phase 1).
-base_url = "https://radicalzephyr.github.io/bwapi-c2"
+base_url = "https://zefira.dev/bwapi-c2"
 title = "bwapi-c2"
 description = "A flat C ABI over BWAPI and BWEM, so any language with a C FFI can drive a StarCraft: Brood War bot."
 default_language = "en"
