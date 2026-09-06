@@ -85,7 +85,10 @@ ctest --test-dir build --output-on-failure
 - `tests/` is one directory per row of `§11`'s table: `header_hygiene`, `layout_dump`,
   `derive_closure`, `exports`, `fixture` (the shared synthetic-`GameData` builder every suite
   uses), `read_write`, `bwem`. New tests use `bwapi_c2_add_test()` and the `Fixture` builder;
-  do not build a `GameData` by hand.
+  do not build a `GameData` by hand. The one exception is `tests/bwem/overlap_asserts.cpp`: it
+  must die inside BWEM's `Neutral::PutOnTiles()` to prove the assertions are live, so it cannot
+  be a doctest runner and plants its overlapping neutrals past the builder on purpose. Do not
+  copy its shape for tests that can use the helper.
 - `tests/layout_dump/baseline.json` changes only at a pin bump, via the `layout_dump_update`
   target.
 - The site: `cd site && zola check && zola build`, with Zola at the version pinned in
