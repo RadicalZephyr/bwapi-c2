@@ -56,9 +56,12 @@ def base_flags():
 
 
 def audit_flags():
-    """The coverage audit parses v141_xp-era headers whole, which needs MSVC compatibility on
-    top of the base flags (plan section 9). Off the merge path for exactly that reason."""
-    return base_flags() + ["-fms-extensions", "-fms-compatibility"]
+    """The coverage audit parses the headers whole with libclang (plan section 9). Section 9
+    expected -fms-extensions -fms-compatibility on top of the base flags; measured, the pinned
+    headers parse under the base flags alone (the closure compiles with them), and
+    -fms-compatibility breaks libstdc++ on Linux (char16_t stops being a keyword), so only the
+    harmless -fms-extensions is added. Off the merge path regardless."""
+    return base_flags() + ["-fms-extensions"]
 
 
 if __name__ == "__main__":

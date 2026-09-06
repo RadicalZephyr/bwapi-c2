@@ -1,0 +1,47 @@
+# Declarations the plan excludes wholesale, with the rule (implementation plan 1.6). A skip
+# names the rule that justifies it; that is how the coverage audit proves the section-1.8
+# mapping. Skips that belong with an interface live in that interface's file; these belong to no
+# export at all. A wildcard, Class::*, covers every public member of the class.
+
+- cpp: "Point::*"
+  skip: "§4: positions cross as packed int64_t or as int32_t pairs; the sentinels are constants and the distance helpers are host arithmetic"
+
+- cpp: "GameWrapper::flush"
+  skip: "§5.9: the stream output devices are not exposed; text goes through the string functions"
+
+# The constant families list every id of every class; a host iterates 0..MAX. The two weapon
+# partitions and the macro-type set are the same information: derivable from the ids.
+- cpp: "UnitTypes::allUnitTypes"
+  skip: "§5.8: the constant family lists every id; a host iterates 0 to BWAPI_UNIT_MAX"
+- cpp: "UnitTypes::allMacroTypes"
+  skip: "§5.8: the four macro ids are constants (BWAPI_UNIT_ALL_UNITS, MEN, BUILDINGS, FACTORIES)"
+- cpp: "WeaponTypes::allWeaponTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "WeaponTypes::normalWeaponTypes"
+  skip: "§5.8: derivable from the ids (every weapon a unit type carries); a host filters the family"
+- cpp: "WeaponTypes::specialWeaponTypes"
+  skip: "§5.8: derivable from the ids (every weapon a tech carries); a host filters the family"
+- cpp: "TechTypes::allTechTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "UpgradeTypes::allUpgradeTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "Races::allRaces"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "UnitSizeTypes::allUnitSizeTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "DamageTypes::allDamageTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "ExplosionTypes::allExplosionTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "BulletTypes::allBulletTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "Orders::allOrders"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "PlayerTypes::allPlayerTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "GameTypes::allGameTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "UnitCommandTypes::allUnitCommandTypes"
+  skip: "§5.8: the constant family lists every id"
+- cpp: "Errors::allErrors"
+  skip: "§5.8: the constant family lists every id"

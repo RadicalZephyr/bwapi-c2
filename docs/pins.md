@@ -39,6 +39,29 @@ and `external/openbw` (the unlicensed engine) are test-only; `.gitmodules` sets
 `fetchRecurseSubmodules = false` on `third_party/bwem`, and no script in this tree passes
 `--recursive` (plan §0, §10.1, Appendix B).
 
+## Coverage audit at the current pins
+
+`tools/abi/audit.sh` (plan §9; implementation plan 1.6), run at the pins above on 2026-09-06,
+after phase 1's spec files: **959 public declarations** in the 30 audited headers
+(`tools/abi/audited-headers.txt`); **222 accounted** by a spec entry or a rule-bearing `skip:`;
+**737 on the recorded backlog** (`tools/abi/backlog.txt`), none new and none stale. The backlog
+is what phases 2 and 3 burn down, by interface:
+
+| Interface | Declarations | Phase |
+|---|---|---|
+| `UnitInterface` | 280 | 2 |
+| `Game` | 179 | 2 |
+| `Event` | 30 | 2 (§5.6: a struct, not a class) |
+| `RegionInterface` | 15 | 2 |
+| `BulletInterface` | 13 | 2 (§6.3: a snapshot) |
+| `ForceInterface` | 3 | 2 |
+| `UnitCommand` | 54 | 3 (§5.3) |
+| BWEM (`Map`, `Area`, `ChokePoint`, `Base`, `Neutral`, `Tile`, `MiniTile`, …) | 163 | 3 (§8.1: 98 export, the rest are internals to skip under §15 #15) |
+
+The audit passes when the unaccounted set is exactly the backlog. A declaration that gains an
+entry or a skip must leave the file; a declaration that appears at a pin bump must be decided,
+not added. Rerun and rewrite it (`--write-backlog`) only after that decision.
+
 ## Carried commits
 
 What each `bwapi-c2-pin` branch adds on top of its upstream base. Each commit's message states
@@ -76,5 +99,7 @@ scheduled drift job. The work happens in the fork first and in this repository s
 4. In this repository, `git -C third_party/<dep> checkout <new tip>`, and update the tables
    above, tag included, and `NOTICE` in the same commit.
 5. Run the layout dump and the derived-closure test; diff both against the checked-in baselines.
-6. Run `check_coverage.py`; resolve every added, removed or changed declaration.
+6. Run `tools/abi/audit.sh`; resolve every added, removed or changed declaration, and rewrite
+   the backlog (`--write-backlog`) once each is decided. Rerun `draft_spec.py
+   --update-constants` and review the diff of `spec/constants.yaml`.
 7. Rebuild; run every suite in plan §11. Record the new revision and `CLIENT_VERSION` here.
