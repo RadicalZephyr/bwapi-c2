@@ -273,6 +273,16 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
   In that row `tests/bwem/overlap_asserts.cpp` plants R11.6's overlapping minerals behind the
   builder and must abort inside `Neutral::PutOnTiles()`; in release the same program segfaults
   at teardown. Leak detection is on under ASan; valgrind finds no definite or indirect leak.
+- `tools/test-sanitizers.sh` answers what the sanitized row cannot answer about itself: whether a
+  green run means no error was found, or that none could be reported. It reads the compiler and
+  `BWAPI_C2_SANITIZERS` back out of a build directory's `CMakeCache.txt`, checks that all 73
+  objects reference the ASan runtime and that all 12 linked images carry both runtimes (the
+  header-hygiene stubs and the layout `static_assert`s are too trivial to call a UBSan handler,
+  which is why UBSan is checked per image and not per object), then compiles a use-after-free, a
+  signed overflow and a leak with the build's own flags and requires each to be diagnosed and to
+  exit non-zero. Verified on a checkout with clang 18.1.3: the suite is green sanitized, all
+  three faults report, and the checks are not vacuous - an uninstrumented object or image dropped
+  into the build directory fails them.
 
 ### 0.12 The site skeleton and its deploy workflow
 

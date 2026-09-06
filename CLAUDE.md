@@ -91,6 +91,10 @@ ctest --test-dir build --output-on-failure
   copy its shape for tests that can use the helper.
 - `tests/layout_dump/baseline.json` changes only at a pin bump, via the `layout_dump_update`
   target.
+- `-DBWAPI_C2_SANITIZERS=address,undefined` is CI's second Linux configuration. Before trusting a
+  green sanitized run, `tools/test-sanitizers.sh <build-dir>` proves the sanitizers are live in
+  that build: every object instrumented, both runtimes linked into every image, and a
+  use-after-free, a signed overflow and a leak each diagnosed.
 - The site: `cd site && zola check && zola build`, with Zola at the version pinned in
   `.github/workflows/docs.yml`. Reference pages under `site/content/reference/` are generated
   and gitignored.
