@@ -20,6 +20,9 @@
   self: none
   params: [{name: unit_type, type: "type:UnitType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return unit_type >= 0 && unit_type <= BWAPI::UnitType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for UnitType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 - cpp: "UnitType::getRace"
@@ -618,6 +621,9 @@
   self: none
   params: [{name: weapon, type: "type:WeaponType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return weapon >= 0 && weapon <= BWAPI::WeaponType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for WeaponType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 - cpp: "WeaponType::getTech"
@@ -795,6 +801,9 @@
   self: none
   params: [{name: tech, type: "type:TechType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return tech >= 0 && tech <= BWAPI::TechType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for TechType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 - cpp: "TechType::getRace"
@@ -895,6 +904,9 @@
   self: none
   params: [{name: upgrade, type: "type:UpgradeType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return upgrade >= 0 && upgrade <= BWAPI::UpgradeType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for UpgradeType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 - cpp: "UpgradeType::getRace"
@@ -988,6 +1000,9 @@
   self: none
   params: [{name: race, type: "type:Race"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return race >= 0 && race <= BWAPI::Race(-1).getID();"
   doc: "1 when the id is one BWAPI knows for Race, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 - cpp: "Race::getWorker"
@@ -1042,6 +1057,9 @@
   self: none
   params: [{name: size, type: "type:UnitSizeType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return size >= 0 && size <= BWAPI::UnitSizeType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for UnitSizeType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- DamageType ----------------------------------------------------------------------
@@ -1058,6 +1076,9 @@
   self: none
   params: [{name: damage, type: "type:DamageType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return damage >= 0 && damage <= BWAPI::DamageType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for DamageType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- ExplosionType -------------------------------------------------------------------
@@ -1074,6 +1095,9 @@
   self: none
   params: [{name: explosion, type: "type:ExplosionType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return explosion >= 0 && explosion <= BWAPI::ExplosionType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for ExplosionType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- BulletType ----------------------------------------------------------------------
@@ -1090,6 +1114,9 @@
   self: none
   params: [{name: bullet, type: "type:BulletType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return bullet >= 0 && bullet <= BWAPI::BulletType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for BulletType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- Order ---------------------------------------------------------------------------
@@ -1106,6 +1133,9 @@
   self: none
   params: [{name: order, type: "type:Order"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return order >= 0 && order <= BWAPI::Order(-1).getID();"
   doc: "1 when the id is one BWAPI knows for Order, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- PlayerType ----------------------------------------------------------------------
@@ -1122,6 +1152,9 @@
   self: none
   params: [{name: player_type, type: "type:PlayerType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return player_type >= 0 && player_type <= BWAPI::PlayerType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for PlayerType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 - cpp: "PlayerType::isLobbyType"
@@ -1152,6 +1185,9 @@
   self: none
   params: [{name: game_type, type: "type:GameType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return game_type >= 0 && game_type <= BWAPI::GameType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for GameType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- UnitCommandType -----------------------------------------------------------------
@@ -1168,6 +1204,9 @@
   self: none
   params: [{name: command, type: "type:UnitCommandType"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return command >= 0 && command <= BWAPI::UnitCommandType(-1).getID();"
   doc: "1 when the id is one BWAPI knows for UnitCommandType, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- Error ---------------------------------------------------------------------------
@@ -1184,6 +1223,9 @@
   self: none
   params: [{name: error, type: "type:Error"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return error >= 0 && error <= BWAPI::Error(-1).getID();"
   doc: "1 when the id is one BWAPI knows for Error, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 # ---- Color ---------------------------------------------------------------------------
@@ -1200,6 +1242,9 @@
   self: none
   params: [{name: color, type: "type:Color"}]
   returns: bool32
+  # Type<>(id) clamps an out-of-range id to Unknown before isValid() could see it, so
+  # the generated call would always say 1; the range check is the whole answer.
+  body: "return color >= 0 && color <= BWAPI::Color(-1).getID();"
   doc: "1 when the id is one BWAPI knows for Color, from 0 to the class's Unknown inclusive; 0 otherwise."
 
 - cpp: "Color::red"

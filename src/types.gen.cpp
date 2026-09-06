@@ -13,8 +13,23 @@ using namespace bwapi_c2;
 
 // Every body: and source: entry names the C++ declaration it stands for; these fail the build
 // when a pin bump removes or reshapes one (plan section 9).
+static_assert(sizeof(&BWAPI::UnitType::isValid) > 0, "spec/types.yaml bwapi_unittype_is_valid: UnitType::isValid not found");
 static_assert(sizeof(&BWAPI::UnitType::whatBuilds) > 0, "spec/types.yaml bwapi_unittype_what_builds: UnitType::whatBuilds not found");
 static_assert(sizeof(&BWAPI::UnitType::requiredUnits) > 0, "spec/types.yaml bwapi_unittype_required_units: UnitType::requiredUnits not found");
+static_assert(sizeof(&BWAPI::WeaponType::isValid) > 0, "spec/types.yaml bwapi_weapontype_is_valid: WeaponType::isValid not found");
+static_assert(sizeof(&BWAPI::TechType::isValid) > 0, "spec/types.yaml bwapi_techtype_is_valid: TechType::isValid not found");
+static_assert(sizeof(&BWAPI::UpgradeType::isValid) > 0, "spec/types.yaml bwapi_upgradetype_is_valid: UpgradeType::isValid not found");
+static_assert(sizeof(&BWAPI::Race::isValid) > 0, "spec/types.yaml bwapi_race_is_valid: Race::isValid not found");
+static_assert(sizeof(&BWAPI::UnitSizeType::isValid) > 0, "spec/types.yaml bwapi_unitsizetype_is_valid: UnitSizeType::isValid not found");
+static_assert(sizeof(&BWAPI::DamageType::isValid) > 0, "spec/types.yaml bwapi_damagetype_is_valid: DamageType::isValid not found");
+static_assert(sizeof(&BWAPI::ExplosionType::isValid) > 0, "spec/types.yaml bwapi_explosiontype_is_valid: ExplosionType::isValid not found");
+static_assert(sizeof(&BWAPI::BulletType::isValid) > 0, "spec/types.yaml bwapi_bullettype_is_valid: BulletType::isValid not found");
+static_assert(sizeof(&BWAPI::Order::isValid) > 0, "spec/types.yaml bwapi_order_is_valid: Order::isValid not found");
+static_assert(sizeof(&BWAPI::PlayerType::isValid) > 0, "spec/types.yaml bwapi_playertype_is_valid: PlayerType::isValid not found");
+static_assert(sizeof(&BWAPI::GameType::isValid) > 0, "spec/types.yaml bwapi_gametype_is_valid: GameType::isValid not found");
+static_assert(sizeof(&BWAPI::UnitCommandType::isValid) > 0, "spec/types.yaml bwapi_unitcommandtype_is_valid: UnitCommandType::isValid not found");
+static_assert(sizeof(&BWAPI::Error::isValid) > 0, "spec/types.yaml bwapi_error_is_valid: Error::isValid not found");
+static_assert(sizeof(&BWAPI::Color::isValid) > 0, "spec/types.yaml bwapi_color_is_valid: Color::isValid not found");
 
 extern "C" {
 
@@ -28,7 +43,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_get_name(int32_t unit_type, ch
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_valid(int32_t unit_type) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::UnitType(unit_type).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return unit_type >= 0 && unit_type <= BWAPI::UnitType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -550,7 +568,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_get_name(int32_t weapon, cha
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_is_valid(int32_t weapon) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::WeaponType(weapon).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return weapon >= 0 && weapon <= BWAPI::WeaponType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -702,7 +723,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_get_name(int32_t tech, char* b
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_is_valid(int32_t tech) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::TechType(tech).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return tech >= 0 && tech <= BWAPI::TechType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -789,7 +813,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_get_name(int32_t upgrade, c
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_is_valid(int32_t upgrade) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::UpgradeType(upgrade).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return upgrade >= 0 && upgrade <= BWAPI::UpgradeType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -870,7 +897,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_get_name(int32_t race, char* buf, 
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_is_valid(int32_t race) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::Race(race).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return race >= 0 && race <= BWAPI::Race(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -914,7 +944,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitsizetype_get_name(int32_t size, cha
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitsizetype_is_valid(int32_t size) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::UnitSizeType(size).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return size >= 0 && size <= BWAPI::UnitSizeType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -928,7 +961,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_damagetype_get_name(int32_t damage, cha
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_damagetype_is_valid(int32_t damage) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::DamageType(damage).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return damage >= 0 && damage <= BWAPI::DamageType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -942,7 +978,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_explosiontype_get_name(int32_t explosio
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_explosiontype_is_valid(int32_t explosion) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::ExplosionType(explosion).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return explosion >= 0 && explosion <= BWAPI::ExplosionType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -956,7 +995,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_bullettype_get_name(int32_t bullet, cha
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_bullettype_is_valid(int32_t bullet) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::BulletType(bullet).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return bullet >= 0 && bullet <= BWAPI::BulletType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -970,7 +1012,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_order_get_name(int32_t order, char* buf
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_order_is_valid(int32_t order) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::Order(order).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return order >= 0 && order <= BWAPI::Order(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -984,7 +1029,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_get_name(int32_t player_type
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_is_valid(int32_t player_type) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::PlayerType(player_type).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return player_type >= 0 && player_type <= BWAPI::PlayerType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -1010,7 +1058,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_gametype_get_name(int32_t game_type, ch
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_gametype_is_valid(int32_t game_type) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::GameType(game_type).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return game_type >= 0 && game_type <= BWAPI::GameType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -1024,7 +1075,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitcommandtype_get_name(int32_t comman
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitcommandtype_is_valid(int32_t command) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::UnitCommandType(command).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return command >= 0 && command <= BWAPI::UnitCommandType(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -1038,7 +1092,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_error_get_name(int32_t error, char* buf
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_error_is_valid(int32_t error) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::Error(error).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return error >= 0 && error <= BWAPI::Error(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 
@@ -1052,7 +1109,10 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_get_name(int32_t color, char* buf
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_is_valid(int32_t color) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    return (BWAPI::Color(color).isValid()) ? 1 : 0;
+    auto body = [&] {
+      return color >= 0 && color <= BWAPI::Color(-1).getID();
+    };
+    return (body()) ? 1 : 0;
   });
 }
 

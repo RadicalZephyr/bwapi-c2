@@ -1980,7 +1980,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for UnitType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -3999,7 +3999,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for WeaponType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -4599,7 +4599,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for TechType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -4956,7 +4956,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for UpgradeType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5304,7 +5304,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for Race, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5490,7 +5490,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for UnitSizeType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5546,7 +5546,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for DamageType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5602,7 +5602,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for ExplosionType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5658,7 +5658,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for BulletType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5714,7 +5714,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for Order, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5770,7 +5770,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for PlayerType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5872,7 +5872,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for GameType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5928,7 +5928,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for UnitCommandType, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -5984,7 +5984,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for Error, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
@@ -6040,7 +6040,7 @@
       },
       "reentrant": "allowed",
       "legit_none": false,
-      "generated": true,
+      "generated": false,
       "doc": "1 when the id is one BWAPI knows for Color, from 0 to the class's Unknown inclusive; 0 otherwise."
     },
     {
