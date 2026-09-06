@@ -21,8 +21,22 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND Python3_Interpreter_FOUND)
     COMMENT "Regenerating tests/layout_dump/baseline.json from the pinned headers")
 endif()
 
-# Compile-time: the real headers, the one number.
-add_library(layout_static_assert OBJECT static_assert.cpp)
+# Compile-time, on every platform and with the compiler that builds the DLL: the baseline as
+# static_asserts against the real headers. On MSVC this is the only place MSVC itself, rather
+# than clang predicting MSVC, checks the 84 offsets. Without Python the hand-written
+# static_assert.cpp (the size and the first two fields) stands in.
+if(Python3_Interpreter_FOUND)
+  set(_layout_asserts_cpp "${CMAKE_CURRENT_BINARY_DIR}/layout_asserts.gen.cpp")
+  add_custom_command(
+    OUTPUT "${_layout_asserts_cpp}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/dump_layout.py"
+            --emit-static-asserts "${_layout_asserts_cpp}"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/dump_layout.py" "${CMAKE_CURRENT_SOURCE_DIR}/baseline.json"
+    COMMENT "Generating GameData layout static_asserts from baseline.json")
+  add_library(layout_static_assert OBJECT "${_layout_asserts_cpp}" static_assert.cpp)
+else()
+  add_library(layout_static_assert OBJECT static_assert.cpp)
+endif()
 target_include_directories(layout_static_assert PRIVATE
   "${BWAPI_C2_BWAPI_ROOT}/include" "${BWAPI_C2_BWAPI_ROOT}/include/BWAPI/Client")
 target_compile_definitions(layout_static_assert PRIVATE NOMINMAX=1)
