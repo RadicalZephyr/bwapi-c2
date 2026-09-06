@@ -160,56 +160,61 @@ int32_t write_ids(int32_t* out, int32_t cap, const Range& range) {
   return static_cast<int32_t>(ids.size());
 }
 
-// The struct-array convention (section 4): the caller sets size on element zero and that is the
-// stride of the whole array; the callee writes the fields it knows into each row, zero-fills
-// the remainder of the caller's stride, sets each row's size to the bytes it filled (so
-// BWAPI_HAS_FIELD on a returned row says what is valid), and never writes past cap rows or
-// past the stride. Returns the total. A stride that cannot hold size itself is BAD_BUFFER.
-template <class Row, class Fill>
-int32_t write_rows(Row* out, int32_t cap, int32_t total, Fill fill) {
-  if (cap <= 0) return total;
-  const int32_t stride = out[0].size;
+// The struct-evolution rule of section 4, in one place for both shapes it takes. The caller's
+// size is the stride: check_stride() is the up-front check, like check_buffer(), false having
+// latched BWAPI_ERR_BAD_BUFFER for a stride that cannot hold size itself; write_row() then
+// writes one row of that stride at dst: the fields it knows, size set to the bytes filled (so
+// BWAPI_HAS_FIELD on a returned row says what is valid), the rest of the stride zeroed, and
+// never a byte past it. Like cap, the stride is the caller's word for how much memory is there.
+inline bool check_stride(int32_t stride) {
   if (stride < static_cast<int32_t>(sizeof(int32_t))) {
-    latch(BWAPI_ERR_BAD_BUFFER, "struct array: size on element zero must be the caller's stride");
-    return 0;
-  }
-  const size_t filled = std::min(static_cast<size_t>(stride), sizeof(Row));
-  char* dst = reinterpret_cast<char*>(out);
-  const int32_t n = std::min(cap, total);
-  for (int32_t i = 0; i < n; ++i, dst += stride) {
-    Row row{};
-    fill(row, i);
-    row.size = static_cast<int32_t>(filled);
-    std::memset(dst, 0, static_cast<size_t>(stride));
-    std::memcpy(dst, &row, filled);
-  }
-  return total;
-}
-
-// The struct-out convention for one struct rather than an array: the caller's size says how
-// much of out may be written. check_struct_out() is the up-front check, like check_buffer():
-// false having latched BWAPI_ERR_BAD_BUFFER for NULL or a size that cannot hold size itself.
-// write_struct() then fills the fields it knows, zeroes the rest of the caller's size, sets
-// size to the bytes filled and never writes past the caller's size. Like cap, the size is the
-// caller's word for how much memory is there.
-template <class Row>
-bool check_struct_out(const Row* out) {
-  if (out == nullptr || out->size < static_cast<int32_t>(sizeof(int32_t))) {
-    latch(BWAPI_ERR_BAD_BUFFER, "struct out: NULL, or a size that cannot hold size itself");
+    latch(BWAPI_ERR_BAD_BUFFER, "struct out: size must be the caller's stride, and at least hold size itself");
     return false;
   }
   return true;
 }
 
 template <class Row, class Fill>
-void write_struct(Row* out, Fill fill) {
-  const int32_t stride = out->size;
+void write_row(void* dst, int32_t stride, Fill fill) {
   const size_t filled = std::min(static_cast<size_t>(stride), sizeof(Row));
   Row row{};
   fill(row);
   row.size = static_cast<int32_t>(filled);
-  std::memset(reinterpret_cast<char*>(out), 0, static_cast<size_t>(stride));
-  std::memcpy(out, &row, filled);
+  char* bytes = static_cast<char*>(dst);
+  std::memcpy(bytes, &row, filled);
+  std::memset(bytes + filled, 0, static_cast<size_t>(stride) - filled);
+}
+
+// The struct-array convention: the caller sets size on element zero and that is the stride of
+// the whole array; the first cap rows are written by write_row() and the total returned. cap of
+// 0 is the size query and reads nothing.
+template <class Row, class Fill>
+int32_t write_rows(Row* out, int32_t cap, int32_t total, Fill fill) {
+  if (cap <= 0) return total;
+  const int32_t stride = out[0].size;
+  if (!check_stride(stride)) return 0;
+  char* dst = reinterpret_cast<char*>(out);
+  const int32_t n = std::min(cap, total);
+  for (int32_t i = 0; i < n; ++i, dst += stride)
+    write_row<Row>(dst, stride, [&](Row& row) { fill(row, i); });
+  return total;
+}
+
+// The struct-out convention, one struct rather than an array: check_struct_out() is the
+// up-front check, NULL or a bad stride being BAD_BUFFER, and write_struct() is one write_row()
+// at the caller's size.
+template <class Row>
+bool check_struct_out(const Row* out) {
+  if (out == nullptr) {
+    latch(BWAPI_ERR_BAD_BUFFER, "struct out: NULL");
+    return false;
+  }
+  return check_stride(out->size);
+}
+
+template <class Row, class Fill>
+void write_struct(Row* out, Fill fill) {
+  write_row<Row>(out, out->size, fill);
 }
 
 // Packed positions in upstream's order (a chokepoint's geometry is a polyline), the first cap
