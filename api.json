@@ -1,0 +1,1953 @@
+{
+  "api_json_version": 1,
+  "abi_version": "0.0.0",
+  "functions": [
+    {
+      "c": "bwapi_abi_version",
+      "section": "client",
+      "signature": "void bwapi_abi_version(int32_t* major, int32_t* minor, int32_t* patch)",
+      "cpp": null,
+      "self": "none",
+      "params": [
+        {
+          "name": "major",
+          "type": "int32_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "minor",
+          "type": "int32_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "patch",
+          "type": "int32_out",
+          "c_type": "int32_t*"
+        }
+      ],
+      "returns": {
+        "kind": "void",
+        "c_type": "void",
+        "neutral": "nothing"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The ABI's own version, written to the three out-params; any of them may be NULL and is then skipped. 0.x is explicitly unstable; append-only begins at 1.0, the exit of the consumers phase. Three int32_t out-params rather than a packed word, so there is nothing to document about packing."
+    },
+    {
+      "c": "bwapi_abi_version_string",
+      "section": "client",
+      "signature": "int32_t bwapi_abi_version_string(char* buf, int32_t buf_len)",
+      "cpp": null,
+      "self": "none",
+      "params": [
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The ABI's own version as \"major.minor.patch\"."
+    },
+    {
+      "c": "bwapi_client_version",
+      "section": "client",
+      "signature": "int32_t bwapi_client_version(void)",
+      "cpp": null,
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "BWAPI::CLIENT_VERSION of the pinned BWAPI (10003 today). The server refuses a client whose version differs from its own, so a host can check compatibility before connecting."
+    },
+    {
+      "c": "bwapi_revision",
+      "section": "client",
+      "signature": "int32_t bwapi_revision(void)",
+      "cpp": null,
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "SVN_REV of the pinned BWAPI, from upstream's own revision generator (plan section 10.3)."
+    },
+    {
+      "c": "bwapi_is_debug",
+      "section": "client",
+      "signature": "int32_t bwapi_is_debug(void)",
+      "cpp": null,
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "1 when the pinned BWAPI was built with BUILD_DEBUG, 0 otherwise."
+    },
+    {
+      "c": "bwapi_last_error",
+      "section": "client",
+      "signature": "int32_t bwapi_last_error(void)",
+      "cpp": null,
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The BWAPI_ERR_* code latched by the first failing call since the last bwapi_clear_last_error(), or BWAPI_ERR_NONE. Sticky: successful calls do not touch it and reading does not clear it. Clear it at the top of the frame and check it before bwapi_client_update(). This is a different lifetime from BWAPI's own Game::getLastError(), which is per call and comes back through bwapi_game_get_last_error()."
+    },
+    {
+      "c": "bwapi_last_error_message",
+      "section": "client",
+      "signature": "int32_t bwapi_last_error_message(char* buf, int32_t buf_len)",
+      "cpp": null,
+      "self": "none",
+      "params": [
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The message that came with the latched code: a BWEM::Exception's what(), the two unit ids of an overlap, the name of the export a bad handle was passed to. Empty when nothing is latched."
+    },
+    {
+      "c": "bwapi_clear_last_error",
+      "section": "client",
+      "signature": "void bwapi_clear_last_error(void)",
+      "cpp": null,
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "void",
+        "c_type": "void",
+        "neutral": "nothing"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Resets the sticky error channel to BWAPI_ERR_NONE and clears its message."
+    },
+    {
+      "c": "bwapi_set_log_callback",
+      "section": "client",
+      "signature": "void bwapi_set_log_callback(bwapi_log_callback cb, void* user)",
+      "cpp": null,
+      "self": "none",
+      "params": [
+        {
+          "name": "cb",
+          "type": "callback:bwapi_log_callback",
+          "c_type": "bwapi_log_callback"
+        },
+        {
+          "name": "user",
+          "type": "void_ptr",
+          "c_type": "void*"
+        }
+      ],
+      "returns": {
+        "kind": "void",
+        "c_type": "void",
+        "neutral": "nothing"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Installs where the ABI's own diagnostics go, at BWAPI_LOG_* levels, with the user pointer handed back on every call. NULL disables. Client::connect() still writes to std::cout and std::cerr itself in this version."
+    },
+    {
+      "c": "bwapi_set_error_callback",
+      "section": "client",
+      "signature": "void bwapi_set_error_callback(bwapi_error_callback cb, void* user)",
+      "cpp": null,
+      "self": "none",
+      "params": [
+        {
+          "name": "cb",
+          "type": "callback:bwapi_error_callback",
+          "c_type": "bwapi_error_callback"
+        },
+        {
+          "name": "user",
+          "type": "void_ptr",
+          "c_type": "void*"
+        }
+      ],
+      "returns": {
+        "kind": "void",
+        "c_type": "void",
+        "neutral": "nothing"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Installs a callback invoked at the moment an error is latched, with the code, its message and the user pointer, so a wrapper can raise at the failing call rather than poll. Off by default; NULL disables. The sticky latch is unchanged either way. The callback runs with the re-entrancy depth raised, so a mutating call from inside it is rejected with BWAPI_ERR_REENTRANT_MUTATION once that guard is emitted."
+    },
+    {
+      "c": "bwapi_client_connect",
+      "section": "client",
+      "signature": "int32_t bwapi_client_connect(void)",
+      "cpp": "Client::connect",
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "forbidden",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Connects to a running BWAPI server over its shared memory and pipe. Returns 1 on success and 0 when no server is up, in which case retry after a pause. Records the calling thread as the thread every later call must come from. Already connected: latches BWAPI_ERR_ALREADY_CONNECTED and returns 0."
+    },
+    {
+      "c": "bwapi_client_update",
+      "section": "client",
+      "signature": "void bwapi_client_update(void)",
+      "cpp": "Client::update",
+      "self": "game",
+      "params": [],
+      "returns": {
+        "kind": "void",
+        "c_type": "void",
+        "neutral": "nothing"
+      },
+      "reentrant": "forbidden",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Ends the frame and BLOCKS on the pipe until the server hands back the next one. Every event index and snapshot from the previous frame is invalid afterwards. If the server has gone away, bwapi_client_is_connected() is 0 on return."
+    },
+    {
+      "c": "bwapi_client_disconnect",
+      "section": "client",
+      "signature": "void bwapi_client_disconnect(void)",
+      "cpp": "Client::disconnect",
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "void",
+        "c_type": "void",
+        "neutral": "nothing"
+      },
+      "reentrant": "forbidden",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Tears down BWEM first, because its map points into the game data, then the client. Safe to call when not connected."
+    },
+    {
+      "c": "bwapi_client_is_connected",
+      "section": "client",
+      "signature": "int32_t bwapi_client_is_connected(void)",
+      "cpp": "Client::isConnected",
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "1 while connected. Becomes 0 when the server goes away during bwapi_client_update()."
+    },
+    {
+      "c": "bwapi_player_get_id",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_id(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getID",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's id, which is the handle itself: 0..11, the slot in the game's player table."
+    },
+    {
+      "c": "bwapi_player_get_name",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_name(bwapi_player_id player_id, char* buf, int32_t buf_len)",
+      "cpp": "PlayerInterface::getName",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's name, as the game reports it."
+    },
+    {
+      "c": "bwapi_player_get_units",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_units(bwapi_player_id player_id, int32_t* out, int32_t cap)",
+      "cpp": "PlayerInterface::getUnits",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The ids of every unit the player owns, incomplete units included, ascending. Units loaded into transports, bunkers, refineries, assimilators or extractors are not included, as in BWAPI."
+    },
+    {
+      "c": "bwapi_player_get_race",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_race(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getRace",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "type:Race",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of Race (BWAPI_RACE_UNKNOWN)",
+        "type_class": "Race",
+        "constants": "BWAPI_RACE"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's race. BWAPI_RACE_UNKNOWN when the player chose Random and the race has not been revealed to this bot."
+    },
+    {
+      "c": "bwapi_player_get_type",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_type(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getType",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "type:PlayerType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of PlayerType (BWAPI_PLAYERTYPE_UNKNOWN)",
+        "type_class": "PlayerType",
+        "constants": "BWAPI_PLAYERTYPE"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's controller type, a BWAPI_PLAYERTYPE_* value. Other bots are reported as human players, as BWAPI reports them."
+    },
+    {
+      "c": "bwapi_player_get_force",
+      "section": "player",
+      "signature": "bwapi_force_id bwapi_player_get_force(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getForce",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "handle:force",
+        "c_type": "bwapi_force_id",
+        "neutral": "BWAPI_NONE",
+        "handle_kind": "force"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The id of the force (team) the player belongs to."
+    },
+    {
+      "c": "bwapi_player_is_ally",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_ally(bwapi_player_id player_id, bwapi_player_id other_id)",
+      "cpp": "PlayerInterface::isAlly",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "other_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player is allied with the other player. 0 when not, and also when either player is neutral or an observer."
+    },
+    {
+      "c": "bwapi_player_is_enemy",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_enemy(bwapi_player_id player_id, bwapi_player_id other_id)",
+      "cpp": "PlayerInterface::isEnemy",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "other_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player is at war with the other player. 0 when not, and also when either player is neutral or an observer."
+    },
+    {
+      "c": "bwapi_player_is_neutral",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_neutral(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::isNeutral",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when this is the neutral player, which owns the minerals, geysers and critters."
+    },
+    {
+      "c": "bwapi_player_get_start_location",
+      "section": "player",
+      "signature": "bwapi_position bwapi_player_get_start_location(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getStartLocation",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "tile_position",
+        "c_type": "bwapi_position",
+        "neutral": "BWAPI_POSITION_NONE",
+        "scale": "tile"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's starting location in tile coordinates. BWAPI_TILEPOSITION_NONE when the player has no start location, BWAPI_TILEPOSITION_UNKNOWN when BWAPI could not retrieve it."
+    },
+    {
+      "c": "bwapi_player_is_victorious",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_victorious(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::isVictorious",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player has achieved victory."
+    },
+    {
+      "c": "bwapi_player_is_defeated",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_defeated(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::isDefeated",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player has been defeated."
+    },
+    {
+      "c": "bwapi_player_left_game",
+      "section": "player",
+      "signature": "int32_t bwapi_player_left_game(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::leftGame",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player has left the game."
+    },
+    {
+      "c": "bwapi_player_minerals",
+      "section": "player",
+      "signature": "int32_t bwapi_player_minerals(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::minerals",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's current minerals. 0 when the player's information is inaccessible to this bot."
+    },
+    {
+      "c": "bwapi_player_gas",
+      "section": "player",
+      "signature": "int32_t bwapi_player_gas(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::gas",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's current vespene gas. 0 when the player's information is inaccessible to this bot."
+    },
+    {
+      "c": "bwapi_player_gathered_minerals",
+      "section": "player",
+      "signature": "int32_t bwapi_player_gathered_minerals(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::gatheredMinerals",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The minerals the player has gathered since the game began, starting minerals included. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_gathered_gas",
+      "section": "player",
+      "signature": "int32_t bwapi_player_gathered_gas(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::gatheredGas",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The vespene gas the player has gathered since the game began, starting gas included. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_repaired_minerals",
+      "section": "player",
+      "signature": "int32_t bwapi_player_repaired_minerals(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::repairedMinerals",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The minerals the player has spent on repairs since the game began. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_repaired_gas",
+      "section": "player",
+      "signature": "int32_t bwapi_player_repaired_gas(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::repairedGas",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The vespene gas the player has spent on repairs since the game began. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_refunded_minerals",
+      "section": "player",
+      "signature": "int32_t bwapi_player_refunded_minerals(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::refundedMinerals",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The minerals the player has recovered by cancelling units and structures. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_refunded_gas",
+      "section": "player",
+      "signature": "int32_t bwapi_player_refunded_gas(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::refundedGas",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The vespene gas the player has recovered by cancelling units and structures. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_spent_minerals",
+      "section": "player",
+      "signature": "int32_t bwapi_player_spent_minerals(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::spentMinerals",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The minerals the player has spent, repairs excluded. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_spent_gas",
+      "section": "player",
+      "signature": "int32_t bwapi_player_spent_gas(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::spentGas",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The vespene gas the player has spent, repairs excluded. 0 when inaccessible."
+    },
+    {
+      "c": "bwapi_player_supply_total",
+      "section": "player",
+      "signature": "int32_t bwapi_player_supply_total(bwapi_player_id player_id, int32_t race)",
+      "cpp": "PlayerInterface::supplyTotal",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The supply available to the player for the given race, or for the player's own race when race is BWAPI_RACE_NONE. Supply is per race, and the value is double what the game displays, as in BWAPI."
+    },
+    {
+      "c": "bwapi_player_supply_used",
+      "section": "player",
+      "signature": "int32_t bwapi_player_supply_used(bwapi_player_id player_id, int32_t race)",
+      "cpp": "PlayerInterface::supplyUsed",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The supply the player is using for the given race, or for the player's own race when race is BWAPI_RACE_NONE. Double what the game displays, as in BWAPI."
+    },
+    {
+      "c": "bwapi_player_all_unit_count",
+      "section": "player",
+      "signature": "int32_t bwapi_player_all_unit_count(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::allUnitCount",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "How many units of the type the player has, incomplete ones included; BWAPI_UNIT_ALL_UNITS counts every type. In-progress Zerg units count as their egg type until they hatch."
+    },
+    {
+      "c": "bwapi_player_visible_unit_count",
+      "section": "player",
+      "signature": "int32_t bwapi_player_visible_unit_count(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::visibleUnitCount",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "How many units of the type the player has that are strictly visible to this bot, even when information on the player is unrestricted; BWAPI_UNIT_ALL_UNITS counts every type."
+    },
+    {
+      "c": "bwapi_player_completed_unit_count",
+      "section": "player",
+      "signature": "int32_t bwapi_player_completed_unit_count(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::completedUnitCount",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "How many completed units of the type the player has; BWAPI_UNIT_ALL_UNITS counts every type."
+    },
+    {
+      "c": "bwapi_player_incomplete_unit_count",
+      "section": "player",
+      "signature": "int32_t bwapi_player_incomplete_unit_count(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::incompleteUnitCount",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "How many incomplete units of the type the player has, which is the all count less the completed count; BWAPI_UNIT_ALL_UNITS counts every type. Zerg units inside eggs are not counted."
+    },
+    {
+      "c": "bwapi_player_dead_unit_count",
+      "section": "player",
+      "signature": "int32_t bwapi_player_dead_unit_count(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::deadUnitCount",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "How many of the player's units of the type have died; BWAPI_UNIT_ALL_UNITS counts every type."
+    },
+    {
+      "c": "bwapi_player_killed_unit_count",
+      "section": "player",
+      "signature": "int32_t bwapi_player_killed_unit_count(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::killedUnitCount",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "How many units of the type the player has killed; BWAPI_UNIT_ALL_UNITS counts every type."
+    },
+    {
+      "c": "bwapi_player_get_upgrade_level",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_upgrade_level(bwapi_player_id player_id, int32_t upgrade)",
+      "cpp": "PlayerInterface::getUpgradeLevel",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The level the player has attained for the upgrade, 0 when none."
+    },
+    {
+      "c": "bwapi_player_has_researched",
+      "section": "player",
+      "signature": "int32_t bwapi_player_has_researched(bwapi_player_id player_id, int32_t tech)",
+      "cpp": "PlayerInterface::hasResearched",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player has researched the technology."
+    },
+    {
+      "c": "bwapi_player_is_researching",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_researching(bwapi_player_id player_id, int32_t tech)",
+      "cpp": "PlayerInterface::isResearching",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 while the player is researching the technology."
+    },
+    {
+      "c": "bwapi_player_is_upgrading",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_upgrading(bwapi_player_id player_id, int32_t upgrade)",
+      "cpp": "PlayerInterface::isUpgrading",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 while the player is upgrading the upgrade."
+    },
+    {
+      "c": "bwapi_player_get_color",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_color(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getColor",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "type:Color",
+        "c_type": "int32_t",
+        "neutral": "255, the Unknown id of Color, which has no named Unknown",
+        "type_class": "Color",
+        "constants": "BWAPI_COLOR"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's colour as a palette index, the value the drawing functions take."
+    },
+    {
+      "c": "bwapi_player_get_text_color",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_text_color(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getTextColor",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The control character that switches text to the player's colour, as a BWAPI_TEXT_* value; put it in a string passed to the drawing and text functions."
+    },
+    {
+      "c": "bwapi_player_max_energy",
+      "section": "player",
+      "signature": "int32_t bwapi_player_max_energy(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::maxEnergy",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The maximum energy a unit of the type has for this player, the player's energy upgrades included."
+    },
+    {
+      "c": "bwapi_player_top_speed",
+      "section": "player",
+      "signature": "double bwapi_player_top_speed(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::topSpeed",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "double",
+        "c_type": "double",
+        "neutral": "0.0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The top speed of a unit of the type for this player, the player's speed upgrades included."
+    },
+    {
+      "c": "bwapi_player_weapon_max_range",
+      "section": "player",
+      "signature": "int32_t bwapi_player_weapon_max_range(bwapi_player_id player_id, int32_t weapon)",
+      "cpp": "PlayerInterface::weaponMaxRange",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The maximum range of the weapon for this player, the player's range upgrades included."
+    },
+    {
+      "c": "bwapi_player_sight_range",
+      "section": "player",
+      "signature": "int32_t bwapi_player_sight_range(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::sightRange",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The sight range of a unit of the type for this player, the player's sight upgrades included."
+    },
+    {
+      "c": "bwapi_player_weapon_damage_cooldown",
+      "section": "player",
+      "signature": "int32_t bwapi_player_weapon_damage_cooldown(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::weaponDamageCooldown",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The ground weapon cooldown of a unit of the type for this player, the player's attack speed upgrades included."
+    },
+    {
+      "c": "bwapi_player_armor",
+      "section": "player",
+      "signature": "int32_t bwapi_player_armor(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::armor",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The armour a unit of the type has for this player, upgrades included."
+    },
+    {
+      "c": "bwapi_player_damage",
+      "section": "player",
+      "signature": "int32_t bwapi_player_damage(bwapi_player_id player_id, int32_t weapon)",
+      "cpp": "PlayerInterface::damage",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The damage the weapon deals for this player, upgrades included."
+    },
+    {
+      "c": "bwapi_player_get_unit_score",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_unit_score(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getUnitScore",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's unit score, as on the end-game score screen."
+    },
+    {
+      "c": "bwapi_player_get_kill_score",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_kill_score(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getKillScore",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's kill score, as on the end-game score screen."
+    },
+    {
+      "c": "bwapi_player_get_building_score",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_building_score(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getBuildingScore",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's building score, as on the end-game score screen."
+    },
+    {
+      "c": "bwapi_player_get_razing_score",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_razing_score(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getRazingScore",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's razing score, as on the end-game score screen."
+    },
+    {
+      "c": "bwapi_player_get_custom_score",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_custom_score(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::getCustomScore",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The player's custom score, which map triggers set."
+    },
+    {
+      "c": "bwapi_player_is_observer",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_observer(bwapi_player_id player_id)",
+      "cpp": "PlayerInterface::isObserver",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player is an observer, typically in a use-map-settings observer game."
+    },
+    {
+      "c": "bwapi_player_get_max_upgrade_level",
+      "section": "player",
+      "signature": "int32_t bwapi_player_get_max_upgrade_level(bwapi_player_id player_id, int32_t upgrade)",
+      "cpp": "PlayerInterface::getMaxUpgradeLevel",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The highest level of the upgrade available to this player, which map settings may lower from the type's own maximum."
+    },
+    {
+      "c": "bwapi_player_is_research_available",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_research_available(bwapi_player_id player_id, int32_t tech)",
+      "cpp": "PlayerInterface::isResearchAvailable",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player is allowed to research the technology under the map's settings."
+    },
+    {
+      "c": "bwapi_player_is_unit_available",
+      "section": "player",
+      "signature": "int32_t bwapi_player_is_unit_available(bwapi_player_id player_id, int32_t unit_type)",
+      "cpp": "PlayerInterface::isUnitAvailable",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player is allowed to create units of the type under the map's settings."
+    },
+    {
+      "c": "bwapi_player_has_unit_type_requirement",
+      "section": "player",
+      "signature": "int32_t bwapi_player_has_unit_type_requirement(bwapi_player_id player_id, int32_t unit_type, int32_t amount)",
+      "cpp": "PlayerInterface::hasUnitTypeRequirement",
+      "self": "player",
+      "params": [
+        {
+          "name": "player_id",
+          "type": "handle:player",
+          "c_type": "bwapi_player_id"
+        },
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "amount",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the player has at least amount completed units of the type, counting the equivalents BWAPI counts: a Lair or Hive for a Hatchery, a Hive for a Lair, a sieged tank for an unsieged one, and both Templar and Archon forms. Pass 1 for the plain requirement."
+    }
+  ],
+  "constants": [
+    {
+      "family": "error",
+      "prefix": "BWAPI_ERR",
+      "cpp": null,
+      "doc": "The ABI's own error codes, latched by the sticky first-error channel. A code says which section-4 rule fired. None of these values is ever reused.",
+      "values": [
+        {
+          "name": "BWAPI_ERR_NONE",
+          "cpp_name": null,
+          "value": 0,
+          "doc": "nothing latched since the last clear"
+        },
+        {
+          "name": "BWAPI_ERR_ALREADY_CONNECTED",
+          "cpp_name": null,
+          "value": 1,
+          "doc": "bwapi_client_connect() while connected"
+        },
+        {
+          "name": "BWAPI_ERR_WRONG_THREAD",
+          "cpp_name": null,
+          "value": 2,
+          "doc": "a call from a thread other than the update thread"
+        },
+        {
+          "name": "BWAPI_ERR_REENTRANT_MUTATION",
+          "cpp_name": null,
+          "value": 3,
+          "doc": "a mutating call from inside a callback"
+        },
+        {
+          "name": "BWAPI_ERR_BWEM",
+          "cpp_name": null,
+          "value": 4,
+          "doc": "a BWEM::Exception, or a map BWEM would crash on"
+        },
+        {
+          "name": "BWAPI_ERR_INVALID_HANDLE",
+          "cpp_name": null,
+          "value": 5,
+          "doc": "an id that could never have been valid"
+        },
+        {
+          "name": "BWAPI_ERR_NOT_CONNECTED",
+          "cpp_name": null,
+          "value": 6,
+          "doc": "a game or unit call before connect, or after disconnect"
+        },
+        {
+          "name": "BWAPI_ERR_BWEM_NOT_INITIALIZED",
+          "cpp_name": null,
+          "value": 7,
+          "doc": "a bwapi_bwem_* query before bwapi_bwem_initialize()"
+        },
+        {
+          "name": "BWAPI_ERR_BAD_BUFFER",
+          "cpp_name": null,
+          "value": 8,
+          "doc": "a NULL buffer with a nonzero cap or buf_len, or a negative one"
+        },
+        {
+          "name": "BWAPI_ERR_EXCEPTION",
+          "cpp_name": null,
+          "value": 9,
+          "doc": "a C++ exception other than BWEM's escaped the wrapped call; what() is the message"
+        }
+      ]
+    },
+    {
+      "family": "log_level",
+      "prefix": "BWAPI_LOG",
+      "cpp": null,
+      "doc": "The level argument of the log callback. Client::connect()'s own std::cout and std::cerr output is not redirected in v1; these carry the ABI's diagnostics.",
+      "values": [
+        {
+          "name": "BWAPI_LOG_INFO",
+          "cpp_name": null,
+          "value": 0,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_LOG_WARN",
+          "cpp_name": null,
+          "value": 1,
+          "doc": "a rejected re-entrant call, among others"
+        },
+        {
+          "name": "BWAPI_LOG_ERROR",
+          "cpp_name": null,
+          "value": 2,
+          "doc": ""
+        }
+      ]
+    },
+    {
+      "family": "position_sentinel",
+      "prefix": "BWAPI",
+      "cpp": null,
+      "doc": "BWAPI's own position sentinels (BWAPI/Position.h) in unpacked form, for the pixel, walk (scale 8) and tile (scale 32) scales. The packed forms are BWAPI_POS_MAKE of each pair; packing is lossless, so a C++ bot sees the same values. BWAPI_POSITION_NONE packed is the neutral return of every position-returning function.",
+      "values": [
+        {
+          "name": "BWAPI_POSITION_INVALID_X",
+          "cpp_name": null,
+          "value": 32000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_POSITION_INVALID_Y",
+          "cpp_name": null,
+          "value": 32000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_POSITION_NONE_X",
+          "cpp_name": null,
+          "value": 32000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_POSITION_NONE_Y",
+          "cpp_name": null,
+          "value": 32032,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_POSITION_UNKNOWN_X",
+          "cpp_name": null,
+          "value": 32000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_POSITION_UNKNOWN_Y",
+          "cpp_name": null,
+          "value": 32064,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_POSITION_ORIGIN_X",
+          "cpp_name": null,
+          "value": 0,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_POSITION_ORIGIN_Y",
+          "cpp_name": null,
+          "value": 0,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_INVALID_X",
+          "cpp_name": null,
+          "value": 4000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_INVALID_Y",
+          "cpp_name": null,
+          "value": 4000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_NONE_X",
+          "cpp_name": null,
+          "value": 4000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_NONE_Y",
+          "cpp_name": null,
+          "value": 4004,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_UNKNOWN_X",
+          "cpp_name": null,
+          "value": 4000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_UNKNOWN_Y",
+          "cpp_name": null,
+          "value": 4008,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_ORIGIN_X",
+          "cpp_name": null,
+          "value": 0,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_WALKPOSITION_ORIGIN_Y",
+          "cpp_name": null,
+          "value": 0,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_INVALID_X",
+          "cpp_name": null,
+          "value": 1000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_INVALID_Y",
+          "cpp_name": null,
+          "value": 1000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_NONE_X",
+          "cpp_name": null,
+          "value": 1000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_NONE_Y",
+          "cpp_name": null,
+          "value": 1001,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_UNKNOWN_X",
+          "cpp_name": null,
+          "value": 1000,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_UNKNOWN_Y",
+          "cpp_name": null,
+          "value": 1002,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_ORIGIN_X",
+          "cpp_name": null,
+          "value": 0,
+          "doc": ""
+        },
+        {
+          "name": "BWAPI_TILEPOSITION_ORIGIN_Y",
+          "cpp_name": null,
+          "value": 0,
+          "doc": ""
+        }
+      ]
+    }
+  ],
+  "structs": []
+}
