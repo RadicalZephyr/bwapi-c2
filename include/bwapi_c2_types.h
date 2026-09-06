@@ -1352,7 +1352,384 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
 extern "C" {
 #endif
 
-/* (nothing yet: the spec files for this header arrive with implementation plan 1.5) */
+/* ---- static type data ---------------------------------------------------------------------------- */
+
+/* The name of the unit type, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_get_name(int32_t unit_type, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for UnitType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_valid(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the Race that the unit type belongs to. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_get_race(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Obtains the source unit type that is used to build or train the unit type, as well as the
+ * amount of them that are required. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_what_builds(int32_t unit_type, int32_t* count) BWAPI_C2_NOEXCEPT;
+/* Retrieves the immediate technology tree requirements to make the unit type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_units(int32_t unit_type, int32_t* types, int32_t* counts, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Identifies the required TechType in order to create certain units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_tech(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the cloaking technology associated with certain units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_cloaking_tech(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the set of abilities that the unit type can use, provided it is available to you in
+ * the game. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_abilities(int32_t unit_type, int32_t* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Retrieves the set of upgrades that the unit type can use to enhance its fighting ability. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_upgrades(int32_t unit_type, int32_t* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Retrieves the upgrade type used to increase the armor of the unit type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_armor_upgrade(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default maximum amount of hit points that the unit type can have. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_hit_points(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default maximum amount of shield points that the unit type can have. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_shields(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the maximum amount of energy the unit type can have by default. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_energy(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default amount of armor that the unit type starts with, excluding upgrades. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_armor(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default mineral price of purchasing the unit. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_mineral_price(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default vespene gas price of purchasing the unit. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_gas_price(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default time, in frames, needed to train, morph, or build the unit. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_build_time(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the amount of supply that the unit type will use when created. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_supply_required(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the amount of supply that the unit type produces for its appropriate Race's supply
+ * pool. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_supply_provided(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the amount of space required by the unit type to fit inside a Bunker or Transport. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_space_required(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the amount of space provided by this Bunker or Transport for unit transportation. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_space_provided(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the amount of score points awarded for constructing the unit type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_build_score(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the amount of score points awarded for killing the unit type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_destroy_score(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the UnitSizeType of the unit type, which is used in calculations along with weapon
+ * damage types to determine the amount of damage that will be dealt to the type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_size(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the width of the unit type, in tiles. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_tile_width(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the height of the unit type, in tiles. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_tile_height(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the tile size of the unit type. */
+BWAPI_C2_API bwapi_position BWAPI_C2_CALL bwapi_unittype_tile_size(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the distance from the center of the unit type to its left edge. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_dimension_left(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the distance from the center of the unit type to its top edge. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_dimension_up(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the distance from the center of the unit type to its right edge. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_dimension_right(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the distance from the center of the unit type to its bottom edge. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_dimension_down(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* A macro for retrieving the width of the unit type, which is calculated using dimensionLeft +
+ * dimensionRight + 1. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_width(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* A macro for retrieving the height of the unit type, which is calculated using dimensionUp +
+ * dimensionDown + 1. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_height(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the range at which the unit type will start targeting enemy units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_seek_range(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the sight range of the unit type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_sight_range(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the unit type's weapon type used when attacking targets on the ground. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_ground_weapon(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the maximum number of hits the unit type can deal to a ground target using its
+ * ground weapon. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_ground_hits(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the unit type's weapon type used when attacking targets in the air. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_air_weapon(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the maximum number of hits the unit type can deal to a flying target using its air
+ * weapon. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_air_hits(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the unit type's top movement speed with no upgrades. */
+BWAPI_C2_API double BWAPI_C2_CALL bwapi_unittype_top_speed(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the unit's acceleration amount. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_acceleration(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the unit's halting distance. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_halt_distance(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves a unit's turning rate. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_turn_radius(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Determines if a unit can train other units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_can_produce(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is capable of attacking. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_can_attack(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is capable of movement. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_can_move(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a flying unit. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_flyer(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type can regenerate hit points. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_regenerates_hp(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type has the capacity to store energy and use it for special abilities. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_spellcaster(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is permanently cloaked. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_has_permanent_cloak(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is invincible by default. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_invincible(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is an organic unit. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_organic(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is mechanical. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_mechanical(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is robotic. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_robotic(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is capable of detecting units that are cloaked or burrowed. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_detector(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is capable of storing resources such as minerals. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_resource_container(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a resource depot. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_resource_depot(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a refinery. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_refinery(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a worker unit. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_worker(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if this structure is powered by a psi field. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_requires_psi(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if this structure must be placed on Zerg creep. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_requires_creep(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type spawns two units when being hatched from an Egg. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_two_units_in_one_egg(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type has the capability to use the Burrow technology when it is researched. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_burrowable(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type has the capability to use a cloaking ability when it is researched. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_cloakable(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a structure. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_building(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is an add-on. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_addon(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if this structure has the capability to use the lift-off command. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_flying_building(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a neutral type, such as critters and resources. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_neutral(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a hero. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_hero(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a powerup. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_powerup(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a beacon. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_beacon(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a flag beacon. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_flag_beacon(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if this structure is special and cannot be obtained normally within the game. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_special_building(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Identifies if the unit type is used to complement some abilities. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_spell(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if this structure type produces creep. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_produces_creep(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type produces larva. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_produces_larva(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a mineral field and contains a resource amount. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_mineral_field(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is a neutral critter. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_critter(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Checks if the unit type is capable of constructing an add-on. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_can_build_addon(int32_t unit_type) BWAPI_C2_NOEXCEPT;
+/* Retrieves the set of units that the unit type is capable of creating. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_builds_what(int32_t unit_type, int32_t* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Retrieves the set of technologies that the unit type is capable of researching. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_researches_what(int32_t unit_type, int32_t* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Retrieves the set of upgrades that the unit type is capable of upgrading. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_upgrades_what(int32_t unit_type, int32_t* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Checks if the current type is equal to the provided type, or a successor of the provided type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_is_successor_of(int32_t unit_type, int32_t type) BWAPI_C2_NOEXCEPT;
+/* The name of the weapon, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_get_name(int32_t weapon, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for WeaponType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_is_valid(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the technology type that must be researched before the weapon can be used. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_get_tech(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the unit type that is intended to use the weapon type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_what_uses(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the base amount of damage that the weapon can deal per attack. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_damage_amount(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Determines the bonus amount of damage that the weapon type increases by for every upgrade to
+ * the type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_damage_bonus(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the base amount of cooldown time between each attack, in frames. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_damage_cooldown(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Obtains the intended number of missiles/attacks that are used. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_damage_factor(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the upgrade type that increases the weapon's damage output. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_upgrade_type(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the damage type that the weapon applies to a unit type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_damage_type(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the explosion type that indicates how the weapon deals damage. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_explosion_type(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the minimum attack range of the weapon, measured in pixels. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_min_range(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the maximum attack range of the weapon, measured in pixels. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_max_range(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the inner radius used for splash damage calculations, in pixels. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_inner_splash_radius(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the middle radius used for splash damage calculations, in pixels. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_median_splash_radius(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Retrieves the outer radius used for splash damage calculations, in pixels. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_outer_splash_radius(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type can target air units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_air(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type can target ground units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_ground(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type can only target mechanical units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_mechanical(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type can only target organic units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_organic(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type cannot target structures. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_non_building(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type cannot target robotic units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_non_robotic(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type can target the ground. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_terrain(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type can only target organic or mechanical units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_org_or_mech(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* Checks if the weapon type can only target units owned by the same player. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_targets_own(int32_t weapon) BWAPI_C2_NOEXCEPT;
+/* The name of the tech, as BWAPI spells it: the enumerator with its underscores, so a unit type
+ * reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_get_name(int32_t tech, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for TechType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_is_valid(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the race that is required to research or use the TechType. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_get_race(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the mineral cost of researching this technology. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_mineral_price(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the vespene gas cost of researching this technology. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_gas_price(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the number of frames needed to research the tech type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_research_time(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the amount of energy needed to use this TechType as an ability. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_energy_cost(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the UnitType that can research this technology. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_what_researches(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the Weapon that is attached to this tech type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_get_weapon(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Checks if this ability can be used on other units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_targets_unit(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Checks if this ability can be used on the terrain (ground). */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_targets_position(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the set of all UnitTypes that are capable of using this ability. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_what_uses(int32_t tech, int32_t* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Retrieves the Order that a Unit uses when using this ability. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_get_order(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* Retrieves the UnitType required to research this technology. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_required_unit(int32_t tech) BWAPI_C2_NOEXCEPT;
+/* The name of the upgrade, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_get_name(int32_t upgrade, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for UpgradeType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_is_valid(int32_t upgrade) BWAPI_C2_NOEXCEPT;
+/* Retrieves the race the upgrade is for. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_get_race(int32_t upgrade) BWAPI_C2_NOEXCEPT;
+/* Returns the mineral price for the upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_mineral_price(int32_t upgrade, int32_t level) BWAPI_C2_NOEXCEPT;
+/* The amount that the mineral price increases for each additional upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_mineral_price_factor(int32_t upgrade) BWAPI_C2_NOEXCEPT;
+/* Returns the vespene gas price for the first upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_gas_price(int32_t upgrade, int32_t level) BWAPI_C2_NOEXCEPT;
+/* Returns the amount that the vespene gas price increases for each additional upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_gas_price_factor(int32_t upgrade) BWAPI_C2_NOEXCEPT;
+/* Returns the number of frames needed to research the first upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_upgrade_time(int32_t upgrade, int32_t level) BWAPI_C2_NOEXCEPT;
+/* Returns the number of frames that the upgrade time increases for each additional upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_upgrade_time_factor(int32_t upgrade) BWAPI_C2_NOEXCEPT;
+/* Returns the maximum number of times the upgrade can be researched. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_max_repeats(int32_t upgrade) BWAPI_C2_NOEXCEPT;
+/* Returns the type of unit that researches the upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_what_upgrades(int32_t upgrade) BWAPI_C2_NOEXCEPT;
+/* Returns the type of unit that is required for the upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_whats_required(int32_t upgrade, int32_t level) BWAPI_C2_NOEXCEPT;
+/* Returns the set of units that are affected by this upgrade. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_what_uses(int32_t upgrade, int32_t* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* The name of the race, as BWAPI spells it: the enumerator with its underscores, so a unit type
+ * reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_get_name(int32_t race, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for Race, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_is_valid(int32_t race) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default worker type for the race. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_get_worker(int32_t race) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default resource depot UnitType that workers of the race can construct and
+ * return resources to. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_get_resource_depot(int32_t race) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default structure UnitType for the race that is used to harvest gas from
+ * Geysers. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_get_refinery(int32_t race) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default transport UnitType for the race that is used to transport ground units
+ * across the map. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_get_transport(int32_t race) BWAPI_C2_NOEXCEPT;
+/* Retrieves the default supply provider UnitType for the race that is used to construct units. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_get_supply_provider(int32_t race) BWAPI_C2_NOEXCEPT;
+/* The name of the size, as BWAPI spells it: the enumerator with its underscores, so a unit type
+ * reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitsizetype_get_name(int32_t size, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for UnitSizeType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitsizetype_is_valid(int32_t size) BWAPI_C2_NOEXCEPT;
+/* The name of the damage, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_damagetype_get_name(int32_t damage, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for DamageType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_damagetype_is_valid(int32_t damage) BWAPI_C2_NOEXCEPT;
+/* The name of the explosion, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_explosiontype_get_name(int32_t explosion, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for ExplosionType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_explosiontype_is_valid(int32_t explosion) BWAPI_C2_NOEXCEPT;
+/* The name of the bullet, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_bullettype_get_name(int32_t bullet, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for BulletType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_bullettype_is_valid(int32_t bullet) BWAPI_C2_NOEXCEPT;
+/* The name of the order, as BWAPI spells it: the enumerator with its underscores, so a unit type
+ * reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_order_get_name(int32_t order, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for Order, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_order_is_valid(int32_t order) BWAPI_C2_NOEXCEPT;
+/* The name of the player type, as BWAPI spells it: the enumerator with its underscores, so a
+ * unit type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_get_name(int32_t player_type, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for PlayerType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_is_valid(int32_t player_type) BWAPI_C2_NOEXCEPT;
+/* Identifies whether or not the type is used for the pre-game lobby. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_is_lobby_type(int32_t player_type) BWAPI_C2_NOEXCEPT;
+/* Identifies whether or not the type is used in-game. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_is_game_type(int32_t player_type) BWAPI_C2_NOEXCEPT;
+/* The name of the game type, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_gametype_get_name(int32_t game_type, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for GameType, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_gametype_is_valid(int32_t game_type) BWAPI_C2_NOEXCEPT;
+/* The name of the command, as BWAPI spells it: the enumerator with its underscores, so a unit
+ * type reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitcommandtype_get_name(int32_t command, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for UnitCommandType, from 0 to the class's Unknown inclusive;
+ * 0 otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unitcommandtype_is_valid(int32_t command) BWAPI_C2_NOEXCEPT;
+/* The name of the error, as BWAPI spells it: the enumerator with its underscores, so a unit type
+ * reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_error_get_name(int32_t error, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for Error, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_error_is_valid(int32_t error) BWAPI_C2_NOEXCEPT;
+/* The name of the color, as BWAPI spells it: the enumerator with its underscores, so a unit type
+ * reads "Terran_Marine". */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_get_name(int32_t color, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+/* 1 when the id is one BWAPI knows for Color, from 0 to the class's Unknown inclusive; 0
+ * otherwise. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_is_valid(int32_t color) BWAPI_C2_NOEXCEPT;
+/* Retrieves the red component of the color. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_red(int32_t color) BWAPI_C2_NOEXCEPT;
+/* Retrieves the green component of the color. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_green(int32_t color) BWAPI_C2_NOEXCEPT;
+/* Retrieves the blue component of the color. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_blue(int32_t color) BWAPI_C2_NOEXCEPT;
 
 #ifdef __cplusplus
 } /* extern "C" */

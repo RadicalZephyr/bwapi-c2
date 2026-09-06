@@ -1,0 +1,1224 @@
+# The static type data (plan section 5.8; implementation plan 1.5): every accessor of the
+# fifteen type classes, one export each, plus getName and isValid from the Type<> base. Pure
+# functions of a type id: self: none, no connection, no thread check. The container-valued
+# accessors (requiredUnits, whatBuilds, abilities, upgrades, buildsWhat, whatUses, ...) get
+# bodies expanding to parallel arrays, an out-param, or an id array (section 5.8).
+#
+# Drafted by tools/abi/draft_spec.py from the AST with upstream's summaries; edited by hand.
+
+# ---- UnitType ------------------------------------------------------------------------
+
+- cpp: "UnitType::getName"
+  c: bwapi_unittype_get_name
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: string_out
+  doc: "The name of the unit type, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "UnitType::isValid"
+  c: bwapi_unittype_is_valid
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for UnitType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+- cpp: "UnitType::getRace"
+  c: bwapi_unittype_get_race
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: "type:Race"
+  doc: "Retrieves the Race that the unit type belongs to."
+
+- cpp: "UnitType::whatBuilds"
+  c: bwapi_unittype_what_builds
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}, {name: count, type: int32_out}]
+  returns: "type:UnitType"
+  body: |
+    auto builder = BWAPI::UnitType(unit_type).whatBuilds();
+    if (count) *count = builder.second;
+    return builder.first;
+  doc: "Obtains the source unit type that is used to build or train the unit type, as well as the amount of them that are required. The number of them needed is written to count when it is not NULL; a type nothing builds returns BWAPI_UNIT_NONE and a count of 0."
+
+- cpp: "UnitType::requiredUnits"
+  c: bwapi_unittype_required_units
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}, {name: types, type: int32_array_out}, {name: counts, type: int32_array_out}, {name: cap, type: int32}]
+  returns: int32
+  body: |
+    if (!check_buffer(types, cap) || !check_buffer(counts, cap)) return 0;
+    int32_t total = 0;
+    for (const auto& req : BWAPI::UnitType(unit_type).requiredUnits()) {
+      if (total < cap) {
+        types[total] = req.first.getID();
+        counts[total] = req.second;
+      }
+      ++total;
+    }
+    return total;
+  doc: "Retrieves the immediate technology tree requirements to make the unit type. Written as parallel arrays of required type and count, ascending by type id, up to cap; returns the total number of requirements. A cap of 0 with NULL arrays queries the count."
+
+- cpp: "UnitType::requiredTech"
+  c: bwapi_unittype_required_tech
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: "type:TechType"
+  doc: "Identifies the required TechType in order to create certain units."
+
+- cpp: "UnitType::cloakingTech"
+  c: bwapi_unittype_cloaking_tech
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: "type:TechType"
+  doc: "Retrieves the cloaking technology associated with certain units."
+
+- cpp: "UnitType::abilities"
+  c: bwapi_unittype_abilities
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: id_array
+  doc: "Retrieves the set of abilities that the unit type can use, provided it is available to you in the game. The ids come back ascending, up to cap; returns the total."
+
+- cpp: "UnitType::upgrades"
+  c: bwapi_unittype_upgrades
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: id_array
+  doc: "Retrieves the set of upgrades that the unit type can use to enhance its fighting ability. The ids come back ascending, up to cap; returns the total."
+
+- cpp: "UnitType::armorUpgrade"
+  c: bwapi_unittype_armor_upgrade
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: "type:UpgradeType"
+  doc: "Retrieves the upgrade type used to increase the armor of the unit type. For each upgrade, the unit type gains +1 additional armor."
+
+- cpp: "UnitType::maxHitPoints"
+  c: bwapi_unittype_max_hit_points
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the default maximum amount of hit points that the unit type can have."
+
+- cpp: "UnitType::maxShields"
+  c: bwapi_unittype_max_shields
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the default maximum amount of shield points that the unit type can have."
+
+- cpp: "UnitType::maxEnergy"
+  c: bwapi_unittype_max_energy
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the maximum amount of energy the unit type can have by default."
+
+- cpp: "UnitType::armor"
+  c: bwapi_unittype_armor
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the default amount of armor that the unit type starts with, excluding upgrades."
+
+- cpp: "UnitType::mineralPrice"
+  c: bwapi_unittype_mineral_price
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the default mineral price of purchasing the unit."
+
+- cpp: "UnitType::gasPrice"
+  c: bwapi_unittype_gas_price
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the default vespene gas price of purchasing the unit."
+
+- cpp: "UnitType::buildTime"
+  c: bwapi_unittype_build_time
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the default time, in frames, needed to train, morph, or build the unit."
+
+- cpp: "UnitType::supplyRequired"
+  c: bwapi_unittype_supply_required
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the amount of supply that the unit type will use when created. It will use the supply pool that is appropriate for its Race."
+
+- cpp: "UnitType::supplyProvided"
+  c: bwapi_unittype_supply_provided
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the amount of supply that the unit type produces for its appropriate Race's supply pool."
+
+- cpp: "UnitType::spaceRequired"
+  c: bwapi_unittype_space_required
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the amount of space required by the unit type to fit inside a Bunker or Transport."
+
+- cpp: "UnitType::spaceProvided"
+  c: bwapi_unittype_space_provided
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the amount of space provided by this Bunker or Transport for unit transportation."
+
+- cpp: "UnitType::buildScore"
+  c: bwapi_unittype_build_score
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the amount of score points awarded for constructing the unit type. This value is used for calculating scores in the post-game score screen."
+
+- cpp: "UnitType::destroyScore"
+  c: bwapi_unittype_destroy_score
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the amount of score points awarded for killing the unit type. This value is used for calculating scores in the post-game score screen."
+
+- cpp: "UnitType::size"
+  c: bwapi_unittype_size
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: "type:UnitSizeType"
+  doc: "Retrieves the UnitSizeType of the unit type, which is used in calculations along with weapon damage types to determine the amount of damage that will be dealt to the type."
+
+- cpp: "UnitType::tileWidth"
+  c: bwapi_unittype_tile_width
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the width of the unit type, in tiles. Used for determining the tile size of structures."
+
+- cpp: "UnitType::tileHeight"
+  c: bwapi_unittype_tile_height
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the height of the unit type, in tiles. Used for determining the tile size of structures."
+
+- cpp: "UnitType::tileSize"
+  c: bwapi_unittype_tile_size
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: tile_position
+  doc: "Retrieves the tile size of the unit type. Used for determining the tile size of structures."
+
+- cpp: "UnitType::dimensionLeft"
+  c: bwapi_unittype_dimension_left
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the distance from the center of the unit type to its left edge."
+
+- cpp: "UnitType::dimensionUp"
+  c: bwapi_unittype_dimension_up
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the distance from the center of the unit type to its top edge."
+
+- cpp: "UnitType::dimensionRight"
+  c: bwapi_unittype_dimension_right
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the distance from the center of the unit type to its right edge."
+
+- cpp: "UnitType::dimensionDown"
+  c: bwapi_unittype_dimension_down
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the distance from the center of the unit type to its bottom edge."
+
+- cpp: "UnitType::width"
+  c: bwapi_unittype_width
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "A macro for retrieving the width of the unit type, which is calculated using dimensionLeft + dimensionRight + 1."
+
+- cpp: "UnitType::height"
+  c: bwapi_unittype_height
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "A macro for retrieving the height of the unit type, which is calculated using dimensionUp + dimensionDown + 1."
+
+- cpp: "UnitType::seekRange"
+  c: bwapi_unittype_seek_range
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the range at which the unit type will start targeting enemy units."
+
+- cpp: "UnitType::sightRange"
+  c: bwapi_unittype_sight_range
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the sight range of the unit type."
+
+- cpp: "UnitType::groundWeapon"
+  c: bwapi_unittype_ground_weapon
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: "type:WeaponType"
+  doc: "Retrieves the unit type's weapon type used when attacking targets on the ground."
+
+- cpp: "UnitType::maxGroundHits"
+  c: bwapi_unittype_max_ground_hits
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the maximum number of hits the unit type can deal to a ground target using its ground weapon. This value is multiplied by the ground weapon's damage to calculate the unit type's damage potential."
+
+- cpp: "UnitType::airWeapon"
+  c: bwapi_unittype_air_weapon
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: "type:WeaponType"
+  doc: "Retrieves the unit type's weapon type used when attacking targets in the air."
+
+- cpp: "UnitType::maxAirHits"
+  c: bwapi_unittype_max_air_hits
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the maximum number of hits the unit type can deal to a flying target using its air weapon. This value is multiplied by the air weapon's damage to calculate the unit type's damage potential."
+
+- cpp: "UnitType::topSpeed"
+  c: bwapi_unittype_top_speed
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: double
+  doc: "Retrieves the unit type's top movement speed with no upgrades."
+
+- cpp: "UnitType::acceleration"
+  c: bwapi_unittype_acceleration
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the unit's acceleration amount."
+
+- cpp: "UnitType::haltDistance"
+  c: bwapi_unittype_halt_distance
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves the unit's halting distance. This is the distance from the unit's destination at which point the unit starts decelerating."
+
+- cpp: "UnitType::turnRadius"
+  c: bwapi_unittype_turn_radius
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: "Retrieves a unit's turning rate. This determines how far a unit can rotate in one frame."
+
+- cpp: "UnitType::canProduce"
+  c: bwapi_unittype_can_produce
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Determines if a unit can train other units. For example, UnitTypes::Terran_Barracks.canProduce() will return true, while UnitTypes::Terran_Marine.canProduce() will return false. This is also true for two non-structures: Carrier (can produce interceptors) and Reaver (can produce scarabs)."
+
+- cpp: "UnitType::canAttack"
+  c: bwapi_unittype_can_attack
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is capable of attacking."
+
+- cpp: "UnitType::canMove"
+  c: bwapi_unittype_can_move
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is capable of movement."
+
+- cpp: "UnitType::isFlyer"
+  c: bwapi_unittype_is_flyer
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a flying unit. Flying units ignore ground pathing and collisions."
+
+- cpp: "UnitType::regeneratesHP"
+  c: bwapi_unittype_regenerates_hp
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type can regenerate hit points. This generally applies to Zerg units."
+
+- cpp: "UnitType::isSpellcaster"
+  c: bwapi_unittype_is_spellcaster
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type has the capacity to store energy and use it for special abilities."
+
+- cpp: "UnitType::hasPermanentCloak"
+  c: bwapi_unittype_has_permanent_cloak
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is permanently cloaked. This means the unit type is always cloaked and requires a detector in order to see it."
+
+- cpp: "UnitType::isInvincible"
+  c: bwapi_unittype_is_invincible
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is invincible by default. Invincible units cannot take damage."
+
+- cpp: "UnitType::isOrganic"
+  c: bwapi_unittype_is_organic
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is an organic unit. The organic property is required for some abilities such as Heal."
+
+- cpp: "UnitType::isMechanical"
+  c: bwapi_unittype_is_mechanical
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is mechanical. The mechanical property is required for some actions such as Repair."
+
+- cpp: "UnitType::isRobotic"
+  c: bwapi_unittype_is_robotic
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is robotic. The robotic property is applied to robotic units such as the Probe which prevents them from taking damage from Irradiate."
+
+- cpp: "UnitType::isDetector"
+  c: bwapi_unittype_is_detector
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is capable of detecting units that are cloaked or burrowed."
+
+- cpp: "UnitType::isResourceContainer"
+  c: bwapi_unittype_is_resource_container
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is capable of storing resources such as minerals. Resources are harvested from resource containers."
+
+- cpp: "UnitType::isResourceDepot"
+  c: bwapi_unittype_is_resource_depot
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a resource depot. Resource depots must be placed a certain distance from resources. Resource depots are typically the main building for any particular race. Workers will return resources to the nearest resource depot."
+
+- cpp: "UnitType::isRefinery"
+  c: bwapi_unittype_is_refinery
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a refinery. A refinery is a structure that is placed on top of a geyser . Refinery types are refinery , extractor , and assimilator."
+
+- cpp: "UnitType::isWorker"
+  c: bwapi_unittype_is_worker
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a worker unit. Worker units can harvest resources and build structures. Worker unit types include the SCV , probe, and drone."
+
+- cpp: "UnitType::requiresPsi"
+  c: bwapi_unittype_requires_psi
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if this structure is powered by a psi field. Structures powered by psi can only be placed near a Pylon. If the Pylon is destroyed, then the unit type will lose power."
+
+- cpp: "UnitType::requiresCreep"
+  c: bwapi_unittype_requires_creep
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if this structure must be placed on Zerg creep."
+
+- cpp: "UnitType::isTwoUnitsInOneEgg"
+  c: bwapi_unittype_is_two_units_in_one_egg
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type spawns two units when being hatched from an Egg. This is only applicable to Zerglings and Scourges."
+
+- cpp: "UnitType::isBurrowable"
+  c: bwapi_unittype_is_burrowable
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type has the capability to use the Burrow technology when it is researched."
+
+- cpp: "UnitType::isCloakable"
+  c: bwapi_unittype_is_cloakable
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type has the capability to use a cloaking ability when it is researched. This applies only to Wraiths and Ghosts, and does not include units which are permanently cloaked."
+
+- cpp: "UnitType::isBuilding"
+  c: bwapi_unittype_is_building
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a structure. This includes Mineral_Fields and Vespene_Geysers."
+
+- cpp: "UnitType::isAddon"
+  c: bwapi_unittype_is_addon
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is an add-on. Add-ons are attachments used by some Terran structures such as the Comsat_Station."
+
+- cpp: "UnitType::isFlyingBuilding"
+  c: bwapi_unittype_is_flying_building
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if this structure has the capability to use the lift-off command."
+
+- cpp: "UnitType::isNeutral"
+  c: bwapi_unittype_is_neutral
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a neutral type, such as critters and resources."
+
+- cpp: "UnitType::isHero"
+  c: bwapi_unittype_is_hero
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a hero. Heroes are types that the player cannot obtain normally, and are identified by the white border around their icon when selected with a group."
+
+- cpp: "UnitType::isPowerup"
+  c: bwapi_unittype_is_powerup
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a powerup. Powerups can be picked up and carried by workers. They are usually only seen in campaign maps and Capture_the_flag."
+
+- cpp: "UnitType::isBeacon"
+  c: bwapi_unittype_is_beacon
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a beacon. Each race has exactly one beacon each. They are UnitTypes::Special_Zerg_Beacon, UnitTypes::Special_Terran_Beacon, and UnitTypes::Special_Protoss_Beacon."
+
+- cpp: "UnitType::isFlagBeacon"
+  c: bwapi_unittype_is_flag_beacon
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a flag beacon. Each race has exactly one flag beacon each. They are UnitTypes::Special_Zerg_Flag_Beacon, UnitTypes::Special_Terran_Flag_Beacon, and UnitTypes::Special_Protoss_Flag_Beacon. Flag beacons spawn a Flag after some ARBITRARY I FORGOT AMOUNT OF FRAMES."
+
+- cpp: "UnitType::isSpecialBuilding"
+  c: bwapi_unittype_is_special_building
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if this structure is special and cannot be obtained normally within the game."
+
+- cpp: "UnitType::isSpell"
+  c: bwapi_unittype_is_spell
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Identifies if the unit type is used to complement some abilities. These include UnitTypes::Spell_Dark_Swarm, UnitTypes::Spell_Disruption_Web, and UnitTypes::Spell_Scanner_Sweep, which correspond to TechTypes::Dark_Swarm, TechTypes::Disruption_Web, and TechTypes::Scanner_Sweep respectively."
+
+- cpp: "UnitType::producesCreep"
+  c: bwapi_unittype_produces_creep
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if this structure type produces creep. That is, the unit type spreads creep over a wide area so that Zerg structures can be placed on it."
+
+- cpp: "UnitType::producesLarva"
+  c: bwapi_unittype_produces_larva
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type produces larva. This is essentially used to check if the unit type is a Hatchery, Lair, or Hive."
+
+- cpp: "UnitType::isMineralField"
+  c: bwapi_unittype_is_mineral_field
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a mineral field and contains a resource amount. This indicates that the unit type is either UnitTypes::Resource_Mineral_Field, UnitTypes::Resource_Mineral_Field_Type_2, or UnitTypes::Resource_Mineral_Field_Type_3."
+
+- cpp: "UnitType::isCritter"
+  c: bwapi_unittype_is_critter
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is a neutral critter."
+
+- cpp: "UnitType::canBuildAddon"
+  c: bwapi_unittype_can_build_addon
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the unit type is capable of constructing an add-on. An add-on is an extension or attachment for Terran structures, specifically the Command_Center, Factory, Starport, and Science_Facility."
+
+- cpp: "UnitType::buildsWhat"
+  c: bwapi_unittype_builds_what
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: id_array
+  doc: "Retrieves the set of units that the unit type is capable of creating. This includes training, constructing, warping, and morphing. The ids come back ascending, up to cap; returns the total."
+
+- cpp: "UnitType::researchesWhat"
+  c: bwapi_unittype_researches_what
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: id_array
+  doc: "Retrieves the set of technologies that the unit type is capable of researching. The ids come back ascending, up to cap; returns the total."
+
+- cpp: "UnitType::upgradesWhat"
+  c: bwapi_unittype_upgrades_what
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: id_array
+  doc: "Retrieves the set of upgrades that the unit type is capable of upgrading. The ids come back ascending, up to cap; returns the total."
+
+- cpp: "UnitType::isSuccessorOf"
+  c: bwapi_unittype_is_successor_of
+  self: none
+  params: [{name: unit_type, type: "type:UnitType"}, {name: type, type: "type:UnitType"}]
+  returns: bool32
+  doc: "Checks if the current type is equal to the provided type, or a successor of the provided type. For example, a Hive is a successor of a Hatchery, since it can still research the Burrow technology."
+
+# ---- WeaponType ----------------------------------------------------------------------
+
+- cpp: "WeaponType::getName"
+  c: bwapi_weapontype_get_name
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: string_out
+  doc: "The name of the weapon, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "WeaponType::isValid"
+  c: bwapi_weapontype_is_valid
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for WeaponType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+- cpp: "WeaponType::getTech"
+  c: bwapi_weapontype_get_tech
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: "type:TechType"
+  doc: "Retrieves the technology type that must be researched before the weapon can be used."
+
+- cpp: "WeaponType::whatUses"
+  c: bwapi_weapontype_what_uses
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the unit type that is intended to use the weapon type."
+
+- cpp: "WeaponType::damageAmount"
+  c: bwapi_weapontype_damage_amount
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Retrieves the base amount of damage that the weapon can deal per attack."
+
+- cpp: "WeaponType::damageBonus"
+  c: bwapi_weapontype_damage_bonus
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Determines the bonus amount of damage that the weapon type increases by for every upgrade to the type."
+
+- cpp: "WeaponType::damageCooldown"
+  c: bwapi_weapontype_damage_cooldown
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Retrieves the base amount of cooldown time between each attack, in frames."
+
+- cpp: "WeaponType::damageFactor"
+  c: bwapi_weapontype_damage_factor
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Obtains the intended number of missiles/attacks that are used. This is used to multiply with the damage amount to obtain the full amount of damage for an attack."
+
+- cpp: "WeaponType::upgradeType"
+  c: bwapi_weapontype_upgrade_type
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: "type:UpgradeType"
+  doc: "Retrieves the upgrade type that increases the weapon's damage output."
+
+- cpp: "WeaponType::damageType"
+  c: bwapi_weapontype_damage_type
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: "type:DamageType"
+  doc: "Retrieves the damage type that the weapon applies to a unit type."
+
+- cpp: "WeaponType::explosionType"
+  c: bwapi_weapontype_explosion_type
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: "type:ExplosionType"
+  doc: "Retrieves the explosion type that indicates how the weapon deals damage."
+
+- cpp: "WeaponType::minRange"
+  c: bwapi_weapontype_min_range
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Retrieves the minimum attack range of the weapon, measured in pixels. This value is 0 for almost all weapon types, except for WeaponTypes::Arclite_Shock_Cannon and WeaponTypes::Arclite_Shock_Cannon_Edmund_Duke."
+
+- cpp: "WeaponType::maxRange"
+  c: bwapi_weapontype_max_range
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Retrieves the maximum attack range of the weapon, measured in pixels."
+
+- cpp: "WeaponType::innerSplashRadius"
+  c: bwapi_weapontype_inner_splash_radius
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Retrieves the inner radius used for splash damage calculations, in pixels. Units in this area take 100% damage."
+
+- cpp: "WeaponType::medianSplashRadius"
+  c: bwapi_weapontype_median_splash_radius
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Retrieves the middle radius used for splash damage calculations, in pixels. Units in this area take 50% damage."
+
+- cpp: "WeaponType::outerSplashRadius"
+  c: bwapi_weapontype_outer_splash_radius
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: "Retrieves the outer radius used for splash damage calculations, in pixels. Units in this area take 25% damage."
+
+- cpp: "WeaponType::targetsAir"
+  c: bwapi_weapontype_targets_air
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type can target air units."
+
+- cpp: "WeaponType::targetsGround"
+  c: bwapi_weapontype_targets_ground
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type can target ground units."
+
+- cpp: "WeaponType::targetsMechanical"
+  c: bwapi_weapontype_targets_mechanical
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type can only target mechanical units."
+
+- cpp: "WeaponType::targetsOrganic"
+  c: bwapi_weapontype_targets_organic
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type can only target organic units."
+
+- cpp: "WeaponType::targetsNonBuilding"
+  c: bwapi_weapontype_targets_non_building
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type cannot target structures."
+
+- cpp: "WeaponType::targetsNonRobotic"
+  c: bwapi_weapontype_targets_non_robotic
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type cannot target robotic units."
+
+- cpp: "WeaponType::targetsTerrain"
+  c: bwapi_weapontype_targets_terrain
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type can target the ground."
+
+- cpp: "WeaponType::targetsOrgOrMech"
+  c: bwapi_weapontype_targets_org_or_mech
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type can only target organic or mechanical units."
+
+- cpp: "WeaponType::targetsOwn"
+  c: bwapi_weapontype_targets_own
+  self: none
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: bool32
+  doc: "Checks if the weapon type can only target units owned by the same player. This is used for WeaponTypes::Consume."
+
+# ---- TechType ------------------------------------------------------------------------
+
+- cpp: "TechType::getName"
+  c: bwapi_techtype_get_name
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: string_out
+  doc: "The name of the tech, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "TechType::isValid"
+  c: bwapi_techtype_is_valid
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for TechType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+- cpp: "TechType::getRace"
+  c: bwapi_techtype_get_race
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: "type:Race"
+  doc: "Retrieves the race that is required to research or use the TechType."
+
+- cpp: "TechType::mineralPrice"
+  c: bwapi_techtype_mineral_price
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: int32
+  doc: "Retrieves the mineral cost of researching this technology."
+
+- cpp: "TechType::gasPrice"
+  c: bwapi_techtype_gas_price
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: int32
+  doc: "Retrieves the vespene gas cost of researching this technology."
+
+- cpp: "TechType::researchTime"
+  c: bwapi_techtype_research_time
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: int32
+  doc: "Retrieves the number of frames needed to research the tech type."
+
+- cpp: "TechType::energyCost"
+  c: bwapi_techtype_energy_cost
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: int32
+  doc: "Retrieves the amount of energy needed to use this TechType as an ability."
+
+- cpp: "TechType::whatResearches"
+  c: bwapi_techtype_what_researches
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the UnitType that can research this technology."
+
+- cpp: "TechType::getWeapon"
+  c: bwapi_techtype_get_weapon
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: "type:WeaponType"
+  doc: "Retrieves the Weapon that is attached to this tech type. A technology's WeaponType is used to indicate the range and behaviour of the ability when used by a Unit."
+
+- cpp: "TechType::targetsUnit"
+  c: bwapi_techtype_targets_unit
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: bool32
+  doc: "Checks if this ability can be used on other units."
+
+- cpp: "TechType::targetsPosition"
+  c: bwapi_techtype_targets_position
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: bool32
+  doc: "Checks if this ability can be used on the terrain (ground)."
+
+- cpp: "TechType::whatUses"
+  c: bwapi_techtype_what_uses
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: id_array
+  doc: "Retrieves the set of all UnitTypes that are capable of using this ability. The ids come back ascending, up to cap; returns the total."
+
+- cpp: "TechType::getOrder"
+  c: bwapi_techtype_get_order
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: "type:Order"
+  doc: "Retrieves the Order that a Unit uses when using this ability."
+
+- cpp: "TechType::requiredUnit"
+  c: bwapi_techtype_required_unit
+  self: none
+  params: [{name: tech, type: "type:TechType"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the UnitType required to research this technology. The required unit type must be a completed unit owned by the player researching the technology."
+
+# ---- UpgradeType ---------------------------------------------------------------------
+
+- cpp: "UpgradeType::getName"
+  c: bwapi_upgradetype_get_name
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: string_out
+  doc: "The name of the upgrade, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "UpgradeType::isValid"
+  c: bwapi_upgradetype_is_valid
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for UpgradeType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+- cpp: "UpgradeType::getRace"
+  c: bwapi_upgradetype_get_race
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: "type:Race"
+  doc: "Retrieves the race the upgrade is for. For example, UpgradeTypes::Terran_Infantry_Armor.getRace() will return Races::Terran."
+
+- cpp: "UpgradeType::mineralPrice"
+  c: bwapi_upgradetype_mineral_price
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}, {name: level, type: int32}]
+  returns: int32
+  doc: "Returns the mineral price for the upgrade."
+
+- cpp: "UpgradeType::mineralPriceFactor"
+  c: bwapi_upgradetype_mineral_price_factor
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: int32
+  doc: "The amount that the mineral price increases for each additional upgrade."
+
+- cpp: "UpgradeType::gasPrice"
+  c: bwapi_upgradetype_gas_price
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}, {name: level, type: int32}]
+  returns: int32
+  doc: "Returns the vespene gas price for the first upgrade."
+
+- cpp: "UpgradeType::gasPriceFactor"
+  c: bwapi_upgradetype_gas_price_factor
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: int32
+  doc: "Returns the amount that the vespene gas price increases for each additional upgrade."
+
+- cpp: "UpgradeType::upgradeTime"
+  c: bwapi_upgradetype_upgrade_time
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}, {name: level, type: int32}]
+  returns: int32
+  doc: "Returns the number of frames needed to research the first upgrade."
+
+- cpp: "UpgradeType::upgradeTimeFactor"
+  c: bwapi_upgradetype_upgrade_time_factor
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: int32
+  doc: "Returns the number of frames that the upgrade time increases for each additional upgrade."
+
+- cpp: "UpgradeType::maxRepeats"
+  c: bwapi_upgradetype_max_repeats
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: int32
+  doc: "Returns the maximum number of times the upgrade can be researched."
+
+- cpp: "UpgradeType::whatUpgrades"
+  c: bwapi_upgradetype_what_upgrades
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: "type:UnitType"
+  doc: "Returns the type of unit that researches the upgrade."
+
+- cpp: "UpgradeType::whatsRequired"
+  c: bwapi_upgradetype_whats_required
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}, {name: level, type: int32}]
+  returns: "type:UnitType"
+  doc: "Returns the type of unit that is required for the upgrade. The player must have at least one of these units completed in order to start upgrading this upgrade."
+
+- cpp: "UpgradeType::whatUses"
+  c: bwapi_upgradetype_what_uses
+  self: none
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: id_array
+  doc: "Returns the set of units that are affected by this upgrade. The ids come back ascending, up to cap; returns the total."
+
+# ---- Race ----------------------------------------------------------------------------
+
+- cpp: "Race::getName"
+  c: bwapi_race_get_name
+  self: none
+  params: [{name: race, type: "type:Race"}]
+  returns: string_out
+  doc: "The name of the race, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "Race::isValid"
+  c: bwapi_race_is_valid
+  self: none
+  params: [{name: race, type: "type:Race"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for Race, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+- cpp: "Race::getWorker"
+  c: bwapi_race_get_worker
+  self: none
+  params: [{name: race, type: "type:Race"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the default worker type for the race."
+
+- cpp: "Race::getResourceDepot"
+  c: bwapi_race_get_resource_depot
+  self: none
+  params: [{name: race, type: "type:Race"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the default resource depot UnitType that workers of the race can construct and return resources to."
+
+- cpp: "Race::getCenter"
+  skip: "deprecated upstream in favour of Race::getResourceDepot, which is exported"
+
+- cpp: "Race::getRefinery"
+  c: bwapi_race_get_refinery
+  self: none
+  params: [{name: race, type: "type:Race"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the default structure UnitType for the race that is used to harvest gas from Geysers."
+
+- cpp: "Race::getTransport"
+  c: bwapi_race_get_transport
+  self: none
+  params: [{name: race, type: "type:Race"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the default transport UnitType for the race that is used to transport ground units across the map."
+
+- cpp: "Race::getSupplyProvider"
+  c: bwapi_race_get_supply_provider
+  self: none
+  params: [{name: race, type: "type:Race"}]
+  returns: "type:UnitType"
+  doc: "Retrieves the default supply provider UnitType for the race that is used to construct units."
+
+# ---- UnitSizeType --------------------------------------------------------------------
+
+- cpp: "UnitSizeType::getName"
+  c: bwapi_unitsizetype_get_name
+  self: none
+  params: [{name: size, type: "type:UnitSizeType"}]
+  returns: string_out
+  doc: "The name of the size, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "UnitSizeType::isValid"
+  c: bwapi_unitsizetype_is_valid
+  self: none
+  params: [{name: size, type: "type:UnitSizeType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for UnitSizeType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- DamageType ----------------------------------------------------------------------
+
+- cpp: "DamageType::getName"
+  c: bwapi_damagetype_get_name
+  self: none
+  params: [{name: damage, type: "type:DamageType"}]
+  returns: string_out
+  doc: "The name of the damage, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "DamageType::isValid"
+  c: bwapi_damagetype_is_valid
+  self: none
+  params: [{name: damage, type: "type:DamageType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for DamageType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- ExplosionType -------------------------------------------------------------------
+
+- cpp: "ExplosionType::getName"
+  c: bwapi_explosiontype_get_name
+  self: none
+  params: [{name: explosion, type: "type:ExplosionType"}]
+  returns: string_out
+  doc: "The name of the explosion, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "ExplosionType::isValid"
+  c: bwapi_explosiontype_is_valid
+  self: none
+  params: [{name: explosion, type: "type:ExplosionType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for ExplosionType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- BulletType ----------------------------------------------------------------------
+
+- cpp: "BulletType::getName"
+  c: bwapi_bullettype_get_name
+  self: none
+  params: [{name: bullet, type: "type:BulletType"}]
+  returns: string_out
+  doc: "The name of the bullet, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "BulletType::isValid"
+  c: bwapi_bullettype_is_valid
+  self: none
+  params: [{name: bullet, type: "type:BulletType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for BulletType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- Order ---------------------------------------------------------------------------
+
+- cpp: "Order::getName"
+  c: bwapi_order_get_name
+  self: none
+  params: [{name: order, type: "type:Order"}]
+  returns: string_out
+  doc: "The name of the order, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "Order::isValid"
+  c: bwapi_order_is_valid
+  self: none
+  params: [{name: order, type: "type:Order"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for Order, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- PlayerType ----------------------------------------------------------------------
+
+- cpp: "PlayerType::getName"
+  c: bwapi_playertype_get_name
+  self: none
+  params: [{name: player_type, type: "type:PlayerType"}]
+  returns: string_out
+  doc: "The name of the player type, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "PlayerType::isValid"
+  c: bwapi_playertype_is_valid
+  self: none
+  params: [{name: player_type, type: "type:PlayerType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for PlayerType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+- cpp: "PlayerType::isLobbyType"
+  c: bwapi_playertype_is_lobby_type
+  self: none
+  params: [{name: player_type, type: "type:PlayerType"}]
+  returns: bool32
+  doc: "Identifies whether or not the type is used for the pre-game lobby. A type such as PlayerTypes::ComputerLeft would only appear in-game when a computer player is defeated."
+
+- cpp: "PlayerType::isGameType"
+  c: bwapi_playertype_is_game_type
+  self: none
+  params: [{name: player_type, type: "type:PlayerType"}]
+  returns: bool32
+  doc: "Identifies whether or not the type is used in-game. A type such as PlayerTypes::Closed would not be a valid in-game type."
+
+# ---- GameType ------------------------------------------------------------------------
+
+- cpp: "GameType::getName"
+  c: bwapi_gametype_get_name
+  self: none
+  params: [{name: game_type, type: "type:GameType"}]
+  returns: string_out
+  doc: "The name of the game type, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "GameType::isValid"
+  c: bwapi_gametype_is_valid
+  self: none
+  params: [{name: game_type, type: "type:GameType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for GameType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- UnitCommandType -----------------------------------------------------------------
+
+- cpp: "UnitCommandType::getName"
+  c: bwapi_unitcommandtype_get_name
+  self: none
+  params: [{name: command, type: "type:UnitCommandType"}]
+  returns: string_out
+  doc: "The name of the command, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "UnitCommandType::isValid"
+  c: bwapi_unitcommandtype_is_valid
+  self: none
+  params: [{name: command, type: "type:UnitCommandType"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for UnitCommandType, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- Error ---------------------------------------------------------------------------
+
+- cpp: "Error::getName"
+  c: bwapi_error_get_name
+  self: none
+  params: [{name: error, type: "type:Error"}]
+  returns: string_out
+  doc: "The name of the error, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "Error::isValid"
+  c: bwapi_error_is_valid
+  self: none
+  params: [{name: error, type: "type:Error"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for Error, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+# ---- Color ---------------------------------------------------------------------------
+
+- cpp: "Color::getName"
+  c: bwapi_color_get_name
+  self: none
+  params: [{name: color, type: "type:Color"}]
+  returns: string_out
+  doc: "The name of the color, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+
+- cpp: "Color::isValid"
+  c: bwapi_color_is_valid
+  self: none
+  params: [{name: color, type: "type:Color"}]
+  returns: bool32
+  doc: "1 when the id is one BWAPI knows for Color, from 0 to the class's Unknown inclusive; 0 otherwise."
+
+- cpp: "Color::red"
+  c: bwapi_color_red
+  self: none
+  params: [{name: color, type: "type:Color"}]
+  returns: int32
+  doc: "Retrieves the red component of the color."
+
+- cpp: "Color::green"
+  c: bwapi_color_green
+  self: none
+  params: [{name: color, type: "type:Color"}]
+  returns: int32
+  doc: "Retrieves the green component of the color."
+
+- cpp: "Color::blue"
+  c: bwapi_color_blue
+  self: none
+  params: [{name: color, type: "type:Color"}]
+  returns: int32
+  doc: "Retrieves the blue component of the color."

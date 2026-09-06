@@ -116,13 +116,25 @@ inline int32_t id_of(T* p) {
   return p ? static_cast<int32_t>(p->getID()) : BWAPI_NONE;
 }
 
-// The collection convention (section 4): the ids of a range of interface pointers, ascending,
-// the first cap of them written, the total returned. Assumes check_buffer() passed.
+// The collection convention (section 4): the ids of a range of interfaces (pointers, as a
+// Unitset holds) or of types (values, as a SetContainer<TechType> holds), ascending, the first
+// cap of them written, the total returned. Assumes check_buffer() passed.
+template <class T>
+inline int32_t id_of_element(const T& e) {
+  if constexpr (std::is_pointer_v<T>) {
+    return e ? static_cast<int32_t>(e->getID()) : BWAPI_NONE;
+  } else {
+    return static_cast<int32_t>(e.getID());
+  }
+}
+
 template <class Range>
 int32_t write_ids(int32_t* out, int32_t cap, const Range& range) {
   std::vector<int32_t> ids;
-  for (auto* p : range)
-    if (p) ids.push_back(static_cast<int32_t>(p->getID()));
+  for (const auto& e : range) {
+    const int32_t id = id_of_element(e);
+    if (id != BWAPI_NONE) ids.push_back(id);
+  }
   std::sort(ids.begin(), ids.end());
   const size_t n = std::min(ids.size(), static_cast<size_t>(cap));
   if (n) std::memcpy(out, ids.data(), n * sizeof(int32_t));

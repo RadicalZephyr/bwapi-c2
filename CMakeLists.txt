@@ -64,6 +64,7 @@ add_library(bwapi_c2_abi OBJECT
   src/client.gen.cpp
   src/constants.gen.cpp
   src/player.gen.cpp
+  src/types.gen.cpp
 )
 target_link_libraries(bwapi_c2_abi PUBLIC bwapi_c2_closure)
 target_include_directories(bwapi_c2_abi

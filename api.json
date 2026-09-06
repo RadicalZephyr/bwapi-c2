@@ -1702,6 +1702,4191 @@
       "legit_none": false,
       "generated": true,
       "doc": "1 when the player has at least amount completed units of the type, counting the equivalents BWAPI counts: a Lair or Hive for a Hatchery, a Hive for a Lair, a sieged tank for an unsieged one, and both Templar and Archon forms. Pass 1 for the plain requirement."
+    },
+    {
+      "c": "bwapi_unittype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_get_name(int32_t unit_type, char* buf, int32_t buf_len)",
+      "cpp": "UnitType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the unit type, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_unittype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_valid(int32_t unit_type)",
+      "cpp": "UnitType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for UnitType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_unittype_get_race",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_get_race(int32_t unit_type)",
+      "cpp": "UnitType::getRace",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:Race",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of Race (BWAPI_RACE_UNKNOWN)",
+        "type_class": "Race",
+        "constants": "BWAPI_RACE",
+        "family": "race"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the Race that the unit type belongs to."
+    },
+    {
+      "c": "bwapi_unittype_what_builds",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_what_builds(int32_t unit_type, int32_t* count)",
+      "cpp": "UnitType::whatBuilds",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "count",
+          "type": "int32_out",
+          "c_type": "int32_t*"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Obtains the source unit type that is used to build or train the unit type, as well as the amount of them that are required. The number of them needed is written to count when it is not NULL; a type nothing builds returns BWAPI_UNIT_NONE and a count of 0."
+    },
+    {
+      "c": "bwapi_unittype_required_units",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_required_units(int32_t unit_type, int32_t* types, int32_t* counts, int32_t cap)",
+      "cpp": "UnitType::requiredUnits",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "types",
+          "type": "int32_array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "counts",
+          "type": "int32_array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Retrieves the immediate technology tree requirements to make the unit type. Written as parallel arrays of required type and count, ascending by type id, up to cap; returns the total number of requirements. A cap of 0 with NULL arrays queries the count."
+    },
+    {
+      "c": "bwapi_unittype_required_tech",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_required_tech(int32_t unit_type)",
+      "cpp": "UnitType::requiredTech",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:TechType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of TechType (BWAPI_TECH_UNKNOWN)",
+        "type_class": "TechType",
+        "constants": "BWAPI_TECH",
+        "family": "tech_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Identifies the required TechType in order to create certain units."
+    },
+    {
+      "c": "bwapi_unittype_cloaking_tech",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_cloaking_tech(int32_t unit_type)",
+      "cpp": "UnitType::cloakingTech",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:TechType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of TechType (BWAPI_TECH_UNKNOWN)",
+        "type_class": "TechType",
+        "constants": "BWAPI_TECH",
+        "family": "tech_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the cloaking technology associated with certain units."
+    },
+    {
+      "c": "bwapi_unittype_abilities",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_abilities(int32_t unit_type, int32_t* out, int32_t cap)",
+      "cpp": "UnitType::abilities",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the set of abilities that the unit type can use, provided it is available to you in the game. The ids come back ascending, up to cap; returns the total."
+    },
+    {
+      "c": "bwapi_unittype_upgrades",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_upgrades(int32_t unit_type, int32_t* out, int32_t cap)",
+      "cpp": "UnitType::upgrades",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the set of upgrades that the unit type can use to enhance its fighting ability. The ids come back ascending, up to cap; returns the total."
+    },
+    {
+      "c": "bwapi_unittype_armor_upgrade",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_armor_upgrade(int32_t unit_type)",
+      "cpp": "UnitType::armorUpgrade",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UpgradeType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UpgradeType (BWAPI_UPGRADE_UNKNOWN)",
+        "type_class": "UpgradeType",
+        "constants": "BWAPI_UPGRADE",
+        "family": "upgrade_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the upgrade type used to increase the armor of the unit type. For each upgrade, the unit type gains +1 additional armor."
+    },
+    {
+      "c": "bwapi_unittype_max_hit_points",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_max_hit_points(int32_t unit_type)",
+      "cpp": "UnitType::maxHitPoints",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default maximum amount of hit points that the unit type can have."
+    },
+    {
+      "c": "bwapi_unittype_max_shields",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_max_shields(int32_t unit_type)",
+      "cpp": "UnitType::maxShields",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default maximum amount of shield points that the unit type can have."
+    },
+    {
+      "c": "bwapi_unittype_max_energy",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_max_energy(int32_t unit_type)",
+      "cpp": "UnitType::maxEnergy",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the maximum amount of energy the unit type can have by default."
+    },
+    {
+      "c": "bwapi_unittype_armor",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_armor(int32_t unit_type)",
+      "cpp": "UnitType::armor",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default amount of armor that the unit type starts with, excluding upgrades."
+    },
+    {
+      "c": "bwapi_unittype_mineral_price",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_mineral_price(int32_t unit_type)",
+      "cpp": "UnitType::mineralPrice",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default mineral price of purchasing the unit."
+    },
+    {
+      "c": "bwapi_unittype_gas_price",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_gas_price(int32_t unit_type)",
+      "cpp": "UnitType::gasPrice",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default vespene gas price of purchasing the unit."
+    },
+    {
+      "c": "bwapi_unittype_build_time",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_build_time(int32_t unit_type)",
+      "cpp": "UnitType::buildTime",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default time, in frames, needed to train, morph, or build the unit."
+    },
+    {
+      "c": "bwapi_unittype_supply_required",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_supply_required(int32_t unit_type)",
+      "cpp": "UnitType::supplyRequired",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the amount of supply that the unit type will use when created. It will use the supply pool that is appropriate for its Race."
+    },
+    {
+      "c": "bwapi_unittype_supply_provided",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_supply_provided(int32_t unit_type)",
+      "cpp": "UnitType::supplyProvided",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the amount of supply that the unit type produces for its appropriate Race's supply pool."
+    },
+    {
+      "c": "bwapi_unittype_space_required",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_space_required(int32_t unit_type)",
+      "cpp": "UnitType::spaceRequired",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the amount of space required by the unit type to fit inside a Bunker or Transport."
+    },
+    {
+      "c": "bwapi_unittype_space_provided",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_space_provided(int32_t unit_type)",
+      "cpp": "UnitType::spaceProvided",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the amount of space provided by this Bunker or Transport for unit transportation."
+    },
+    {
+      "c": "bwapi_unittype_build_score",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_build_score(int32_t unit_type)",
+      "cpp": "UnitType::buildScore",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the amount of score points awarded for constructing the unit type. This value is used for calculating scores in the post-game score screen."
+    },
+    {
+      "c": "bwapi_unittype_destroy_score",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_destroy_score(int32_t unit_type)",
+      "cpp": "UnitType::destroyScore",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the amount of score points awarded for killing the unit type. This value is used for calculating scores in the post-game score screen."
+    },
+    {
+      "c": "bwapi_unittype_size",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_size(int32_t unit_type)",
+      "cpp": "UnitType::size",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitSizeType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitSizeType (BWAPI_UNITSIZE_UNKNOWN)",
+        "type_class": "UnitSizeType",
+        "constants": "BWAPI_UNITSIZE",
+        "family": "unit_size_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the UnitSizeType of the unit type, which is used in calculations along with weapon damage types to determine the amount of damage that will be dealt to the type."
+    },
+    {
+      "c": "bwapi_unittype_tile_width",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_tile_width(int32_t unit_type)",
+      "cpp": "UnitType::tileWidth",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the width of the unit type, in tiles. Used for determining the tile size of structures."
+    },
+    {
+      "c": "bwapi_unittype_tile_height",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_tile_height(int32_t unit_type)",
+      "cpp": "UnitType::tileHeight",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the height of the unit type, in tiles. Used for determining the tile size of structures."
+    },
+    {
+      "c": "bwapi_unittype_tile_size",
+      "section": "types",
+      "signature": "bwapi_position bwapi_unittype_tile_size(int32_t unit_type)",
+      "cpp": "UnitType::tileSize",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "tile_position",
+        "c_type": "bwapi_position",
+        "neutral": "BWAPI_POSITION_NONE",
+        "scale": "tile"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the tile size of the unit type. Used for determining the tile size of structures."
+    },
+    {
+      "c": "bwapi_unittype_dimension_left",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_dimension_left(int32_t unit_type)",
+      "cpp": "UnitType::dimensionLeft",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the distance from the center of the unit type to its left edge."
+    },
+    {
+      "c": "bwapi_unittype_dimension_up",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_dimension_up(int32_t unit_type)",
+      "cpp": "UnitType::dimensionUp",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the distance from the center of the unit type to its top edge."
+    },
+    {
+      "c": "bwapi_unittype_dimension_right",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_dimension_right(int32_t unit_type)",
+      "cpp": "UnitType::dimensionRight",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the distance from the center of the unit type to its right edge."
+    },
+    {
+      "c": "bwapi_unittype_dimension_down",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_dimension_down(int32_t unit_type)",
+      "cpp": "UnitType::dimensionDown",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the distance from the center of the unit type to its bottom edge."
+    },
+    {
+      "c": "bwapi_unittype_width",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_width(int32_t unit_type)",
+      "cpp": "UnitType::width",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "A macro for retrieving the width of the unit type, which is calculated using dimensionLeft + dimensionRight + 1."
+    },
+    {
+      "c": "bwapi_unittype_height",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_height(int32_t unit_type)",
+      "cpp": "UnitType::height",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "A macro for retrieving the height of the unit type, which is calculated using dimensionUp + dimensionDown + 1."
+    },
+    {
+      "c": "bwapi_unittype_seek_range",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_seek_range(int32_t unit_type)",
+      "cpp": "UnitType::seekRange",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the range at which the unit type will start targeting enemy units."
+    },
+    {
+      "c": "bwapi_unittype_sight_range",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_sight_range(int32_t unit_type)",
+      "cpp": "UnitType::sightRange",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the sight range of the unit type."
+    },
+    {
+      "c": "bwapi_unittype_ground_weapon",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_ground_weapon(int32_t unit_type)",
+      "cpp": "UnitType::groundWeapon",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:WeaponType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of WeaponType (BWAPI_WEAPON_UNKNOWN)",
+        "type_class": "WeaponType",
+        "constants": "BWAPI_WEAPON",
+        "family": "weapon_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the unit type's weapon type used when attacking targets on the ground."
+    },
+    {
+      "c": "bwapi_unittype_max_ground_hits",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_max_ground_hits(int32_t unit_type)",
+      "cpp": "UnitType::maxGroundHits",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the maximum number of hits the unit type can deal to a ground target using its ground weapon. This value is multiplied by the ground weapon's damage to calculate the unit type's damage potential."
+    },
+    {
+      "c": "bwapi_unittype_air_weapon",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_air_weapon(int32_t unit_type)",
+      "cpp": "UnitType::airWeapon",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:WeaponType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of WeaponType (BWAPI_WEAPON_UNKNOWN)",
+        "type_class": "WeaponType",
+        "constants": "BWAPI_WEAPON",
+        "family": "weapon_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the unit type's weapon type used when attacking targets in the air."
+    },
+    {
+      "c": "bwapi_unittype_max_air_hits",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_max_air_hits(int32_t unit_type)",
+      "cpp": "UnitType::maxAirHits",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the maximum number of hits the unit type can deal to a flying target using its air weapon. This value is multiplied by the air weapon's damage to calculate the unit type's damage potential."
+    },
+    {
+      "c": "bwapi_unittype_top_speed",
+      "section": "types",
+      "signature": "double bwapi_unittype_top_speed(int32_t unit_type)",
+      "cpp": "UnitType::topSpeed",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "double",
+        "c_type": "double",
+        "neutral": "0.0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the unit type's top movement speed with no upgrades."
+    },
+    {
+      "c": "bwapi_unittype_acceleration",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_acceleration(int32_t unit_type)",
+      "cpp": "UnitType::acceleration",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the unit's acceleration amount."
+    },
+    {
+      "c": "bwapi_unittype_halt_distance",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_halt_distance(int32_t unit_type)",
+      "cpp": "UnitType::haltDistance",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the unit's halting distance. This is the distance from the unit's destination at which point the unit starts decelerating."
+    },
+    {
+      "c": "bwapi_unittype_turn_radius",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_turn_radius(int32_t unit_type)",
+      "cpp": "UnitType::turnRadius",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves a unit's turning rate. This determines how far a unit can rotate in one frame."
+    },
+    {
+      "c": "bwapi_unittype_can_produce",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_can_produce(int32_t unit_type)",
+      "cpp": "UnitType::canProduce",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Determines if a unit can train other units. For example, UnitTypes::Terran_Barracks.canProduce() will return true, while UnitTypes::Terran_Marine.canProduce() will return false. This is also true for two non-structures: Carrier (can produce interceptors) and Reaver (can produce scarabs)."
+    },
+    {
+      "c": "bwapi_unittype_can_attack",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_can_attack(int32_t unit_type)",
+      "cpp": "UnitType::canAttack",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is capable of attacking."
+    },
+    {
+      "c": "bwapi_unittype_can_move",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_can_move(int32_t unit_type)",
+      "cpp": "UnitType::canMove",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is capable of movement."
+    },
+    {
+      "c": "bwapi_unittype_is_flyer",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_flyer(int32_t unit_type)",
+      "cpp": "UnitType::isFlyer",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a flying unit. Flying units ignore ground pathing and collisions."
+    },
+    {
+      "c": "bwapi_unittype_regenerates_hp",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_regenerates_hp(int32_t unit_type)",
+      "cpp": "UnitType::regeneratesHP",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type can regenerate hit points. This generally applies to Zerg units."
+    },
+    {
+      "c": "bwapi_unittype_is_spellcaster",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_spellcaster(int32_t unit_type)",
+      "cpp": "UnitType::isSpellcaster",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type has the capacity to store energy and use it for special abilities."
+    },
+    {
+      "c": "bwapi_unittype_has_permanent_cloak",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_has_permanent_cloak(int32_t unit_type)",
+      "cpp": "UnitType::hasPermanentCloak",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is permanently cloaked. This means the unit type is always cloaked and requires a detector in order to see it."
+    },
+    {
+      "c": "bwapi_unittype_is_invincible",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_invincible(int32_t unit_type)",
+      "cpp": "UnitType::isInvincible",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is invincible by default. Invincible units cannot take damage."
+    },
+    {
+      "c": "bwapi_unittype_is_organic",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_organic(int32_t unit_type)",
+      "cpp": "UnitType::isOrganic",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is an organic unit. The organic property is required for some abilities such as Heal."
+    },
+    {
+      "c": "bwapi_unittype_is_mechanical",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_mechanical(int32_t unit_type)",
+      "cpp": "UnitType::isMechanical",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is mechanical. The mechanical property is required for some actions such as Repair."
+    },
+    {
+      "c": "bwapi_unittype_is_robotic",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_robotic(int32_t unit_type)",
+      "cpp": "UnitType::isRobotic",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is robotic. The robotic property is applied to robotic units such as the Probe which prevents them from taking damage from Irradiate."
+    },
+    {
+      "c": "bwapi_unittype_is_detector",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_detector(int32_t unit_type)",
+      "cpp": "UnitType::isDetector",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is capable of detecting units that are cloaked or burrowed."
+    },
+    {
+      "c": "bwapi_unittype_is_resource_container",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_resource_container(int32_t unit_type)",
+      "cpp": "UnitType::isResourceContainer",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is capable of storing resources such as minerals. Resources are harvested from resource containers."
+    },
+    {
+      "c": "bwapi_unittype_is_resource_depot",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_resource_depot(int32_t unit_type)",
+      "cpp": "UnitType::isResourceDepot",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a resource depot. Resource depots must be placed a certain distance from resources. Resource depots are typically the main building for any particular race. Workers will return resources to the nearest resource depot."
+    },
+    {
+      "c": "bwapi_unittype_is_refinery",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_refinery(int32_t unit_type)",
+      "cpp": "UnitType::isRefinery",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a refinery. A refinery is a structure that is placed on top of a geyser . Refinery types are refinery , extractor , and assimilator."
+    },
+    {
+      "c": "bwapi_unittype_is_worker",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_worker(int32_t unit_type)",
+      "cpp": "UnitType::isWorker",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a worker unit. Worker units can harvest resources and build structures. Worker unit types include the SCV , probe, and drone."
+    },
+    {
+      "c": "bwapi_unittype_requires_psi",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_requires_psi(int32_t unit_type)",
+      "cpp": "UnitType::requiresPsi",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if this structure is powered by a psi field. Structures powered by psi can only be placed near a Pylon. If the Pylon is destroyed, then the unit type will lose power."
+    },
+    {
+      "c": "bwapi_unittype_requires_creep",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_requires_creep(int32_t unit_type)",
+      "cpp": "UnitType::requiresCreep",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if this structure must be placed on Zerg creep."
+    },
+    {
+      "c": "bwapi_unittype_is_two_units_in_one_egg",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_two_units_in_one_egg(int32_t unit_type)",
+      "cpp": "UnitType::isTwoUnitsInOneEgg",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type spawns two units when being hatched from an Egg. This is only applicable to Zerglings and Scourges."
+    },
+    {
+      "c": "bwapi_unittype_is_burrowable",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_burrowable(int32_t unit_type)",
+      "cpp": "UnitType::isBurrowable",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type has the capability to use the Burrow technology when it is researched."
+    },
+    {
+      "c": "bwapi_unittype_is_cloakable",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_cloakable(int32_t unit_type)",
+      "cpp": "UnitType::isCloakable",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type has the capability to use a cloaking ability when it is researched. This applies only to Wraiths and Ghosts, and does not include units which are permanently cloaked."
+    },
+    {
+      "c": "bwapi_unittype_is_building",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_building(int32_t unit_type)",
+      "cpp": "UnitType::isBuilding",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a structure. This includes Mineral_Fields and Vespene_Geysers."
+    },
+    {
+      "c": "bwapi_unittype_is_addon",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_addon(int32_t unit_type)",
+      "cpp": "UnitType::isAddon",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is an add-on. Add-ons are attachments used by some Terran structures such as the Comsat_Station."
+    },
+    {
+      "c": "bwapi_unittype_is_flying_building",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_flying_building(int32_t unit_type)",
+      "cpp": "UnitType::isFlyingBuilding",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if this structure has the capability to use the lift-off command."
+    },
+    {
+      "c": "bwapi_unittype_is_neutral",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_neutral(int32_t unit_type)",
+      "cpp": "UnitType::isNeutral",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a neutral type, such as critters and resources."
+    },
+    {
+      "c": "bwapi_unittype_is_hero",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_hero(int32_t unit_type)",
+      "cpp": "UnitType::isHero",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a hero. Heroes are types that the player cannot obtain normally, and are identified by the white border around their icon when selected with a group."
+    },
+    {
+      "c": "bwapi_unittype_is_powerup",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_powerup(int32_t unit_type)",
+      "cpp": "UnitType::isPowerup",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a powerup. Powerups can be picked up and carried by workers. They are usually only seen in campaign maps and Capture_the_flag."
+    },
+    {
+      "c": "bwapi_unittype_is_beacon",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_beacon(int32_t unit_type)",
+      "cpp": "UnitType::isBeacon",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a beacon. Each race has exactly one beacon each. They are UnitTypes::Special_Zerg_Beacon, UnitTypes::Special_Terran_Beacon, and UnitTypes::Special_Protoss_Beacon."
+    },
+    {
+      "c": "bwapi_unittype_is_flag_beacon",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_flag_beacon(int32_t unit_type)",
+      "cpp": "UnitType::isFlagBeacon",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a flag beacon. Each race has exactly one flag beacon each. They are UnitTypes::Special_Zerg_Flag_Beacon, UnitTypes::Special_Terran_Flag_Beacon, and UnitTypes::Special_Protoss_Flag_Beacon. Flag beacons spawn a Flag after some ARBITRARY I FORGOT AMOUNT OF FRAMES."
+    },
+    {
+      "c": "bwapi_unittype_is_special_building",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_special_building(int32_t unit_type)",
+      "cpp": "UnitType::isSpecialBuilding",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if this structure is special and cannot be obtained normally within the game."
+    },
+    {
+      "c": "bwapi_unittype_is_spell",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_spell(int32_t unit_type)",
+      "cpp": "UnitType::isSpell",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Identifies if the unit type is used to complement some abilities. These include UnitTypes::Spell_Dark_Swarm, UnitTypes::Spell_Disruption_Web, and UnitTypes::Spell_Scanner_Sweep, which correspond to TechTypes::Dark_Swarm, TechTypes::Disruption_Web, and TechTypes::Scanner_Sweep respectively."
+    },
+    {
+      "c": "bwapi_unittype_produces_creep",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_produces_creep(int32_t unit_type)",
+      "cpp": "UnitType::producesCreep",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if this structure type produces creep. That is, the unit type spreads creep over a wide area so that Zerg structures can be placed on it."
+    },
+    {
+      "c": "bwapi_unittype_produces_larva",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_produces_larva(int32_t unit_type)",
+      "cpp": "UnitType::producesLarva",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type produces larva. This is essentially used to check if the unit type is a Hatchery, Lair, or Hive."
+    },
+    {
+      "c": "bwapi_unittype_is_mineral_field",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_mineral_field(int32_t unit_type)",
+      "cpp": "UnitType::isMineralField",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a mineral field and contains a resource amount. This indicates that the unit type is either UnitTypes::Resource_Mineral_Field, UnitTypes::Resource_Mineral_Field_Type_2, or UnitTypes::Resource_Mineral_Field_Type_3."
+    },
+    {
+      "c": "bwapi_unittype_is_critter",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_critter(int32_t unit_type)",
+      "cpp": "UnitType::isCritter",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is a neutral critter."
+    },
+    {
+      "c": "bwapi_unittype_can_build_addon",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_can_build_addon(int32_t unit_type)",
+      "cpp": "UnitType::canBuildAddon",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the unit type is capable of constructing an add-on. An add-on is an extension or attachment for Terran structures, specifically the Command_Center, Factory, Starport, and Science_Facility."
+    },
+    {
+      "c": "bwapi_unittype_builds_what",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_builds_what(int32_t unit_type, int32_t* out, int32_t cap)",
+      "cpp": "UnitType::buildsWhat",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the set of units that the unit type is capable of creating. This includes training, constructing, warping, and morphing. The ids come back ascending, up to cap; returns the total."
+    },
+    {
+      "c": "bwapi_unittype_researches_what",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_researches_what(int32_t unit_type, int32_t* out, int32_t cap)",
+      "cpp": "UnitType::researchesWhat",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the set of technologies that the unit type is capable of researching. The ids come back ascending, up to cap; returns the total."
+    },
+    {
+      "c": "bwapi_unittype_upgrades_what",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_upgrades_what(int32_t unit_type, int32_t* out, int32_t cap)",
+      "cpp": "UnitType::upgradesWhat",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the set of upgrades that the unit type is capable of upgrading. The ids come back ascending, up to cap; returns the total."
+    },
+    {
+      "c": "bwapi_unittype_is_successor_of",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_is_successor_of(int32_t unit_type, int32_t type)",
+      "cpp": "UnitType::isSuccessorOf",
+      "self": "none",
+      "params": [
+        {
+          "name": "unit_type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "type",
+          "type": "type:UnitType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the current type is equal to the provided type, or a successor of the provided type. For example, a Hive is a successor of a Hatchery, since it can still research the Burrow technology."
+    },
+    {
+      "c": "bwapi_weapontype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_get_name(int32_t weapon, char* buf, int32_t buf_len)",
+      "cpp": "WeaponType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the weapon, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_weapontype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_is_valid(int32_t weapon)",
+      "cpp": "WeaponType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for WeaponType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_weapontype_get_tech",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_get_tech(int32_t weapon)",
+      "cpp": "WeaponType::getTech",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:TechType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of TechType (BWAPI_TECH_UNKNOWN)",
+        "type_class": "TechType",
+        "constants": "BWAPI_TECH",
+        "family": "tech_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the technology type that must be researched before the weapon can be used."
+    },
+    {
+      "c": "bwapi_weapontype_what_uses",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_what_uses(int32_t weapon)",
+      "cpp": "WeaponType::whatUses",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the unit type that is intended to use the weapon type."
+    },
+    {
+      "c": "bwapi_weapontype_damage_amount",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_damage_amount(int32_t weapon)",
+      "cpp": "WeaponType::damageAmount",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the base amount of damage that the weapon can deal per attack."
+    },
+    {
+      "c": "bwapi_weapontype_damage_bonus",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_damage_bonus(int32_t weapon)",
+      "cpp": "WeaponType::damageBonus",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Determines the bonus amount of damage that the weapon type increases by for every upgrade to the type."
+    },
+    {
+      "c": "bwapi_weapontype_damage_cooldown",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_damage_cooldown(int32_t weapon)",
+      "cpp": "WeaponType::damageCooldown",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the base amount of cooldown time between each attack, in frames."
+    },
+    {
+      "c": "bwapi_weapontype_damage_factor",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_damage_factor(int32_t weapon)",
+      "cpp": "WeaponType::damageFactor",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Obtains the intended number of missiles/attacks that are used. This is used to multiply with the damage amount to obtain the full amount of damage for an attack."
+    },
+    {
+      "c": "bwapi_weapontype_upgrade_type",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_upgrade_type(int32_t weapon)",
+      "cpp": "WeaponType::upgradeType",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UpgradeType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UpgradeType (BWAPI_UPGRADE_UNKNOWN)",
+        "type_class": "UpgradeType",
+        "constants": "BWAPI_UPGRADE",
+        "family": "upgrade_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the upgrade type that increases the weapon's damage output."
+    },
+    {
+      "c": "bwapi_weapontype_damage_type",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_damage_type(int32_t weapon)",
+      "cpp": "WeaponType::damageType",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:DamageType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of DamageType (BWAPI_DAMAGE_UNKNOWN)",
+        "type_class": "DamageType",
+        "constants": "BWAPI_DAMAGE",
+        "family": "damage_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the damage type that the weapon applies to a unit type."
+    },
+    {
+      "c": "bwapi_weapontype_explosion_type",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_explosion_type(int32_t weapon)",
+      "cpp": "WeaponType::explosionType",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:ExplosionType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of ExplosionType (BWAPI_EXPLOSION_UNKNOWN)",
+        "type_class": "ExplosionType",
+        "constants": "BWAPI_EXPLOSION",
+        "family": "explosion_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the explosion type that indicates how the weapon deals damage."
+    },
+    {
+      "c": "bwapi_weapontype_min_range",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_min_range(int32_t weapon)",
+      "cpp": "WeaponType::minRange",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the minimum attack range of the weapon, measured in pixels. This value is 0 for almost all weapon types, except for WeaponTypes::Arclite_Shock_Cannon and WeaponTypes::Arclite_Shock_Cannon_Edmund_Duke."
+    },
+    {
+      "c": "bwapi_weapontype_max_range",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_max_range(int32_t weapon)",
+      "cpp": "WeaponType::maxRange",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the maximum attack range of the weapon, measured in pixels."
+    },
+    {
+      "c": "bwapi_weapontype_inner_splash_radius",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_inner_splash_radius(int32_t weapon)",
+      "cpp": "WeaponType::innerSplashRadius",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the inner radius used for splash damage calculations, in pixels. Units in this area take 100% damage."
+    },
+    {
+      "c": "bwapi_weapontype_median_splash_radius",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_median_splash_radius(int32_t weapon)",
+      "cpp": "WeaponType::medianSplashRadius",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the middle radius used for splash damage calculations, in pixels. Units in this area take 50% damage."
+    },
+    {
+      "c": "bwapi_weapontype_outer_splash_radius",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_outer_splash_radius(int32_t weapon)",
+      "cpp": "WeaponType::outerSplashRadius",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the outer radius used for splash damage calculations, in pixels. Units in this area take 25% damage."
+    },
+    {
+      "c": "bwapi_weapontype_targets_air",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_air(int32_t weapon)",
+      "cpp": "WeaponType::targetsAir",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type can target air units."
+    },
+    {
+      "c": "bwapi_weapontype_targets_ground",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_ground(int32_t weapon)",
+      "cpp": "WeaponType::targetsGround",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type can target ground units."
+    },
+    {
+      "c": "bwapi_weapontype_targets_mechanical",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_mechanical(int32_t weapon)",
+      "cpp": "WeaponType::targetsMechanical",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type can only target mechanical units."
+    },
+    {
+      "c": "bwapi_weapontype_targets_organic",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_organic(int32_t weapon)",
+      "cpp": "WeaponType::targetsOrganic",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type can only target organic units."
+    },
+    {
+      "c": "bwapi_weapontype_targets_non_building",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_non_building(int32_t weapon)",
+      "cpp": "WeaponType::targetsNonBuilding",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type cannot target structures."
+    },
+    {
+      "c": "bwapi_weapontype_targets_non_robotic",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_non_robotic(int32_t weapon)",
+      "cpp": "WeaponType::targetsNonRobotic",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type cannot target robotic units."
+    },
+    {
+      "c": "bwapi_weapontype_targets_terrain",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_terrain(int32_t weapon)",
+      "cpp": "WeaponType::targetsTerrain",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type can target the ground."
+    },
+    {
+      "c": "bwapi_weapontype_targets_org_or_mech",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_org_or_mech(int32_t weapon)",
+      "cpp": "WeaponType::targetsOrgOrMech",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type can only target organic or mechanical units."
+    },
+    {
+      "c": "bwapi_weapontype_targets_own",
+      "section": "types",
+      "signature": "int32_t bwapi_weapontype_targets_own(int32_t weapon)",
+      "cpp": "WeaponType::targetsOwn",
+      "self": "none",
+      "params": [
+        {
+          "name": "weapon",
+          "type": "type:WeaponType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if the weapon type can only target units owned by the same player. This is used for WeaponTypes::Consume."
+    },
+    {
+      "c": "bwapi_techtype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_get_name(int32_t tech, char* buf, int32_t buf_len)",
+      "cpp": "TechType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the tech, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_techtype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_is_valid(int32_t tech)",
+      "cpp": "TechType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for TechType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_techtype_get_race",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_get_race(int32_t tech)",
+      "cpp": "TechType::getRace",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:Race",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of Race (BWAPI_RACE_UNKNOWN)",
+        "type_class": "Race",
+        "constants": "BWAPI_RACE",
+        "family": "race"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the race that is required to research or use the TechType."
+    },
+    {
+      "c": "bwapi_techtype_mineral_price",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_mineral_price(int32_t tech)",
+      "cpp": "TechType::mineralPrice",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the mineral cost of researching this technology."
+    },
+    {
+      "c": "bwapi_techtype_gas_price",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_gas_price(int32_t tech)",
+      "cpp": "TechType::gasPrice",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the vespene gas cost of researching this technology."
+    },
+    {
+      "c": "bwapi_techtype_research_time",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_research_time(int32_t tech)",
+      "cpp": "TechType::researchTime",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the number of frames needed to research the tech type."
+    },
+    {
+      "c": "bwapi_techtype_energy_cost",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_energy_cost(int32_t tech)",
+      "cpp": "TechType::energyCost",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the amount of energy needed to use this TechType as an ability."
+    },
+    {
+      "c": "bwapi_techtype_what_researches",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_what_researches(int32_t tech)",
+      "cpp": "TechType::whatResearches",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the UnitType that can research this technology."
+    },
+    {
+      "c": "bwapi_techtype_get_weapon",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_get_weapon(int32_t tech)",
+      "cpp": "TechType::getWeapon",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:WeaponType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of WeaponType (BWAPI_WEAPON_UNKNOWN)",
+        "type_class": "WeaponType",
+        "constants": "BWAPI_WEAPON",
+        "family": "weapon_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the Weapon that is attached to this tech type. A technology's WeaponType is used to indicate the range and behaviour of the ability when used by a Unit."
+    },
+    {
+      "c": "bwapi_techtype_targets_unit",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_targets_unit(int32_t tech)",
+      "cpp": "TechType::targetsUnit",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if this ability can be used on other units."
+    },
+    {
+      "c": "bwapi_techtype_targets_position",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_targets_position(int32_t tech)",
+      "cpp": "TechType::targetsPosition",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Checks if this ability can be used on the terrain (ground)."
+    },
+    {
+      "c": "bwapi_techtype_what_uses",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_what_uses(int32_t tech, int32_t* out, int32_t cap)",
+      "cpp": "TechType::whatUses",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the set of all UnitTypes that are capable of using this ability. The ids come back ascending, up to cap; returns the total."
+    },
+    {
+      "c": "bwapi_techtype_get_order",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_get_order(int32_t tech)",
+      "cpp": "TechType::getOrder",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:Order",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of Order (BWAPI_ORDER_UNKNOWN)",
+        "type_class": "Order",
+        "constants": "BWAPI_ORDER",
+        "family": "order"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the Order that a Unit uses when using this ability."
+    },
+    {
+      "c": "bwapi_techtype_required_unit",
+      "section": "types",
+      "signature": "int32_t bwapi_techtype_required_unit(int32_t tech)",
+      "cpp": "TechType::requiredUnit",
+      "self": "none",
+      "params": [
+        {
+          "name": "tech",
+          "type": "type:TechType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the UnitType required to research this technology. The required unit type must be a completed unit owned by the player researching the technology."
+    },
+    {
+      "c": "bwapi_upgradetype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_get_name(int32_t upgrade, char* buf, int32_t buf_len)",
+      "cpp": "UpgradeType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the upgrade, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_upgradetype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_is_valid(int32_t upgrade)",
+      "cpp": "UpgradeType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for UpgradeType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_upgradetype_get_race",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_get_race(int32_t upgrade)",
+      "cpp": "UpgradeType::getRace",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:Race",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of Race (BWAPI_RACE_UNKNOWN)",
+        "type_class": "Race",
+        "constants": "BWAPI_RACE",
+        "family": "race"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the race the upgrade is for. For example, UpgradeTypes::Terran_Infantry_Armor.getRace() will return Races::Terran."
+    },
+    {
+      "c": "bwapi_upgradetype_mineral_price",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_mineral_price(int32_t upgrade, int32_t level)",
+      "cpp": "UpgradeType::mineralPrice",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "level",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the mineral price for the upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_mineral_price_factor",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_mineral_price_factor(int32_t upgrade)",
+      "cpp": "UpgradeType::mineralPriceFactor",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The amount that the mineral price increases for each additional upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_gas_price",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_gas_price(int32_t upgrade, int32_t level)",
+      "cpp": "UpgradeType::gasPrice",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "level",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the vespene gas price for the first upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_gas_price_factor",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_gas_price_factor(int32_t upgrade)",
+      "cpp": "UpgradeType::gasPriceFactor",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the amount that the vespene gas price increases for each additional upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_upgrade_time",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_upgrade_time(int32_t upgrade, int32_t level)",
+      "cpp": "UpgradeType::upgradeTime",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "level",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the number of frames needed to research the first upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_upgrade_time_factor",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_upgrade_time_factor(int32_t upgrade)",
+      "cpp": "UpgradeType::upgradeTimeFactor",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the number of frames that the upgrade time increases for each additional upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_max_repeats",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_max_repeats(int32_t upgrade)",
+      "cpp": "UpgradeType::maxRepeats",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the maximum number of times the upgrade can be researched."
+    },
+    {
+      "c": "bwapi_upgradetype_what_upgrades",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_what_upgrades(int32_t upgrade)",
+      "cpp": "UpgradeType::whatUpgrades",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the type of unit that researches the upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_whats_required",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_whats_required(int32_t upgrade, int32_t level)",
+      "cpp": "UpgradeType::whatsRequired",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "level",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the type of unit that is required for the upgrade. The player must have at least one of these units completed in order to start upgrading this upgrade."
+    },
+    {
+      "c": "bwapi_upgradetype_what_uses",
+      "section": "types",
+      "signature": "int32_t bwapi_upgradetype_what_uses(int32_t upgrade, int32_t* out, int32_t cap)",
+      "cpp": "UpgradeType::whatUses",
+      "self": "none",
+      "params": [
+        {
+          "name": "upgrade",
+          "type": "type:UpgradeType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "array_out",
+          "c_type": "int32_t*"
+        },
+        {
+          "name": "cap",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "id_array",
+        "c_type": "int32_t",
+        "neutral": "nothing written, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Returns the set of units that are affected by this upgrade. The ids come back ascending, up to cap; returns the total."
+    },
+    {
+      "c": "bwapi_race_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_race_get_name(int32_t race, char* buf, int32_t buf_len)",
+      "cpp": "Race::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the race, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_race_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_race_is_valid(int32_t race)",
+      "cpp": "Race::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for Race, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_race_get_worker",
+      "section": "types",
+      "signature": "int32_t bwapi_race_get_worker(int32_t race)",
+      "cpp": "Race::getWorker",
+      "self": "none",
+      "params": [
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default worker type for the race."
+    },
+    {
+      "c": "bwapi_race_get_resource_depot",
+      "section": "types",
+      "signature": "int32_t bwapi_race_get_resource_depot(int32_t race)",
+      "cpp": "Race::getResourceDepot",
+      "self": "none",
+      "params": [
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default resource depot UnitType that workers of the race can construct and return resources to."
+    },
+    {
+      "c": "bwapi_race_get_refinery",
+      "section": "types",
+      "signature": "int32_t bwapi_race_get_refinery(int32_t race)",
+      "cpp": "Race::getRefinery",
+      "self": "none",
+      "params": [
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default structure UnitType for the race that is used to harvest gas from Geysers."
+    },
+    {
+      "c": "bwapi_race_get_transport",
+      "section": "types",
+      "signature": "int32_t bwapi_race_get_transport(int32_t race)",
+      "cpp": "Race::getTransport",
+      "self": "none",
+      "params": [
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default transport UnitType for the race that is used to transport ground units across the map."
+    },
+    {
+      "c": "bwapi_race_get_supply_provider",
+      "section": "types",
+      "signature": "int32_t bwapi_race_get_supply_provider(int32_t race)",
+      "cpp": "Race::getSupplyProvider",
+      "self": "none",
+      "params": [
+        {
+          "name": "race",
+          "type": "type:Race",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "type:UnitType",
+        "c_type": "int32_t",
+        "neutral": "the Unknown id of UnitType (BWAPI_UNIT_UNKNOWN)",
+        "type_class": "UnitType",
+        "constants": "BWAPI_UNIT",
+        "family": "unit_type"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the default supply provider UnitType for the race that is used to construct units."
+    },
+    {
+      "c": "bwapi_unitsizetype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_unitsizetype_get_name(int32_t size, char* buf, int32_t buf_len)",
+      "cpp": "UnitSizeType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "size",
+          "type": "type:UnitSizeType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the size, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_unitsizetype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_unitsizetype_is_valid(int32_t size)",
+      "cpp": "UnitSizeType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "size",
+          "type": "type:UnitSizeType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for UnitSizeType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_damagetype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_damagetype_get_name(int32_t damage, char* buf, int32_t buf_len)",
+      "cpp": "DamageType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "damage",
+          "type": "type:DamageType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the damage, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_damagetype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_damagetype_is_valid(int32_t damage)",
+      "cpp": "DamageType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "damage",
+          "type": "type:DamageType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for DamageType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_explosiontype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_explosiontype_get_name(int32_t explosion, char* buf, int32_t buf_len)",
+      "cpp": "ExplosionType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "explosion",
+          "type": "type:ExplosionType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the explosion, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_explosiontype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_explosiontype_is_valid(int32_t explosion)",
+      "cpp": "ExplosionType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "explosion",
+          "type": "type:ExplosionType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for ExplosionType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_bullettype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_bullettype_get_name(int32_t bullet, char* buf, int32_t buf_len)",
+      "cpp": "BulletType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "bullet",
+          "type": "type:BulletType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the bullet, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_bullettype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_bullettype_is_valid(int32_t bullet)",
+      "cpp": "BulletType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "bullet",
+          "type": "type:BulletType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for BulletType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_order_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_order_get_name(int32_t order, char* buf, int32_t buf_len)",
+      "cpp": "Order::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "order",
+          "type": "type:Order",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the order, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_order_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_order_is_valid(int32_t order)",
+      "cpp": "Order::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "order",
+          "type": "type:Order",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for Order, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_playertype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_playertype_get_name(int32_t player_type, char* buf, int32_t buf_len)",
+      "cpp": "PlayerType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "player_type",
+          "type": "type:PlayerType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the player type, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_playertype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_playertype_is_valid(int32_t player_type)",
+      "cpp": "PlayerType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "player_type",
+          "type": "type:PlayerType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for PlayerType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_playertype_is_lobby_type",
+      "section": "types",
+      "signature": "int32_t bwapi_playertype_is_lobby_type(int32_t player_type)",
+      "cpp": "PlayerType::isLobbyType",
+      "self": "none",
+      "params": [
+        {
+          "name": "player_type",
+          "type": "type:PlayerType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Identifies whether or not the type is used for the pre-game lobby. A type such as PlayerTypes::ComputerLeft would only appear in-game when a computer player is defeated."
+    },
+    {
+      "c": "bwapi_playertype_is_game_type",
+      "section": "types",
+      "signature": "int32_t bwapi_playertype_is_game_type(int32_t player_type)",
+      "cpp": "PlayerType::isGameType",
+      "self": "none",
+      "params": [
+        {
+          "name": "player_type",
+          "type": "type:PlayerType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Identifies whether or not the type is used in-game. A type such as PlayerTypes::Closed would not be a valid in-game type."
+    },
+    {
+      "c": "bwapi_gametype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_gametype_get_name(int32_t game_type, char* buf, int32_t buf_len)",
+      "cpp": "GameType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "game_type",
+          "type": "type:GameType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the game type, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_gametype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_gametype_is_valid(int32_t game_type)",
+      "cpp": "GameType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "game_type",
+          "type": "type:GameType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for GameType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_unitcommandtype_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_unitcommandtype_get_name(int32_t command, char* buf, int32_t buf_len)",
+      "cpp": "UnitCommandType::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "command",
+          "type": "type:UnitCommandType",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the command, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_unitcommandtype_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_unitcommandtype_is_valid(int32_t command)",
+      "cpp": "UnitCommandType::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "command",
+          "type": "type:UnitCommandType",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for UnitCommandType, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_error_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_error_get_name(int32_t error, char* buf, int32_t buf_len)",
+      "cpp": "Error::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "error",
+          "type": "type:Error",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the error, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_error_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_error_is_valid(int32_t error)",
+      "cpp": "Error::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "error",
+          "type": "type:Error",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for Error, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_color_get_name",
+      "section": "types",
+      "signature": "int32_t bwapi_color_get_name(int32_t color, char* buf, int32_t buf_len)",
+      "cpp": "Color::getName",
+      "self": "none",
+      "params": [
+        {
+          "name": "color",
+          "type": "type:Color",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "The name of the color, as BWAPI spells it: the enumerator with its underscores, so a unit type reads \"Terran_Marine\". An id out of range names Unknown."
+    },
+    {
+      "c": "bwapi_color_is_valid",
+      "section": "types",
+      "signature": "int32_t bwapi_color_is_valid(int32_t color)",
+      "cpp": "Color::isValid",
+      "self": "none",
+      "params": [
+        {
+          "name": "color",
+          "type": "type:Color",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "1 when the id is one BWAPI knows for Color, from 0 to the class's Unknown inclusive; 0 otherwise."
+    },
+    {
+      "c": "bwapi_color_red",
+      "section": "types",
+      "signature": "int32_t bwapi_color_red(int32_t color)",
+      "cpp": "Color::red",
+      "self": "none",
+      "params": [
+        {
+          "name": "color",
+          "type": "type:Color",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the red component of the color."
+    },
+    {
+      "c": "bwapi_color_green",
+      "section": "types",
+      "signature": "int32_t bwapi_color_green(int32_t color)",
+      "cpp": "Color::green",
+      "self": "none",
+      "params": [
+        {
+          "name": "color",
+          "type": "type:Color",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the green component of the color."
+    },
+    {
+      "c": "bwapi_color_blue",
+      "section": "types",
+      "signature": "int32_t bwapi_color_blue(int32_t color)",
+      "cpp": "Color::blue",
+      "self": "none",
+      "params": [
+        {
+          "name": "color",
+          "type": "type:Color",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": true,
+      "doc": "Retrieves the blue component of the color."
     }
   ],
   "constants": [
