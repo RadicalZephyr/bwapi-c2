@@ -31,7 +31,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         # No submodules: the site needs neither a compiler nor the closure.
       - name: Install Zola ${{ env.ZOLA_VERSION }} (pinned, checksum verified)
         run: |
@@ -75,7 +75,7 @@ jobs:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Zola ${{ env.ZOLA_VERSION }} (pinned, checksum verified)
         run: |
           set -euo pipefail
