@@ -24,10 +24,11 @@ include_description = true
 include_content = true
 
 [markdown]
-highlight_code = true
-highlight_theme = "css"
 external_links_target_blank = false
 smart_punctuation = false
+
+[markdown.highlighting]
+theme = "everforest-dark"
 
 [extra]
 repo = "https://github.com/RadicalZephyr/bwapi-c2"

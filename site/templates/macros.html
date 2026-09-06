@@ -1,7 +1,7 @@
 {# The sidebar for one Diátaxis section: its pages in weight order, then its subsections and
    theirs. The reference section nests one level (unit/, game/, bwem/, ...) once phase 1 emits
    it; the prose sections are flat. `current` is the permalink of the page being rendered. #}
-{% macro sidebar(section, current) %}
+{% component sidebar(section, current) %}
 <nav class="sidebar" aria-label="{{ section.title }}">
   <a class="sidebar-title{% if section.permalink == current %} active{% endif %}" href="{{ section.permalink | safe }}">{{ section.title }}</a>
   <ul>
@@ -21,13 +21,13 @@
     {% endfor %}
   </ul>
 </nav>
-{% endmacro sidebar %}
+{% endcomponent sidebar %}
 
 {# Previous/next within a section, in weight order. Zola gives page.lower and page.higher when
    the section sorts by weight. #}
-{% macro pager(page) %}
+{% component pager(page) %}
 <nav class="pager">
   {% if page.lower %}<a class="prev" href="{{ page.lower.permalink | safe }}">← {{ page.lower.title }}</a>{% else %}<span></span>{% endif %}
   {% if page.higher %}<a class="next" href="{{ page.higher.permalink | safe }}">{{ page.higher.title }} →</a>{% else %}<span></span>{% endif %}
 </nav>
-{% endmacro pager %}
+{% endcomponent pager %}
