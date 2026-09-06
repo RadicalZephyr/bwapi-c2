@@ -10,7 +10,7 @@
 # and harmless.
 #
 # Usage:
-#   scripts/setup-sanitizers.sh
+#   tools/setup-sanitizers.sh
 #
 set -euo pipefail
 
