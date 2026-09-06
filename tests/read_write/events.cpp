@@ -1,14 +1,13 @@
 // Every event export against the fixture (implementation plan 2.1): bwapi_game_event_count(),
 // bwapi_game_get_event() and bwapi_game_event_text() over the snapshot the library takes of
-// Game::getEvents(). This suite pumps through GameImpl directly, as every fixture suite does,
-// and then calls bwapi_c2::snapshot_events(), the step bwapi_client_update() runs after its
-// own pump; that is the one internal it reaches for, the way errors/latch.cpp reaches for
-// bind_abi_thread(). It is also the first suite over a size-prefixed output struct, so it
-// proves the struct-out half of the section-4 rule: the caller's size is honoured up and down.
+// Game::getEvents(). The fixture pumps through GameImpl directly, as every suite's does, and
+// runs the library's own after-the-pump step behind start() and frame(), so the snapshot here
+// is the one bwapi_client_update() would have taken. It is also the first suite over a
+// size-prefixed output struct, so it proves the struct-out half of the section-4 rule: the
+// caller's size is honoured up and down.
 #include "doctest.h"
 #include "fixture.h"
 
-#include "abi_internal.h"
 #include "bwapi_c2.h"
 
 #include <climits>
@@ -44,15 +43,8 @@ struct EventScenario {
     f.event(EventType::SaveGame, "fixture.sav");
     f.event(EventType::UnitComplete, marine);
     f.start();
-    bwapi_c2::snapshot_events();
   }
   ~EventScenario() { bwapi_clear_last_error(); }
-
-  // The next frame, pumped the way update() pumps it: GameImpl first, then the snapshot.
-  void frame() {
-    f.frame();
-    bwapi_c2::snapshot_events();
-  }
 };
 
 bwapi_event get(int32_t index) {
@@ -181,7 +173,6 @@ TEST_CASE("a text longer than a shared-memory slot arrives cut to 255 bytes") {
   const std::string longer(300, 'x');
   f.event(EventType::SendText, longer.c_str());
   f.start();
-  bwapi_c2::snapshot_events();
   bwapi_clear_last_error();
   REQUIRE(bwapi_game_event_count() == 1);
   CHECK(bwapi_game_event_text(0, nullptr, 0) == 255);
@@ -264,7 +255,7 @@ TEST_CASE("the next frame replaces the snapshot and its indices") {
   REQUIRE(bwapi_game_event_count() == EventScenario::kCount);
 
   SUBCASE("a frame with nothing queued carries the MatchFrame alone") {
-    s.frame();
+    s.f.frame();
     REQUIRE(bwapi_game_event_count() == 1);
     CHECK(get(0).type == BWAPI_EVENT_MATCH_FRAME);
     CHECK(get(0).unit_id == BWAPI_NONE);
@@ -277,7 +268,7 @@ TEST_CASE("the next frame replaces the snapshot and its indices") {
   SUBCASE("events queued between frames follow the MatchFrame") {
     s.f.event(EventType::UnitShow, s.scv);
     s.f.event(EventType::ReceiveText, "again", 1);
-    s.frame();
+    s.f.frame();
     REQUIRE(bwapi_game_event_count() == 3);
     CHECK(get(0).type == BWAPI_EVENT_MATCH_FRAME);
     CHECK(get(1).type == BWAPI_EVENT_UNIT_SHOW);
@@ -294,7 +285,6 @@ TEST_CASE("a null text is the empty string, as upstream's Event::SendText(nullpt
   f.player(0, Races::Terran);
   f.event(EventType::SendText, nullptr);
   f.start();
-  bwapi_c2::snapshot_events();
   bwapi_clear_last_error();
   REQUIRE(bwapi_game_event_count() == 1);
   CHECK(get(0).type == BWAPI_EVENT_SEND_TEXT);
@@ -318,7 +308,6 @@ TEST_CASE("the fixture pairs text with the types that carry it, and only those")
 TEST_CASE("before the game exists every event call is NOT_CONNECTED, behind BAD_BUFFER") {
   bwapi_clear_last_error();
   REQUIRE(BroodwarPtr == nullptr);
-  bwapi_c2::snapshot_events();  // with no game the snapshot is empty, and harmless
   CHECK(bwapi_game_event_count() == 0);
   CHECK(bwapi_last_error() == BWAPI_ERR_NOT_CONNECTED);
   bwapi_clear_last_error();

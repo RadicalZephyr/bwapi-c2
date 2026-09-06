@@ -244,19 +244,23 @@ BWAPI::Region resolve_region(bwapi_region_id id, const char* fn);
 // What disconnect() runs before the client goes: BWEM's teardown. A no-op until phase 3.
 void teardown_bwem();
 
-// ---- the frame's events (client.cpp) ---------------------------------------------------------
+// ---- after the pump (client.cpp) ---------------------------------------------------------------
 
-// Game::getEvents() is a std::list, so update() snapshots it into a vector once per frame and
-// the event exports index that (section 5.6). The vector holds pointers to the list's nodes,
-// not copies: the list lives in the client GameImpl and is only cleared by the next pump, which
-// is when the vector is cleared too, so the pointers are exactly as valid as the plan says the
-// indices are, and a frame of ten thousand events costs one walk and no Event copy (an Event
-// copy allocates its text). snapshot_events() is that step on its own: bwapi_client_update()
-// calls it after the pump, and the fixture-driven tests call it after GameImpl::onMatchStart()
-// or onMatchFrame(), which is how they pump without a server, the same way they call
-// bind_abi_thread() for what connect() does. With no game it empties the vector.
-// frame_events() is the snapshot, stable until the next call.
-void snapshot_events();
+// Everything bwapi_client_update() does once the frame is in, in the order it does it: today
+// the event snapshot of section 5.6, in phase 3 the UnitDestroy dispatch to BWEM's filtered
+// hooks (section 8.2). One function, so the order lives in one place. The fixture-driven tests
+// pump through GameImpl directly, with no server, and run this same step through the hook
+// tests/support/doctest_main.cpp installs on the Fixture once per test binary; no suite replays
+// update() by hand, and the Fixture runs it at teardown too, so a snapshot never outlives the
+// game it was taken from. With no game the step leaves nothing behind.
+void after_pump();
+
+// The frame's events: Game::getEvents() is a std::list, so after_pump() snapshots its nodes
+// into this vector and the event exports index it (section 5.6). Pointers, not copies: the
+// list lives in the client GameImpl and is cleared only by the next pump, which is when this
+// vector is cleared too, so the pointers are valid for exactly the window the plan gives the
+// indices, and a frame of ten thousand events costs one walk and no Event copy (an Event copy
+// allocates its text). Stable until the next after_pump().
 const std::vector<const BWAPI::Event*>& frame_events();
 
 // ---- packing ---------------------------------------------------------------------------------

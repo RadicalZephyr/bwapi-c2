@@ -24,6 +24,14 @@
 //
 // Teardown order is the ABI's own (section 8.2): BWEM's map first, then GameImpl, then the
 // memory it pointed into. The destructor does it so a test cannot get it wrong.
+//
+// The library has a step of its own after every pump (bwapi_c2::after_pump(): the event
+// snapshot today, BWEM's destruction hooks in phase 3). This library links the closure and not
+// the ABI, so it cannot name that step; it runs whatever set_after_pump() installed, after
+// onMatchStart(), after each onMatchFrame(), and once more at teardown with no game, so nothing
+// the step keeps can outlive the GameImpl. tests/support/doctest_main.cpp installs the ABI's
+// step once per test binary; a binary that links only the fixture (tests/bwem/overlap_asserts)
+// installs nothing and nothing runs.
 #pragma once
 
 #include <BWAPI.h>
@@ -129,6 +137,9 @@ class Fixture {
   BWAPI::GameImpl& game();
   bool started() const { return game_ != nullptr; }
 
+  // What runs after every pump and at teardown; null (the default) runs nothing.
+  static void set_after_pump(std::function<void()> hook);
+
   // The footprint rule, exposed so a test can check the arithmetic without a neutral.
   struct Footprint { int left, top, right, bottom; BWAPI::UnitType type; };  // right/bottom exclusive
   static bool partially_overlaps(const Footprint& a, const Footprint& b);
@@ -137,6 +148,7 @@ class Fixture {
   int allocate_unit(int owner, BWAPI::UnitType type, int x, int y, const UnitOptions& opts);
   Fixture& queue(BWAPI::EventType::Enum type, int v1, int v2);
   void require_not_started(const char* what) const;
+  static void run_after_pump();
 
   BWAPI::GameData* data_ = nullptr;
   std::unique_ptr<BWAPI::GameImpl> game_;

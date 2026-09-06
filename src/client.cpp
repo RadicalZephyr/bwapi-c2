@@ -22,12 +22,22 @@ void teardown_bwem() {
   // Phase 3 makes this BWEM's reset; until then there is nothing to tear down.
 }
 
+namespace {
+
 void snapshot_events() {
   g_events.clear();
   if (!BWAPI::BroodwarPtr) return;
   const auto& events = BWAPI::BroodwarPtr->getEvents();
   g_events.reserve(events.size());
   for (const BWAPI::Event& e : events) g_events.push_back(&e);
+}
+
+}  // namespace
+
+void after_pump() {
+  // In this order, and only here: the snapshot first, so that what phase 3 adds after it (the
+  // UnitDestroy dispatch to BWEM, section 8.2) can read the frame's events the way a host does.
+  snapshot_events();
 }
 
 const std::vector<const BWAPI::Event*>& frame_events() { return g_events; }
@@ -58,9 +68,9 @@ BWAPI_C2_API void BWAPI_C2_CALL bwapi_client_update(void) BWAPI_C2_NOEXCEPT {
     g_events.clear();
     BWAPI::BWAPIClient.update();
     // The server may have gone away inside update(); Client::disconnect() then nulled
-    // BroodwarPtr, and snapshot_events() finds nothing to snapshot.
+    // BroodwarPtr, and after_pump() finds nothing to snapshot.
     if (!BWAPI::BroodwarPtr) unbind_abi_thread();
-    snapshot_events();
+    after_pump();
   });
 }
 

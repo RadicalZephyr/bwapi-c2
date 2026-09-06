@@ -6,12 +6,15 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <utility>
 
 namespace bwapi_c2::test {
 
 namespace {
 
 constexpr int kNeutralPlayer = 11;
+
+std::function<void()> g_after_pump;
 
 // snprintf rather than strncpy: always NUL-terminates, and MSVC does not deprecate it (C4996).
 void copy_string(char* dst, size_t cap, const char* src) {
@@ -53,6 +56,14 @@ Fixture::~Fixture() {
   BWAPI::BroodwarPtr = nullptr;
   BWAPI::BWAPIClient.data = nullptr;
   std::free(data_);
+  // With no game the library's step keeps nothing, so a snapshot cannot outlive the GameImpl.
+  run_after_pump();
+}
+
+void Fixture::set_after_pump(std::function<void()> hook) { g_after_pump = std::move(hook); }
+
+void Fixture::run_after_pump() {
+  if (g_after_pump) g_after_pump();
 }
 
 void Fixture::require_not_started(const char* what) const {
@@ -272,6 +283,7 @@ void Fixture::start() {
   BWAPI::BroodwarPtr = game_.get();
   game_->onMatchStart();
   pending_consumed_ = data_->eventCount;  // onMatchStart pumped everything queued so far
+  run_after_pump();
 }
 
 BWAPI::GameImpl& Fixture::game() {
@@ -298,6 +310,7 @@ void Fixture::frame() {
   for (const auto& e : keep) queue(e.type, e.v1, e.v2);
   game_->onMatchFrame();
   pending_consumed_ = data_->eventCount;
+  run_after_pump();
 }
 
 }  // namespace bwapi_c2::test
