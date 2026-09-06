@@ -110,6 +110,23 @@ int32_t write_string(char* buf, int32_t buf_len, const std::string& s);
 // The neutral value of a string_out return: an empty string when there is room for one, and 0.
 int32_t empty_string(char* buf, int32_t buf_len);
 
+// ---- type ids ------------------------------------------------------------------------------------
+
+// The Unknown id of a type class, and how many ids the class has (0 to Unknown inclusive). Both
+// rest on one fact about upstream: Type<>'s constructor clamps any id outside 0..UnknownId to
+// UnknownId, so T(-1) is Unknown for every class, Color included, which has no Unknown
+// enumerator to name. That fact is spelled here and nowhere else; the neutral of a type: return,
+// the isValid bodies and the table emitter all go through these.
+template <class T>
+inline int32_t unknown_id() {
+  return T(-1).getID();
+}
+
+template <class T>
+inline int32_t id_count() {
+  return unknown_id<T>() + 1;
+}
+
 // ---- conversions the generated wrappers apply (spec-format.md section 1.4) --------------------
 
 // A BWAPI interface pointer to its id; null is BWAPI_NONE.

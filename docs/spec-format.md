@@ -119,7 +119,7 @@ kind, and the emitter writes it into every wrapper and every reference page.
 | `int32` | `int32_t` | `0` | `static_cast<int32_t>` |
 | `bool32` | `int32_t` | `0` | `? 1 : 0` |
 | `double` | `double` | `0.0` | none |
-| `type:<Class>` | `int32_t` | the class's `Unknown` id: `BWAPI::<Class>(-1).getID()`, which `Type<>`'s constructor clamps to its `UnknownId` argument (`UnitTypes::Unknown` = 234, `Races::Unknown` = 8, `Color(-1)` = 255, …) | `.getID()` |
+| `type:<Class>` | `int32_t` | the class's `Unknown` id, `unknown_id<BWAPI::<Class>>()` from `abi_internal.h`, which is `<Class>(-1).getID()` because `Type<>`'s constructor clamps to its `UnknownId` argument (`UnitTypes::Unknown` = 233, `Races::Unknown` = 8, `Color(-1)` = 255, …); `id_count<T>()` beside it is one more, the number of ids a body iterates | `.getID()` |
 | `position`, `tile_position`, `walk_position` | `bwapi_position` | the packed `None` of the kind's own scale: `BWAPI_POSITION_NONE` (32000/32032), `BWAPI_TILEPOSITION_NONE` (1000/1001), `BWAPI_WALKPOSITION_NONE` (4000/4004) | `BWAPI_POS_MAKE(p.x, p.y)` |
 | `handle:<kind>` | `bwapi_<kind>_id` | `BWAPI_NONE` | the kind's id: `getID()`, BWEM `Id()` / `Index()`, the base table, `Unit()->getID()` |
 | `string_out` | `int32_t` | an empty string (one NUL, when `buf_len > 0`) and `0` | `write_string(buf, buf_len, std::string)` |

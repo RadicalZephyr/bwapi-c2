@@ -332,7 +332,7 @@ def table_entry(struct):
     through the stride rule of section 4 (the caller's size on element zero)."""
     t = struct["table"]
     cls = t["class"]
-    lines = [f"const int32_t total = BWAPI::{cls}(-1).getID() + 1;",
+    lines = [f"const int32_t total = id_count<BWAPI::{cls}>();",
              f"return write_rows(out, cap, total, [](bwapi_{struct['name']}& row, int32_t id) {{",
              f"  const BWAPI::{cls} t(id);", "  row.id = id;"]
     for f in struct["fields"][1:]:
@@ -415,7 +415,7 @@ def neutral_c(kind):
         "position_array": "0", "struct_array": "0", "void": "",
         "position": "BWAPI_POSITION_NONE", "tile_position": "BWAPI_TILEPOSITION_NONE",
         "walk_position": "BWAPI_WALKPOSITION_NONE", "handle": "BWAPI_NONE",
-        "type": f"BWAPI::{arg}(-1).getID()",
+        "type": f"unknown_id<BWAPI::{arg}>()",
     }[base]
 
 

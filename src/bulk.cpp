@@ -20,7 +20,7 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_units_table(bwapi_req
     // requiredUnits() is a std::map keyed by UnitType, so the inner order is already ascending.
     struct Triple { int32_t type, required, count; };
     std::vector<Triple> rows;
-    const int32_t types = BWAPI::UnitType(-1).getID() + 1;
+    const int32_t types = id_count<BWAPI::UnitType>();
     for (int32_t id = 0; id < types; ++id)
       for (const auto& req : BWAPI::UnitType(id).requiredUnits())
         rows.push_back({id, req.first.getID(), req.second});
