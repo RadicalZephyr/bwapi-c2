@@ -123,7 +123,9 @@
   source: src/client.cpp
   doc: >-
     Tears down BWEM first, because its map points into the game data, then the client. Safe to
-    call when not connected.
+    call when not connected. Unlike the rest of the ABI's own surface it is thread-checked, so a
+    call from a thread other than the one that connected tears nothing down and latches
+    BWAPI_ERR_WRONG_THREAD.
 
 - cpp: "Client::isConnected"
   c: bwapi_client_is_connected
