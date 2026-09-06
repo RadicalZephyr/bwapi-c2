@@ -31,7 +31,9 @@ jobs:
     env:
       CC: clang
       CXX: clang++
-      ASAN_OPTIONS: detect_leaks=0
+      # Leak detection stays on: the teardown order the fixture enforces (section 8.2) is what
+      # LeakSanitizer checks, and valgrind finds no definite or indirect leak in either suite.
+      ASAN_OPTIONS: detect_leaks=1
       UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
     steps:
       - uses: actions/checkout@v7
