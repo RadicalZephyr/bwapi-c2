@@ -1267,3 +1267,26 @@
   params: [{name: color, type: "type:Color"}]
   returns: int32
   doc: "Retrieves the blue component of the color."
+# ---- free functions ----------------------------------------------------------------------------
+
+- cpp: "UnitTypes::maxUnitWidth"
+  c: bwapi_unittype_max_unit_width
+  self: none
+  returns: int32
+  body: "return BWAPI::UnitTypes::maxUnitWidth();"
+  doc: "The largest width in pixels of any unit type, for sizing spatial queries."
+
+- cpp: "UnitTypes::maxUnitHeight"
+  c: bwapi_unittype_max_unit_height
+  self: none
+  returns: int32
+  body: "return BWAPI::UnitTypes::maxUnitHeight();"
+  doc: "The largest height in pixels of any unit type, for sizing spatial queries."
+
+- cpp: "Text::isColor"
+  c: bwapi_text_is_color
+  self: none
+  params: [{name: c, type: int32}]
+  returns: bool32
+  body: "return BWAPI::Text::isColor(static_cast<BWAPI::Text::Enum>(c));"
+  doc: "1 when the character is one of the BWAPI_TEXT_* colour control codes, which change the colour of the text that follows them in a string passed to the text and drawing functions."

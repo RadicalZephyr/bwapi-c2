@@ -6111,6 +6111,63 @@
       "legit_none": false,
       "generated": true,
       "doc": "Retrieves the blue component of the color."
+    },
+    {
+      "c": "bwapi_unittype_max_unit_width",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_max_unit_width(void)",
+      "cpp": "UnitTypes::maxUnitWidth",
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The largest width in pixels of any unit type, for sizing spatial queries."
+    },
+    {
+      "c": "bwapi_unittype_max_unit_height",
+      "section": "types",
+      "signature": "int32_t bwapi_unittype_max_unit_height(void)",
+      "cpp": "UnitTypes::maxUnitHeight",
+      "self": "none",
+      "params": [],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The largest height in pixels of any unit type, for sizing spatial queries."
+    },
+    {
+      "c": "bwapi_text_is_color",
+      "section": "types",
+      "signature": "int32_t bwapi_text_is_color(int32_t c)",
+      "cpp": "Text::isColor",
+      "self": "none",
+      "params": [
+        {
+          "name": "c",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "1 when the character is one of the BWAPI_TEXT_* colour control codes, which change the colour of the text that follows them in a string passed to the text and drawing functions."
     }
   ],
   "constants": [

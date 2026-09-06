@@ -30,6 +30,9 @@ static_assert(sizeof(&BWAPI::GameType::isValid) > 0, "spec/types.yaml bwapi_game
 static_assert(sizeof(&BWAPI::UnitCommandType::isValid) > 0, "spec/types.yaml bwapi_unitcommandtype_is_valid: UnitCommandType::isValid not found");
 static_assert(sizeof(&BWAPI::Error::isValid) > 0, "spec/types.yaml bwapi_error_is_valid: Error::isValid not found");
 static_assert(sizeof(&BWAPI::Color::isValid) > 0, "spec/types.yaml bwapi_color_is_valid: Color::isValid not found");
+static_assert(sizeof(&BWAPI::UnitTypes::maxUnitWidth) > 0, "spec/types.yaml bwapi_unittype_max_unit_width: UnitTypes::maxUnitWidth not found");
+static_assert(sizeof(&BWAPI::UnitTypes::maxUnitHeight) > 0, "spec/types.yaml bwapi_unittype_max_unit_height: UnitTypes::maxUnitHeight not found");
+static_assert(sizeof(&BWAPI::Text::isColor) > 0, "spec/types.yaml bwapi_text_is_color: Text::isColor not found");
 
 extern "C" {
 
@@ -1131,6 +1134,33 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_green(int32_t color) BWAPI_C2_NOE
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_blue(int32_t color) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
     return static_cast<int32_t>(BWAPI::Color(color).blue());
+  });
+}
+
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_unit_width(void) BWAPI_C2_NOEXCEPT {
+  return guard<int32_t>(0, [&]() -> int32_t {
+    auto body = [&] {
+      return BWAPI::UnitTypes::maxUnitWidth();
+    };
+    return static_cast<int32_t>(body());
+  });
+}
+
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_unit_height(void) BWAPI_C2_NOEXCEPT {
+  return guard<int32_t>(0, [&]() -> int32_t {
+    auto body = [&] {
+      return BWAPI::UnitTypes::maxUnitHeight();
+    };
+    return static_cast<int32_t>(body());
+  });
+}
+
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_text_is_color(int32_t c) BWAPI_C2_NOEXCEPT {
+  return guard<int32_t>(0, [&]() -> int32_t {
+    auto body = [&] {
+      return BWAPI::Text::isColor(static_cast<BWAPI::Text::Enum>(c));
+    };
+    return (body()) ? 1 : 0;
   });
 }
 

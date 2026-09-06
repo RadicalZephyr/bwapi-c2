@@ -1915,6 +1915,13 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_red(int32_t color) BWAPI_C2_NOEXC
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_green(int32_t color) BWAPI_C2_NOEXCEPT;
 /* Retrieves the blue component of the color. */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_blue(int32_t color) BWAPI_C2_NOEXCEPT;
+/* The largest width in pixels of any unit type, for sizing spatial queries. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_unit_width(void) BWAPI_C2_NOEXCEPT;
+/* The largest height in pixels of any unit type, for sizing spatial queries. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_max_unit_height(void) BWAPI_C2_NOEXCEPT;
+/* 1 when the character is one of the BWAPI_TEXT_* colour control codes, which change the colour
+ * of the text that follows them in a string passed to the text and drawing functions. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_text_is_color(int32_t c) BWAPI_C2_NOEXCEPT;
 
 /* ---- bulk type tables ---------------------------------------------------------------------------- */
 

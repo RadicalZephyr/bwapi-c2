@@ -118,6 +118,7 @@ EXPORTS
     bwapi_techtype_targets_unit
     bwapi_techtype_what_researches
     bwapi_techtype_what_uses
+    bwapi_text_is_color
     bwapi_unitcommandtype_get_name
     bwapi_unitcommandtype_is_valid
     bwapi_unitsizetype_get_name
@@ -180,6 +181,8 @@ EXPORTS
     bwapi_unittype_max_ground_hits
     bwapi_unittype_max_hit_points
     bwapi_unittype_max_shields
+    bwapi_unittype_max_unit_height
+    bwapi_unittype_max_unit_width
     bwapi_unittype_mineral_price
     bwapi_unittype_produces_creep
     bwapi_unittype_produces_larva
