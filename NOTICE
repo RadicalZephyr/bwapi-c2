@@ -10,7 +10,7 @@ bwapi_c2.dll contains object code compiled from two third-party libraries:
    https://github.com/bwapi/bwapi
    License: LGPL-3.0 (COPYING.LESSER)
    Upstream commit: d727fed68558c506163048ea889131d8cbb33915
-   Pinned as: https://github.com/RadicalZephyr/bwapi, branch bwapi-c2-pin, commit
+   Pinned as: https://github.com/RadicalZephyr/bwapi, tag bwapi-c2-pin-20260905, commit
      621ef61e0d423b5ed48f75f0126cd1dfb7efb47a
    Modifications carried by bwapi-c2 (the commits between the two):
      BWAPIClient/Source/Convenience.h, `va_list &ap` changed to `va_list ap`, so the
@@ -21,7 +21,7 @@ bwapi_c2.dll contains object code compiled from two third-party libraries:
    https://github.com/N00byEdge/BWEM-community
    License: MIT/X11, Copyright (c) 2015, 2017, Igor Dimitrijevic (LICENSE.BWEM)
    Upstream commit: 9a63141f301f7830e9e09a2bae95c304fcc03cc5
-   Pinned as: https://github.com/RadicalZephyr/BWEM-community, branch bwapi-c2-pin, commit
+   Pinned as: https://github.com/RadicalZephyr/BWEM-community, tag bwapi-c2-pin-20260905, commit
      70d7b34a2ae2043e1bf42e024461ef26dca6967c
    Modification carried by bwapi-c2 (the one commit between the two):
      adds `void Map::ResetInstance()`, which lets a host destroy the map singleton
@@ -31,8 +31,8 @@ bwapi_c2.dll contains object code compiled from two third-party libraries:
 Corresponding Source (GPL-3.0 §6(d), LGPL-3.0 §4):
    https://github.com/RadicalZephyr/bwapi-c2
    Release tag: <set by the release process; unreleased trees identify by commit>
-   The tag pins the two dependency commits above as submodules under third_party/ and
-   carries the modifications above under patches/.
+   The tag pins the two dependency commits above as submodules under third_party/; each is
+   itself a tag on its fork, so both stay reachable however the forks' branches move.
 
 --------------------------------------------------------------------------------------
 For bot authors who distribute a bot together with bwapi_c2.dll (LGPL-3.0 §4(a)–(c)),

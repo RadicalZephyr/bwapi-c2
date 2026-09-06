@@ -1646,10 +1646,13 @@ size as JSON, and CI diffs both against the checked-in baseline — the detector
 
 ### 10.3 `svnrev.h`, the forks, and the pin-bump procedure
 
-**Each submodule pins a `bwapi-c2-pin` branch on our own fork of the dependency.** The branch is
-the upstream commit we pin plus the commits we carry (§15.2, and for BWAPI the two below), so
-the carried changes are ordinary commits with history and a diff against upstream that is
-exactly the fork's branch minus its default branch. Revisions 4.0–4.3 carried them as patch
+**Each submodule pins a tagged commit on the `bwapi-c2-pin` branch of our own fork of the
+dependency.** The branch is the upstream commit we pin plus the commits we carry (§15.2, and for
+BWAPI the two below), so the carried changes are ordinary commits with history and a diff
+against upstream that is exactly the fork's branch minus its default branch. The tag
+(`bwapi-c2-pin-YYYYMMDD`) is what makes the pin permanent: the branch is rebased at each bump,
+and only a tag keeps the previous tip, and with it §0's source pointer, from being garbage
+collected. Revisions 4.0–4.3 carried them as patch
 files applied into the submodule working trees at configure time; that kept "pinned upstream
 commit" literally true at the cost of dirty working trees in every checkout and a script CMake
 had to run first. The fork is the cleaner mechanism and the one the tree now uses. Offering the
@@ -1674,11 +1677,15 @@ this repository second; the operational checklist is `docs/pins.md`:
 1. In the fork, fast-forward the default branch to the new upstream commit and rebase
    `bwapi-c2-pin` onto it. A carried commit that no longer applies is the first finding.
 2. For BWAPI: regenerate `svnrev.h` at the upstream commit; replace the committed header on
-   `bwapi-c2-pin` (force-added; upstream gitignores it). Push the branch.
-3. Move the submodule (`third_party/bwapi` or `third_party/bwem`) to the new tip.
-4. Run `derive_closure` and the layout dumps; diff against the baselines.
-5. Run `check_coverage.py`; resolve every added, removed or changed declaration.
-6. Rebuild; run every suite in §11. Record the new revision and `CLIENT_VERSION` in `docs/pins.md`.
+   `bwapi-c2-pin` (force-added; upstream gitignores it).
+3. **Tag the new tip `bwapi-c2-pin-YYYYMMDD` on the fork and push the tag before the branch.**
+   A rebased branch orphans its previous tip; the tag is what keeps every earlier gitlink, every
+   shipped `NOTICE` and §0's Corresponding Source pointer resolvable. A pin tag is never deleted.
+4. Move the submodule (`third_party/bwapi` or `third_party/bwem`) to the new tip; record the tag
+   and the commit in `docs/pins.md` and `NOTICE` in the same commit.
+5. Run `derive_closure` and the layout dumps; diff against the baselines.
+6. Run `check_coverage.py`; resolve every added, removed or changed declaration.
+7. Rebuild; run every suite in §11. Record the new revision and `CLIENT_VERSION` in `docs/pins.md`.
 
 ### 10.4 Distribution
 
