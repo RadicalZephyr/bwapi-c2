@@ -273,6 +273,16 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
   In that row `tests/bwem/overlap_asserts.cpp` plants R11.6's overlapping minerals behind the
   builder and must abort inside `Neutral::PutOnTiles()`; in release the same program segfaults
   at teardown. Leak detection is on under ASan; valgrind finds no definite or indirect leak.
+- `tools/test-sanitizers.sh` answers what the sanitized row cannot answer about itself: whether a
+  green run means no error was found, or that none could be reported. It reads the compiler and
+  `BWAPI_C2_SANITIZERS` back out of a build directory's `CMakeCache.txt`, checks that all 73
+  objects reference the ASan runtime and that all 12 linked images carry both runtimes (the
+  header-hygiene stubs and the layout `static_assert`s are too trivial to call a UBSan handler,
+  which is why UBSan is checked per image and not per object), then compiles a use-after-free, a
+  signed overflow and a leak with the build's own flags and requires each to be diagnosed and to
+  exit non-zero. Verified on a checkout with clang 18.1.3: the suite is green sanitized, all
+  three faults report, and the checks are not vacuous - an uninstrumented object or image dropped
+  into the build directory fails them.
 
 ### 0.12 The site skeleton and its deploy workflow
 
@@ -307,7 +317,7 @@ Explanation pages can be written alongside the code they explain instead of afte
 - Commits: *"Add the Zola site skeleton with the four Diátaxis sections"*, *"Add the site
   templates and stylesheet"*, *"Add two Explanation pages: why a C ABI, and the license"*,
   *"Add docs.yml: check and build on PRs, deploy to Pages from main"*. **Done**, with Zola
-  pinned at 0.19.2. That version has no `--skip-external-links` flag; the mechanism is
+  pinned at 0.23.4. That version has no `--skip-external-links` flag; the mechanism is
   `[link_checker] external_level = "warn"` in `config.toml`, which the weekly job flips to
   `error`. The stylesheet lives in `site/sass/` (Zola compiles it), keeping `site/static/` empty
   as the step says. **Still to do by hand:** the Pages source setting, and the first deploy,

@@ -34,6 +34,22 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+`-DBWAPI_C2_SANITIZERS=address,undefined` puts AddressSanitizer and UndefinedBehaviorSanitizer
+on every target, closure included, which is how CI runs the suite a second time. A green run
+under them is only worth something if the instrumentation is really there, so
+`tools/test-sanitizers.sh <build-dir>` checks that it is: every object in the build calls into
+the ASan runtime, every linked image carries both runtimes, and three deliberate faults compiled
+with the build's own flags -- a use-after-free, a signed overflow, a leak -- are each diagnosed
+and exit non-zero.
+
+```sh
+CXX=clang++ cmake -B build-asan -G Ninja -DBWAPI_C2_SANITIZERS=address,undefined
+cmake --build build-asan
+tools/test-sanitizers.sh build-asan
+ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 \
+  ctest --test-dir build-asan --output-on-failure
+```
+
 The site under `site/` builds with Zola, pinned to the version and checksum in
 `.github/workflows/docs.yml`; `zola check` there must pass before a docs change lands. The one
 repository setting not in the tree is Pages' source, which must be "GitHub Actions".

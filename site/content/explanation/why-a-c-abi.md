@@ -44,12 +44,14 @@ they reach every client.
 
 ## Why this and not the C ABI that already existed
 
-One did: `bwapi-c` reached 1.0 in 2018 with 530 entry points and stopped. It shipped none of the
-type database, so the one bot built on it hand-wrote 650 lines of enums; it passed BWAPI's
-pointer-hashed set order straight through, so iteration order changed run to run; it let C++
-exceptions unwind through `extern "C"`; and it has no license, which forecloses forking it.
-bwapi-c2 takes its inventory of wrappable methods as a checked list and its issue tracker as a
-list of the failure modes to design out, and reuses no code.
+This project has a spiritual predecessor: [bwapi-c] reached 1.0 in 2018 with 530 entry points
+and stopped. It shipped none of the type database, so the one bot built on it hand-wrote 650
+lines of enums; it passed BWAPI's pointer-hashed set order straight through, so iteration order
+changed run to run; it let C++ exceptions unwind through `extern "C"`; and it has no license,
+which forecloses forking it.  bwapi-c2 takes its inventory of wrappable methods as a checked
+list and its issue tracker as a list of the failure modes to design out, and reuses no code.
+
+[bwapi-c]: https://github.com/RnDome/bwapi-c
 
 ---
 

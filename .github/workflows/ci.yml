@@ -59,6 +59,9 @@ jobs:
           -DBWAPI_C2_BWEM_ASSERTS=${{ matrix.bwem_asserts }}
       - name: Build
         run: cmake --build build
+      - name: Test Sanitizers
+        if: matrix.name == 'asan+ubsan'
+        run: ./tools/test-sanitizers.sh
       - name: Test
         run: ctest --test-dir build --output-on-failure
 

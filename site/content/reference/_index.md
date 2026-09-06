@@ -5,7 +5,7 @@ sort_by = "weight"
 weight = 3
 +++
 
-The reference states what is, and nothing else: for every exported function its C name, its
+The [reference] states what is, and nothing else: for every exported function its C name, its
 parameters and their handle kinds, its return kind and the neutral value it returns on an invalid
 handle, when it latches an error, and where it departs from the C++ it wraps. One page per
 function, so every symbol has a stable URL and the search box finds it. Tables for each constant
@@ -20,3 +20,5 @@ and are not checked in. Until the generator lands, this section holds only this 
 
 What does not belong here: guidance. A reference entry says what a function does; how to use it
 well is a how-to guide, and why it works that way is an explanation.
+
+[reference]: https://diataxis.fr/reference/

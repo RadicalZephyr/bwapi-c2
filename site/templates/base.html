@@ -19,7 +19,7 @@
     {% set root = get_section(path="_index.md") %}
     {% for s in root.subsections %}
       {% set sec = get_section(path=s) %}
-      <a href="{{ sec.permalink | safe }}"{% if current_path is defined and current_path is starting_with(sec.path) %} class="active"{% endif %}>{{ sec.title }}</a>
+      <a href="{{ sec.permalink | safe }}"{% if current_path is defined and current_path is starting_with(pat=sec.path) %} class="active"{% endif %}>{{ sec.title }}</a>
     {% endfor %}
     <a href="{{ config.extra.repo | safe }}">GitHub</a>
   </nav>
