@@ -160,8 +160,6 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
  * them under the stride rule stated above. */
 @STRUCTS@
 
-/* ---- static type data ------------------------------------------------------------------- */
-
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,
  * WeaponType, ... accessors, one export each, plus the bulk tables. Unlike everything in
  * bwapi_c2.h these need no connection and check no thread. */

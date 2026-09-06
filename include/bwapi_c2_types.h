@@ -1531,8 +1531,6 @@ typedef struct bwapi_required_unit {
   int32_t count;         /* how many of the required type */
 } bwapi_required_unit;
 
-/* ---- static type data ------------------------------------------------------------------- */
-
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,
  * WeaponType, ... accessors, one export each, plus the bulk tables. Unlike everything in
  * bwapi_c2.h these need no connection and check no thread. */
