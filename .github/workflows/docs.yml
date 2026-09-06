@@ -23,10 +23,6 @@ on:
 permissions:
   contents: read
 
-env:
-  ZOLA_VERSION: 0.19.2
-  ZOLA_SHA256: 0798e69b86c628ddcb264ebd86c8cc8dce7670b9049060bf94faa73f6857cd9c
-
 jobs:
   build:
     if: github.event_name != 'schedule'   # the weekly run is external-links alone
@@ -34,7 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         # No submodules: the site needs neither a compiler nor the closure.
-      - name: Install Zola ${{ env.ZOLA_VERSION }} (pinned, checksum verified)
+      - name: Install Zola (pinned, checksum verified)
         run: tools/install-zola.sh
       # From phase 1 on: copy api.json into site/static/ (this is also how /api.json is served)
       # and run tools/abi/emit_docs.py into site/content/reference/. Neither exists yet.
@@ -70,7 +66,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - name: Install Zola ${{ env.ZOLA_VERSION }} (pinned, checksum verified)
+      - name: Install Zola (pinned, checksum verified)
         run: tools/install-zola.sh
       - name: Check every link, external ones included
         run: |
