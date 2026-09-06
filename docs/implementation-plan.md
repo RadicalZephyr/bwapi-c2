@@ -598,12 +598,14 @@ a step is a commit-sized unit.
 ### 2.1 Events
 
 - `bwapi_event` struct in `bwapi_c2_types.h` with the size prefix; `bwapi_game_event_count`,
-  `bwapi_game_get_event`, `bwapi_game_event_text` over the vector `update()` already fills.
+  `bwapi_game_get_events`, `bwapi_game_event_text` over the vector `update()` already fills.
 - The fixture builder's `event()` populates `data->events[]` and `eventCount`; `frame()`
   re-runs the pump.
-- Tests: three events of different kinds round-trip; the text of a `SendText` event through
-  the string convention; an out-of-range index is the neutral value plus latch; an output
-  struct with a larger `size` is zero-filled past the known fields.
+- Tests: several events of different kinds round-trip through one drain, in the fixture's own
+  order rather than sorted; the text of a `SendText` event through the string convention; a
+  `cap` short of the count returns the total and writes nothing past `cap`; a stride larger
+  than `sizeof(bwapi_event)` is zero-filled past the known fields; an out-of-range index to
+  `bwapi_game_event_text()` is the neutral value plus latch.
 - **Done**, three commits: the exports, the fixture's text events, the suite. `bwapi_event` is
   the first non-table struct in `structs.yaml` and `spec/game.yaml` opens with the three
   `source:` entries into `src/bulk.cpp` plus the 28 skips for the rest of `BWAPI::Event`; the
@@ -615,6 +617,22 @@ a step is a commit-sized unit.
   and 19). Seven kinds in one frame, 9 cases, 266 assertions, the whole tree 19 tests,
   sanitizers green. A `/code-review` of the PR moved the step's second landing: the seam, the
   pointer snapshot, the shared row writer, two fixture guards and the C# `ref` mapping.
+- **A fourth landing, not yet built**, from a later review: those three commits shipped no bulk
+  form, so `bwapi_game_get_event()` was the only way to drain a frame and a host paid a crossing
+  per event (§5.6, decision 24). Replace it with `bwapi_game_get_events` — one spec entry,
+  `returns: struct_array:event` with `self: game` (it needs a connection, and phase 2's exit
+  checklist covers every `self` ≠ `none` export) and `source: src/bulk.cpp`, over `write_rows()`
+  at `src/abi_internal.h:192` with the fill lambda `write_struct()` uses today. `Game::getEvents`
+  then backs both the count and the table, the way `UnitType::requiredUnits` backs an accessor
+  and a table (`abispec.py`'s uniqueness check already permits it), and `Event::getType` joins
+  the other four field accessors as a `skip:`, so the four existing skip strings restate the new
+  name. Exports stay 248, skips go 28 to 29, the backlog stays 706. `struct_out:` is left with
+  no user, which is unremarkable — `struct_in:` and `struct_array_out:` have had none since 1.2
+  and 3.1's `bwapi_unit_command` is the first — so `check_struct_out()` and `write_struct()`
+  stay in `abi_internal.h` as the convention's wrappers rather than being retired. Touches
+  `spec/game.yaml`, `spec/structs.yaml`, `src/bulk.cpp`, `tests/read_write/events.cpp` and the
+  regenerated output; the C# `ref` mapping in `bindings/csharp/gen.py` goes untested until 3.1
+  brings a `struct_in:`. One commit.
 
 ### 2.2 Bulk grids
 
