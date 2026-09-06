@@ -646,11 +646,11 @@ the two land here as one step and two commits, in this order.
   `struct_out:` parameter, `bwapi_game_get_event`, gains `int32_t out_size` before the second
   commit removes it. The headers, `*.gen.cpp` and `api.json` diff; `bwapi_c2.def` does not, since
   it carries names and not signatures. `tests/regen_check.sh` is the proof.
-- Tests, `tests/read_write/stride.cpp`: R12's three consumer/library pairings against a real
-  table export, driving one buffer across two calls at a stride larger than the row and checking
-  every row of the second call — the case that was corrupt and is the reason the step exists. A
-  `cap` shorter than the total; a stride too small to hold `size` itself latching
-  `BWAPI_ERR_BAD_BUFFER`; a stride larger than the row zero-filled past the known fields.
+- Tests: R12's three consumer/library pairings against a real table export, driving one buffer
+  across two calls at a stride larger than the row and checking every row of the second call —
+  the case that was corrupt and is the reason the step exists. A `cap` shorter than the total; a
+  stride too small to hold `size` itself latching `BWAPI_ERR_BAD_BUFFER`; a stride larger than
+  the row zero-filled past the known fields.
 - **Then the drain**, as the second commit. One spec entry, `returns: struct_array:event` with
   `self: game` and `source: src/bulk.cpp`, over the new `write_rows()` with the fill lambda
   `write_struct()` uses today. `bwapi_game_get_event()` goes (decision 24), so `Game::getEvents`
@@ -666,6 +666,18 @@ the two land here as one step and two commits, in this order.
   wrappers, now carrying the caller's size as a parameter.
 - Then the how-to §16.2 plans, as a third commit: draining a frame's events, in C and over the
   generated Python raw layer, under `site/content/how-to/`.
+- **Done**, three commits. The stride test landed in `tests/types_test.cpp`'s existing "the
+  stride rule on a table" case rather than a new `tests/read_write/stride.cpp`: that case already
+  drove the older- and newer-consumer pairings against `bwapi_race_table`, so it wanted the reuse
+  subcase added, not a second file duplicating it. Reverting `write_rows()` to the old aliasing
+  makes that subcase fail on its first assertion, which is how the regression is known to be
+  load-bearing. The event suite's struct-out cases became struct-array cases on the drain — queue
+  order against the fixture's seven kinds, `cap` of 0 with NULL, a short `cap`, both strides, the
+  reuse, and the `BAD_BUFFER` pair — and its out-of-range latch moved to
+  `bwapi_game_event_text()`. 9 cases, 369 assertions, the whole tree 19 tests, `regen_check`
+  green. The predicted numbers all held: 248 exports, `game.yaml`'s skips 28 to 29, backlog 706.
+  The how-to shows the drain where it sits rather than inside §4.1's loop, because
+  `bwapi_game_is_in_game()` is a 2.6 getter and the page compiles against what exists today.
 
 ### 2.3 Bulk grids
 
