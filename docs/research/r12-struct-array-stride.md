@@ -7,10 +7,10 @@ No submodules and no BWAPI: the defect is in the boundary's own convention, not 
 BWAPI does.
 
 **Headline: element zero's `size` carries the caller's stride *in* and the callee's filled byte
-count *out*, and the callee's write destroys the caller's value. A consumer that reuses one
-buffer across frames — which §4's retry idiom and §14's example both tell it to do — reads
-corrupt rows from the second frame onward, silently, and only when its header is newer than the
-DLL it loaded.** That is precisely the forward-compatibility case the size prefix exists to
+count *out*, and the callee's write destroys the caller's value. §4's retry idiom tells a
+consumer to size one buffer and reuse it every frame, and nothing tells it that the `size` field
+must be re-set on every call. A consumer that sets it once reads corrupt rows from the second
+frame onward, silently, and only when its header is newer than the DLL it loaded.** That is precisely the forward-compatibility case the size prefix exists to
 serve, so the mechanism fails in the one situation it was added for. The flat requiredUnits
 table and the fifteen per-class tables ship this convention today; they escape it only because
 a type table is read once, not per frame.
@@ -19,7 +19,9 @@ a type table is read once, not per frame.
 
 `write_rows()`, `write_row()` and `write_struct()` copied verbatim out of `abi_internal.h`, then
 driven the way a consumer is told to drive them: allocate once, set element zero's `size` once,
-call every frame. Three consumer/library pairings, because the prefix exists for the mismatched
+call every frame. §14's C example survives only because it re-sets `size` inside the frame loop,
+beside a `realloc` it also repeats — and it says nothing about why, so a reader hoisting either
+out of the loop, which is the obvious tidy-up, breaks it. Three consumer/library pairings, because the prefix exists for the mismatched
 ones — a consumer whose row matches the library's, one compiled against a **newer** header than
 the DLL it loaded, and one against an **older** header.
 
@@ -54,7 +56,9 @@ to the array form**, where one field is read once for the whole array and writte
 
 ## 3. What it costs to detect
 
-Nothing in the current suite would catch it. Every test calls a table once. `bwapi_event`'s
+Nothing in the current suite would catch it, and nothing in the plan warns about it: §4 says to
+reuse the buffer and never says the field is load-bearing on every call. Every test calls a
+table once. `bwapi_event`'s
 suite sets `size` fresh on each call because each case builds its own struct. A consumer only
 meets it after shipping, against a DLL older than its header, on the second frame — the
 hardest possible reproduction, and the failure mode is misread data rather than a crash, so it
