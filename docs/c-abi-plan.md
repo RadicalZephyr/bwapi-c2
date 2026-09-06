@@ -1025,9 +1025,20 @@ memory. Revisit only with a measured need.
 ### 5.6 Events
 
 `Broodwar->getEvents()` returns a **`std::list<Event>`**, and `BWAPI::Event` holds a heap
-`std::string*`. Indexing a `std::list` directly would be O(n²) over a frame's events, so **the
-event list is snapshotted into a vector during `bwapi_client_update()`, and indices are stable
-until the next one.**
+`std::string*`. **`bwapi_client_update()` snapshots that list's nodes into a vector, and a
+position in it means the same thing to every export until the next update.** One description of
+the frame's events, which the drain below, `bwapi_game_event_text()`'s index and §8.2's BWEM
+dispatch all read.
+
+The snapshot is **eager, and stays eager** (R13). An earlier draft justified it as avoiding
+O(n²) indexing of a `std::list`; that was an argument about the per-index accessor decision 24
+deleted, and it no longer applies. The live question is the opposite one — whether a host that
+never reads events should pay for a snapshot at all — and it is answered by measurement: an
+ordinary frame costs **4.9 ns** and a `MatchStart`-sized one **427 ns**, of which 70–95% is the
+list walk rather than the vector. Filling it lazily on first use would save such a host about
+118 ns per second of game time, and nothing at all once BWEM is initialised, since §8.2's
+`UnitDestroy` dispatch walks the same list every frame whether the host asks or not. §7 row 18
+carries the variants.
 
 ```c
 typedef struct bwapi_event {
