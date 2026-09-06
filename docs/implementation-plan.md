@@ -604,6 +604,15 @@ a step is a commit-sized unit.
 - Tests: three events of different kinds round-trip; the text of a `SendText` event through
   the string convention; an out-of-range index is the neutral value plus latch; an output
   struct with a larger `size` is zero-filled past the known fields.
+- **Done**, three commits: the exports, the fixture's text events, the suite. `bwapi_event` is
+  the first non-table struct in `structs.yaml` and `spec/game.yaml` opens with the three
+  `source:` entries into `src/bulk.cpp` plus the 28 skips for the rest of `BWAPI::Event`; the
+  ABI has 248 exports and the backlog 706 entries. The second bullet was already true of the
+  0.10 builder except for text: an `event(type, text, player)` overload fills
+  `data->eventStrings` the way the server does. The out-of-range latch is `INVALID_HANDLE`,
+  the struct-out check is `check_struct_out()`/`write_struct()` beside `write_rows()`, and the
+  suite fills the vector through `bwapi_c2::snapshot_events()` (§7 rows 18 and 19). Seven
+  kinds in one frame, 8 cases, 257 assertions, the whole tree 19 tests, sanitizers green.
 
 ### 2.2 Bulk grids
 
@@ -974,6 +983,8 @@ changes a §4 convention.
 | 15 | The per-class bulk tables are generated from `spec/structs.yaml`, each field naming the accessor it mirrors in `from:` and a `table:` block declaring the function (1.5) | Hand-written in `src/bulk.cpp`, as 1.5 said | A row that is a pure function of the spec is what the generator exists for; the test that checks every row against the accessor of the same id is the same either way, and 72 fields typed by hand is 72 places to be wrong. The flat `requiredUnits` table stays hand-written: it is the one shape a `from:` cannot express |
 | 16 | The Python and C# raw layers are generated in CI from `api.json` and never committed (1.7) | Check them in under rule 2 | Rule 2 names the ABI's own outputs, which something compiles against; a raw layer is a pure function of `api.json` that CI regenerates on every run, and committing it would put the same diff in two places. `regen.py` leaves them alone; the `gen.py` of each binding is the only way to make one |
 | 17 | The spec's `self` has `game` and `bwem_map` beside the plan's list, and entries may carry `source:` instead of `body:` (1.2) | `none` for everything without a handle; hand-written functions specced with an empty `body:` | Without `game`, a `Game::mapName()` wrapper and a `UnitType::maxHitPoints()` wrapper are both `none` and the emitter cannot tell which needs the connected check; without `source:`, a hand-written definition would have to be pasted into YAML to be declared. Both are format, documented in `docs/spec-format.md` |
+| 18 | Fixture-driven suites fill the event vector by calling `bwapi_c2::snapshot_events()`, the step `bwapi_client_update()` runs after its own pump (2.1) | The fixture calls `bwapi_client_update()`; or the accessors snapshot `getEvents()` lazily on a frame-count change | `update()` blocks on the pipe, and the fixture links the closure, not the ABI. A lazy snapshot keyed on the frame count would serve a stale list across the menu-frame updates that do not advance it. The hook is the shape the errors suite already uses for `bind_abi_thread()`, and the suite that needs it sees `src/` the same way |
+| 19 | An event index outside the frame's events latches `BWAPI_ERR_INVALID_HANDLE` (2.1) | A new `BWAPI_ERR_OUT_OF_RANGE` | The index is checked the way §6.2 checks a handle, against the range it could be in, which for an event is the snapshot's size; the message carries the index and the count. A fifth ABI-own code would be one more line for the header to explain and for a wrapper to map, for a distinction the message already makes |
 
 ### Questions worth settling before 0.2
 
