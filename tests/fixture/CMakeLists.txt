@@ -10,8 +10,8 @@ else()
 endif()
 
 # doctest's runtime and main(), compiled once.
-add_library(bwapi_c2_doctest_main OBJECT "${CMAKE_SOURCE_DIR}/tests/support/doctest_main.cpp")
-target_include_directories(bwapi_c2_doctest_main PUBLIC "${CMAKE_SOURCE_DIR}/tests/support")
+add_library(bwapi_c2_doctest_main OBJECT "${PROJECT_SOURCE_DIR}/tests/support/doctest_main.cpp")
+target_include_directories(bwapi_c2_doctest_main PUBLIC "${PROJECT_SOURCE_DIR}/tests/support")
 
 # bwapi_c2_add_test(<name> <source>...): a doctest executable over the fixture, registered with
 # CTest under its own name so a failure names the suite.

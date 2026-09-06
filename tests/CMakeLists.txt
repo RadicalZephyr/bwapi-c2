@@ -2,7 +2,7 @@
 
 # The public headers alone, for tests that must see them exactly as a consumer does.
 add_library(bwapi_c2_headers INTERFACE)
-target_include_directories(bwapi_c2_headers INTERFACE "${CMAKE_SOURCE_DIR}/include")
+target_include_directories(bwapi_c2_headers INTERFACE "${PROJECT_SOURCE_DIR}/include")
 
 add_subdirectory(header_hygiene)
 
