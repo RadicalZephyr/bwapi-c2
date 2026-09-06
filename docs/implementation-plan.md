@@ -317,7 +317,7 @@ Explanation pages can be written alongside the code they explain instead of afte
 - Commits: *"Add the Zola site skeleton with the four Diátaxis sections"*, *"Add the site
   templates and stylesheet"*, *"Add two Explanation pages: why a C ABI, and the license"*,
   *"Add docs.yml: check and build on PRs, deploy to Pages from main"*. **Done**, with Zola
-  pinned at 0.19.2. That version has no `--skip-external-links` flag; the mechanism is
+  pinned at 0.23.4. That version has no `--skip-external-links` flag; the mechanism is
   `[link_checker] external_level = "warn"` in `config.toml`, which the weekly job flips to
   `error`. The stylesheet lives in `site/sass/` (Zola compiles it), keeping `site/static/` empty
   as the step says. **Still to do by hand:** the Pages source setting, and the first deploy,
