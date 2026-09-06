@@ -170,7 +170,11 @@ TEST_CASE("the builder refuses R11.6's overlapping mineral layout") {
   // The same field on the same tiles is a deliberate stack only if the call says so.
   CHECK_THROWS_AS(f.neutral(UnitTypes::Resource_Mineral_Field, 20, 13), FixtureError);
   CHECK_NOTHROW(f.neutral(UnitTypes::Resource_Mineral_Field, 20, 13, 1500, true));
-  // A different type on identical tiles is not an identical stack.
+  // A different type on identical tiles is not an identical stack. Type_2 is 2x1 like the
+  // field already there, so only the type comparison can be the reason this throws; a geyser
+  // (4x2) would fail on geometry before the type is looked at.
+  CHECK_THROWS_AS(f.neutral(UnitTypes::Resource_Mineral_Field_Type_2, 20, 13, 1500, true), FixtureError);
+  // And a geyser (4x2) whose footprint reaches across other neutrals' tiles fails on geometry.
   CHECK_THROWS_AS(f.neutral(UnitTypes::Resource_Vespene_Geyser, 20, 13, 5000, true), FixtureError);
   // One free tile between fields is fine.
   CHECK_NOTHROW(f.neutral(UnitTypes::Resource_Mineral_Field, 23, 13));
