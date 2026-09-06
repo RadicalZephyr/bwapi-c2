@@ -4,8 +4,8 @@
 #include <bwem.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
-#include <cstring>
 
 namespace bwapi_c2::test {
 
@@ -13,9 +13,9 @@ namespace {
 
 constexpr int kNeutralPlayer = 11;
 
+// snprintf rather than strncpy: always NUL-terminates, and MSVC does not deprecate it (C4996).
 void copy_string(char* dst, size_t cap, const char* src) {
-  std::strncpy(dst, src, cap - 1);
-  dst[cap - 1] = '\0';
+  std::snprintf(dst, cap, "%s", src);
 }
 
 }  // namespace
