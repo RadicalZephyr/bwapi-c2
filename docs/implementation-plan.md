@@ -752,7 +752,7 @@ Now the volume, one spec file and one `*.gen.cpp` per interface, in this order: 
 | llvm-cov function coverage of `*.gen.cpp` is 100% under the fixture suites (the fuzz run is excluded from this measure, since bad input is not "exercised") | linux CI, reported not gated until the number is 100 |
 | Fuzz green under sanitizers | linux CI |
 | `check_coverage.py` backlog contains only phase-3 items (commands, BWEM reads) | by hand |
-| Reference pages exist for every export (automatic from `emit_docs.py`); the frame-loop page and the "size buffers with the retry idiom" and "latch or callback" how-tos are written, since phase 2 is when their subject matter lands | docs CI, review |
+| Reference pages exist for every export (automatic from `emit_docs.py`); the frame-loop page and the "size buffers with the retry idiom", "drain a frame's events" and "latch or callback" how-tos are written, since phase 2 is when their subject matter lands | docs CI, review |
 
 ---
 

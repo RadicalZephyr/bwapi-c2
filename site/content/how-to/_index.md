@@ -15,8 +15,8 @@ What does not belong here: a first run from nothing (tutorial), the facts about 
 (reference), and why the design is what it is (explanation).
 
 Guides are written as the tasks arrive. Planned first: consuming the DLL from C, Python, C# and
-Rust; the retry idiom for sizing buffers; choosing between the sticky error latch and the error
-callback; running the differential test against a real StarCraft installation; and the pin-bump
-procedure.
+Rust; the retry idiom for sizing buffers; draining a frame's events and handing them to a host's
+own dispatch; choosing between the sticky error latch and the error callback; running the
+differential test against a real StarCraft installation; and the pin-bump procedure.
 
 [how-to guide]: https://diataxis.fr/how-to-guides/

@@ -2166,7 +2166,7 @@ section is rewritten until it does:
 | Section | Job | First contents |
 |---|---|---|
 | **Tutorials** | Learning by doing, one path, guaranteed to work | A first bot in C (the §14 loop, explained); a first bot in Python over the raw layer |
-| **How-to guides** | A task the reader already has | Consume the DLL from C, Python, C#, Rust; size buffers with the retry idiom; choose between the latch and the error callback; initialise BWEM and find the natural; run the differential test against a real installation; bump a pin |
+| **How-to guides** | A task the reader already has | Consume the DLL from C, Python, C#, Rust; size buffers with the retry idiom; drain a frame's events and fan them out to a host's own subscribers (§5.6); choose between the latch and the error callback; initialise BWEM and find the natural; run the differential test against a real installation; bump a pin |
 | **Reference** | The facts, generated (16.1) | Every function, constant family, struct and error code; the frame loop; `api.json`'s fields; the divergence register |
 | **Explanation** | Why it is the way it is | Why a C ABI over the real `Game` rather than another protocol port; why client mode; why integer handles; why the error channel is sticky; why positions pack; why the fixtures are synthetic; what the license asks of a bot author |
 
