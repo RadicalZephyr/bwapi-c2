@@ -184,10 +184,14 @@ A `body:` never re-implements the prologue, never `try`s and never touches the e
 except to latch. Everything a body could get wrong about the boundary is generated around it.
 
 For every `body:` and `source:` entry the emitter also writes a `static_assert` that the `cpp`
-declaration exists with the signature the spec claims (plan §9): a `body:` is opaque to the
-coverage audit, and this is what keeps it from being a hole. The assertion is on the member
-pointer's type, so a changed return type or parameter list at a pin bump fails the build of
-`*.gen.cpp` rather than the audit.
+declaration exists (plan §9): a `body:` is opaque to the coverage audit, and this is what keeps
+it from being a hole. The assertion proves existence and no more. For an unoverloaded name it
+takes the member's address, which fails to compile when the name is gone; for an overloaded one
+it forms a call with the parameter types the spec spells, which fails when no overload accepts
+them. Neither checks the return type, because the spec never states a C++ signature to check
+against. What catches a changed return type at a pin bump is the body itself: it is fully typed
+C++ that converts the call's result to the return kind, so a `UnitType` that became a
+`std::pair` fails the build of `*.gen.cpp` in the body, not in the assertion.
 
 ### 1.7 `doc` is reference-shaped by rule
 

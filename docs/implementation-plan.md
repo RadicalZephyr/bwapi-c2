@@ -438,8 +438,8 @@ others. Commit each once it produces correct output for `Player`.
 - `emit_source.py` → `src/player.gen.cpp` (and the other `*.gen.cpp` as specs arrive). The
   per-function template: `BWAPI_C2_API <ret> BWAPI_C2_CALL <c>(<params>) { return guard<...>(
   [&]{ thread check; resolve-and-guard; <body or generated call>; }); }`. For a `body:` entry,
-  also emit the `static_assert` that the named C++ overload exists with the declared
-  signature (§9).
+  also emit the `static_assert` that the named C++ overload exists (§9); the body's own
+  compilation is what checks its types.
 - `emit_def.py` → `bwapi_c2.def`, sorted by name, no ordinals.
 - `emit_json.py` → `api.json`: `api_json_version: 1`, `abi_version`, then every entry's C
   name, parameters with types, return kind, `self`, `reentrant`, `legit_none`, `doc`, plus the

@@ -1517,8 +1517,10 @@ bool)"` is overload resolution by string match; assert uniqueness in the generat
 bind the wrong overload eventually.
 
 **`body:` entries still declare full types, and CI emits a `static_assert` that the referenced
-C++ overload exists with the declared signature.** Otherwise an opaque C++ body is a hole in both
-the coverage audit and `api.json`.
+C++ overload exists.** Otherwise an opaque C++ body is a hole in both the coverage audit and
+`api.json`. The assertion is an existence check and nothing more: the spec carries no C++
+signature to compare against, so a changed return type is caught by the body's own compilation,
+which converts the call's result to the return kind (`docs/spec-format.md` §1.6).
 
 **The `.def` file is the golden symbol artifact.** Generate it, check it in, and have CI assert
 `dumpbin /exports` matches. Assign no ordinals; binding is by name only.
