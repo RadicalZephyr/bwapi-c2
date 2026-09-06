@@ -72,6 +72,16 @@ jobs:
         run: ./tools/test-sanitizers.sh
       - name: Test
         run: ctest --test-dir build --output-on-failure
+      # The Python raw layer against the built library: generate from api.json, import, call. The
+      # C# layer builds on Windows only, where dotnet is; the Python check runs here too because it
+      # is the cheap one (implementation plan 1.7).
+      - name: Generate and import the Python raw layer
+        if: matrix.name == 'plain'
+        env:
+          BWAPI_C2_LIBRARY: ${{ github.workspace }}/build/libbwapi_c2.so
+        run: |
+          python3 bindings/python/gen.py
+          python3 -c "import sys; sys.path.insert(0, 'bindings/python'); import bwapi_c2._raw as r; assert r.bwapi_client_version() == 10003; assert r.bwapi_unittype_max_hit_points(r.BWAPI_UNIT_ZERG_ZERGLING) == 35; print('python raw layer ok')"
 
   # The artifact: bwapi_c2.dll for Win32 and x64 with the CRT static, exporting exactly what
   # bwapi_c2.def says, undecorated. The header hygiene tests run under /TC here, the layout
@@ -96,6 +106,19 @@ jobs:
       # in this step and not repeated after it.
       - name: Test
         run: ctest --test-dir build --build-config Release --output-on-failure
+      # Both raw layers from api.json (implementation plan 1.7): the Python one imports against the
+      # DLL just built and calls into it; the C# one builds. Behaviour comes in phase 4 with the
+      # transport fake. Neither generator needs anything beyond the standard library.
+      - name: Generate and import the Python raw layer
+        env:
+          BWAPI_C2_LIBRARY: ${{ github.workspace }}\build\Release\bwapi_c2.dll
+        run: |
+          python bindings/python/gen.py
+          python -c "import sys; sys.path.insert(0, 'bindings/python'); import bwapi_c2._raw as r; assert r.bwapi_client_version() == 10003; assert r.bwapi_unittype_max_hit_points(r.BWAPI_UNIT_ZERG_ZERGLING) == 35; print('python raw layer ok')"
+      - name: Generate and build the C# raw layer
+        run: |
+          python bindings/csharp/gen.py
+          dotnet build bindings/csharp/BwapiC2.Raw/BwapiC2.Raw.csproj -c Release --nologo
       - uses: actions/upload-artifact@v4
         with:
           name: bwapi_c2-${{ matrix.arch }}
