@@ -57,6 +57,8 @@ include(cmake/closure.cmake)
 # second copy of BWAPI. Every file is named; never glob.
 add_library(bwapi_c2_abi OBJECT
   src/abi.cpp
+  src/client.cpp
+  src/handles.cpp
 )
 target_link_libraries(bwapi_c2_abi PUBLIC bwapi_c2_closure)
 target_include_directories(bwapi_c2_abi
