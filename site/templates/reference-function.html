@@ -1,13 +1,65 @@
 {% extends "page.html" %}
-{# One exported function (plan section 16.1). emit_docs.py writes a page per function with typed
-   front matter under [extra]: c_name, signature, handle_kind, params, returns, neutral,
-   legit_none, reentrant, since, divergences, guides. Phase 1 fills this template in; until then
-   it renders as an ordinary page. #}
+{# One exported function (plan section 16.1). emit_docs.py writes a page per function from
+   api.json with every field under [extra]: c, section, signature, cpp, self, params, returns,
+   reentrant, legit_none, generated, since, guides, divergences, and the latches derived from
+   the kinds. This template does all the layout; the emitter formats nothing. #}
 {% block content %}
+{% set x = page.extra %}
 <article class="reference">
   <h1><code>{{ page.title }}</code></h1>
-  {% if page.extra.since %}<span class="badge">since {{ page.extra.since }}</span>{% endif %}
-  {% if page.extra.signature %}<pre class="signature"><code class="language-c">{{ page.extra.signature }}</code></pre>{% endif %}
+  <p class="badges">
+    {% if x.since %}<span class="badge">since {{ x.since }}</span>{% else %}<span class="badge badge-muted">unstable, pre-1.0</span>{% endif %}
+    {% if x.reentrant == "forbidden" %}<span class="badge badge-warn">not re-entrant</span>{% else %}<span class="badge">re-entrant: allowed</span>{% endif %}
+    {% if x.legit_none %}<span class="badge">may legitimately return BWAPI_NONE</span>{% endif %}
+    {% if x.self != "none" %}<span class="badge badge-muted">self: {{ x.self }}</span>{% endif %}
+  </p>
+  <pre class="signature"><code class="language-c">{{ x.signature }};</code></pre>
+
   {{ page.content | safe }}
+
+  {% if x.params %}
+  <h2>Parameters</h2>
+  <table>
+    <thead><tr><th>Name</th><th>C type</th><th>Kind</th></tr></thead>
+    <tbody>
+    {% for p in x.params %}
+      <tr><td><code>{{ p.name }}</code></td><td><code>{{ p.c_type }}</code></td><td>{{ p.type }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <h2>Returns</h2>
+  <table>
+    <tbody>
+      <tr><th>C type</th><td><code>{{ x.returns.c_type }}</code></td></tr>
+      <tr><th>Kind</th><td>{{ x.returns.kind }}{% if x.returns.scale %} ({{ x.returns.scale }} scale){% endif %}</td></tr>
+      {% if x.returns.constants %}<tr><th>Ids</th><td>{% if x.returns.family_page %}<a href="{{ get_url(path="@/" ~ x.returns.family_page) | safe }}"><code>{{ x.returns.constants }}_*</code></a>{% else %}<code>{{ x.returns.constants }}_*</code>{% endif %}</td></tr>{% endif %}
+      {% if x.returns.handle_kind %}<tr><th>Handle</th><td>{{ x.returns.handle_kind }}</td></tr>{% endif %}
+      {% if x.returns.kind != "void" %}<tr><th>Neutral value</th><td>{{ x.returns.neutral }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+
+  <h2>Latches</h2>
+  <ul>
+    {% for l in x.latches %}<li>{{ l }}</li>{% endfor %}
+  </ul>
+
+  <h2>Provenance</h2>
+  <table>
+    <tbody>
+      {% if x.cpp %}<tr><th>Wraps</th><td><code>{{ x.cpp }}</code></td></tr>{% else %}<tr><th>Wraps</th><td>nothing: the ABI's own surface</td></tr>{% endif %}
+      <tr><th>Wrapper</th><td>{% if x.generated %}generated from the spec entry alone{% else %}hand-written body{% endif %}</td></tr>
+      <tr><th>Section</th><td>{{ x.section }}</td></tr>
+      {% if x.divergences %}<tr><th>Departs from upstream</th><td>{% for d in x.divergences %}<a href="{{ config.extra.plan | safe }}#15-divergence-register">§15 #{{ d }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td></tr>{% endif %}
+    </tbody>
+  </table>
+
+  {% if x.guides %}
+  <h2>Related guides</h2>
+  <ul>
+    {% for g in x.guides %}<li><a href="{{ get_url(path=g) | safe }}">{{ g }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
 </article>
 {% endblock content %}

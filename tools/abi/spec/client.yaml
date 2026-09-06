@@ -1,0 +1,136 @@
+# The ABI's own surface (plan section 4): versions, the sticky error channel, the two
+# callbacks, and the client lifecycle (section 4.1). Every entry here is defined by hand in
+# src/abi.cpp or src/client.cpp and carries source:, so the header, the .def and api.json see
+# it like everything else while the emitter writes no wrapper for it. Only the four lifecycle
+# calls account for a C++ declaration (BWAPI::Client's); the rest wrap nothing.
+
+- c: bwapi_abi_version
+  self: none
+  params: [{name: major, type: int32_out}, {name: minor, type: int32_out}, {name: patch, type: int32_out}]
+  returns: void
+  source: src/abi.cpp
+  doc: >-
+    The ABI's own version, written to the three out-params; any of them may be NULL and is then
+    skipped. 0.x is explicitly unstable; append-only begins at 1.0, the exit of the consumers
+    phase. Three int32_t out-params rather than a packed word, so there is nothing to document
+    about packing.
+
+- c: bwapi_abi_version_string
+  self: none
+  returns: string_out
+  source: src/abi.cpp
+  doc: >-
+    The ABI's own version as "major.minor.patch".
+
+- c: bwapi_client_version
+  self: none
+  returns: int32
+  source: src/abi.cpp
+  doc: >-
+    BWAPI::CLIENT_VERSION of the pinned BWAPI (10003 today). The server refuses a client whose
+    version differs from its own, so a host can check compatibility before connecting.
+
+- c: bwapi_revision
+  self: none
+  returns: int32
+  source: src/abi.cpp
+  doc: >-
+    SVN_REV of the pinned BWAPI, from upstream's own revision generator (plan section 10.3).
+
+- c: bwapi_is_debug
+  self: none
+  returns: bool32
+  source: src/abi.cpp
+  doc: >-
+    1 when the pinned BWAPI was built with BUILD_DEBUG, 0 otherwise.
+
+- c: bwapi_last_error
+  self: none
+  returns: int32
+  source: src/abi.cpp
+  doc: >-
+    The BWAPI_ERR_* code latched by the first failing call since the last bwapi_clear_last_error(),
+    or BWAPI_ERR_NONE. Sticky: successful calls do not touch it and reading does not clear it.
+    Clear it at the top of the frame and check it before bwapi_client_update(). This is a
+    different lifetime from BWAPI's own Game::getLastError(), which is per call and comes back
+    through bwapi_game_get_last_error().
+
+- c: bwapi_last_error_message
+  self: none
+  returns: string_out
+  source: src/abi.cpp
+  doc: >-
+    The message that came with the latched code: a BWEM::Exception's what(), the two unit ids of
+    an overlap, the name of the export a bad handle was passed to. Empty when nothing is latched.
+
+- c: bwapi_clear_last_error
+  self: none
+  returns: void
+  source: src/abi.cpp
+  doc: >-
+    Resets the sticky error channel to BWAPI_ERR_NONE and clears its message.
+
+- c: bwapi_set_log_callback
+  self: none
+  params: [{name: cb, type: "callback:bwapi_log_callback"}, {name: user, type: void_ptr}]
+  returns: void
+  source: src/abi.cpp
+  doc: >-
+    Installs where the ABI's own diagnostics go, at BWAPI_LOG_* levels, with the user pointer
+    handed back on every call. NULL disables. Client::connect() still writes to std::cout and
+    std::cerr itself in this version.
+
+- c: bwapi_set_error_callback
+  self: none
+  params: [{name: cb, type: "callback:bwapi_error_callback"}, {name: user, type: void_ptr}]
+  returns: void
+  source: src/abi.cpp
+  doc: >-
+    Installs a callback invoked at the moment an error is latched, with the code, its message
+    and the user pointer, so a wrapper can raise at the failing call rather than poll. Off by
+    default; NULL disables. The sticky latch is unchanged either way. The callback runs with the
+    re-entrancy depth raised, so a mutating call from inside it is rejected with
+    BWAPI_ERR_REENTRANT_MUTATION once that guard is emitted.
+
+- cpp: "Client::connect"
+  c: bwapi_client_connect
+  self: none
+  returns: bool32
+  reentrant: forbidden
+  source: src/client.cpp
+  doc: >-
+    Connects to a running BWAPI server over its shared memory and pipe. Returns 1 on success and
+    0 when no server is up, in which case retry after a pause. Records the calling thread as the
+    thread every later call must come from. Already connected: latches
+    BWAPI_ERR_ALREADY_CONNECTED and returns 0.
+
+- cpp: "Client::update"
+  c: bwapi_client_update
+  self: game
+  returns: void
+  reentrant: forbidden
+  source: src/client.cpp
+  doc: >-
+    Ends the frame and BLOCKS on the pipe until the server hands back the next one. Every event
+    index and snapshot from the previous frame is invalid afterwards. If the server has gone
+    away, bwapi_client_is_connected() is 0 on return.
+
+- cpp: "Client::disconnect"
+  c: bwapi_client_disconnect
+  self: none
+  returns: void
+  reentrant: forbidden
+  source: src/client.cpp
+  doc: >-
+    Tears down BWEM first, because its map points into the game data, then the client. Safe to
+    call when not connected. Unlike the rest of the ABI's own surface it is thread-checked, so a
+    call from a thread other than the one that connected tears nothing down and latches
+    BWAPI_ERR_WRONG_THREAD.
+
+- cpp: "Client::isConnected"
+  c: bwapi_client_is_connected
+  self: none
+  returns: bool32
+  source: src/client.cpp
+  doc: >-
+    1 while connected. Becomes 0 when the server goes away during bwapi_client_update().

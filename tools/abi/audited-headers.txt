@@ -1,0 +1,83 @@
+# The coverage audit's universe (plan section 9; implementation plan 1.6). check_coverage.py
+# parses exactly these headers with libclang and reports every public method or free function
+# in them that has neither a spec entry nor a rule-bearing skip:. "Complete" means complete
+# relative to this list, so the list is written down rather than implied by section 1.8's counts.
+#
+# One header per line, relative to the include roots in clang_flags.py. A line beginning with
+# `exclude` names a header that is deliberately NOT audited, with the rule that excludes it after
+# the #, so the omission is a decision and not an oversight.
+
+# The six interface headers.
+BWAPI/Game.h
+BWAPI/Unit.h
+BWAPI/Player.h
+BWAPI/Force.h
+BWAPI/Region.h
+BWAPI/Bullet.h
+
+# The fourteen type-class headers behind section 5.8's accessors, and Color.
+BWAPI/UnitType.h
+BWAPI/WeaponType.h
+BWAPI/TechType.h
+BWAPI/UpgradeType.h
+BWAPI/Race.h
+BWAPI/UnitSizeType.h
+BWAPI/DamageType.h
+BWAPI/ExplosionType.h
+BWAPI/BulletType.h
+BWAPI/Order.h
+BWAPI/PlayerType.h
+BWAPI/GameType.h
+BWAPI/UnitCommandType.h
+BWAPI/Error.h
+BWAPI/Color.h
+
+# The remaining public value types.
+BWAPI/UnitCommand.h
+BWAPI/Event.h
+BWAPI/Position.h
+
+# BWEM's six bot-facing headers (section 8.1).
+map.h
+area.h
+cp.h
+base.h
+neutral.h
+tiles.h
+
+# Not audited, and why.
+exclude BWAPI/Filters.h            # §5.4: no filters cross C; the host filters the id array or the snapshot
+exclude BWAPI/UnaryFilter.h        # §5.4, with Filters.h
+exclude BWAPI/BestFilter.h         # §5.4: getBestUnit is not exposed at all
+exclude BWAPI/ComparisonFilter.h   # §5.4, with Filters.h
+exclude BWAPI/ArithmaticFilter.h   # §5.4, with Filters.h
+exclude BWAPI/Unitset.h            # §5.7: unit-set broadcasts are a host loop over an exported function
+exclude BWAPI/Playerset.h          # §5.7, with Unitset.h; a Playerset crosses as an id array
+exclude BWAPI/Forceset.h           # §5.7, with Unitset.h
+exclude BWAPI/Regionset.h          # §5.7, with Unitset.h
+exclude BWAPI/Bulletset.h          # §6.3: bullets cross as a snapshot, never as a set
+exclude BWAPI/SetContainer.h       # §5.7: the set template itself
+exclude BWAPI/Interface.h          # §5.9: registerEvent and the client-side event scheduler are C++-only
+exclude BWAPI/InterfaceEvent.h     # §5.9, with Interface.h
+exclude BWAPI/Type.h               # the CRTP base; getName and isValid are specced per derived class in types.yaml
+exclude BWAPI/AIModule.h           # module mode is Appendix A, a scoped v2 item
+exclude BWAPI/TournamentAction.h   # module mode, Appendix A
+exclude BWAPI/BroodwarOutputDevice.h # §5.9: the stream output devices are not exposed
+exclude BWAPI/Streams.h            # §5.9, and excluded from the closure (cmake/closure.cmake)
+exclude BWAPI/Constants.h          # §5.8: constants come from the enumerations, not from here
+exclude BWAPI/CoordinateType.h     # an enumeration only; exported as a constant family
+exclude BWAPI/EventType.h          # an enumeration only; exported as a constant family
+exclude BWAPI/Flag.h               # an enumeration only; exported as a constant family
+exclude BWAPI/Input.h              # enumerations only (Key, MouseButton); exported as constant families
+exclude BWAPI/Latency.h            # an enumeration only; exported as a constant family
+exclude BWAPI/Client/*.h           # not public: the client implementation the closure builds
+exclude BWAPI.h                    # the umbrella; declares only CLIENT_VERSION and Broodwar, both covered by client.yaml
+exclude bwem.h                     # BWEM's umbrella; declares nothing of its own
+exclude defs.h                     # BWEM's Exception and macros; the exception is classified by the boundary (§4)
+exclude utils.h                    # BWEM internals: §15 #15
+exclude graph.h                    # BWEM internals: §15 #15
+exclude gridMap.h                  # BWEM internals: §15 #15
+exclude mapImpl.h                  # BWEM internals: §15 #15
+exclude mapDrawer.h                # BWEM internals: §15 #15
+exclude mapPrinter.h               # BWEM internals: §15 #15
+exclude bwapiExt.h                 # BWEM internals: §15 #15

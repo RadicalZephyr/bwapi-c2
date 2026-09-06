@@ -1,0 +1,432 @@
+# PlayerInterface (BWAPI/Player.h): the proving ground for the generator (implementation plan
+# 1.4), because it is small and dull. Every method exports; nothing here needs a body except
+# the two that take a second player and the one whose default argument the C caller spells.
+#
+# A player id is 0..11. Ids out of that range latch BWAPI_ERR_INVALID_HANDLE; a slot that no
+# player occupies is in range and answers as BWAPI answers for it, mostly 0 and None.
+
+- cpp: "PlayerInterface::getID"
+  c: bwapi_player_get_id
+  self: player
+  returns: int32
+  doc: >-
+    The player's id, which is the handle itself: 0..11, the slot in the game's player table.
+
+- cpp: "PlayerInterface::getName"
+  c: bwapi_player_get_name
+  self: player
+  returns: string_out
+  doc: >-
+    The player's name, as the game reports it.
+
+- cpp: "PlayerInterface::getUnits"
+  c: bwapi_player_get_units
+  self: player
+  returns: id_array
+  doc: >-
+    The ids of every unit the player owns, incomplete units included, ascending. Units loaded
+    into transports, bunkers, refineries, assimilators or extractors are not included, as in
+    BWAPI.
+
+- cpp: "PlayerInterface::getRace"
+  c: bwapi_player_get_race
+  self: player
+  returns: "type:Race"
+  doc: >-
+    The player's race. BWAPI_RACE_UNKNOWN when the player chose Random and the race has not been
+    revealed to this bot.
+
+- cpp: "PlayerInterface::getType"
+  c: bwapi_player_get_type
+  self: player
+  returns: "type:PlayerType"
+  doc: >-
+    The player's controller type, a BWAPI_PLAYERTYPE_* value. Other bots are reported as human
+    players, as BWAPI reports them.
+
+- cpp: "PlayerInterface::getForce"
+  c: bwapi_player_get_force
+  self: player
+  returns: "handle:force"
+  doc: >-
+    The id of the force (team) the player belongs to.
+
+- cpp: "PlayerInterface::isAlly"
+  c: bwapi_player_is_ally
+  self: player
+  params: [{name: other, type: "handle:player"}]
+  returns: bool32
+  doc: >-
+    1 when the player is allied with the other player. 0 when not, and also when either player
+    is neutral or an observer.
+
+- cpp: "PlayerInterface::isEnemy"
+  c: bwapi_player_is_enemy
+  self: player
+  params: [{name: other, type: "handle:player"}]
+  returns: bool32
+  doc: >-
+    1 when the player is at war with the other player. 0 when not, and also when either player
+    is neutral or an observer.
+
+- cpp: "PlayerInterface::isNeutral"
+  c: bwapi_player_is_neutral
+  self: player
+  returns: bool32
+  doc: >-
+    1 when this is the neutral player, which owns the minerals, geysers and critters.
+
+- cpp: "PlayerInterface::getStartLocation"
+  c: bwapi_player_get_start_location
+  self: player
+  returns: tile_position
+  doc: >-
+    The player's starting location in tile coordinates. BWAPI_TILEPOSITION_NONE when the player
+    has no start location, BWAPI_TILEPOSITION_UNKNOWN when BWAPI could not retrieve it.
+
+- cpp: "PlayerInterface::isVictorious"
+  c: bwapi_player_is_victorious
+  self: player
+  returns: bool32
+  doc: >-
+    1 when the player has achieved victory.
+
+- cpp: "PlayerInterface::isDefeated"
+  c: bwapi_player_is_defeated
+  self: player
+  returns: bool32
+  doc: >-
+    1 when the player has been defeated.
+
+- cpp: "PlayerInterface::leftGame"
+  c: bwapi_player_left_game
+  self: player
+  returns: bool32
+  doc: >-
+    1 when the player has left the game.
+
+- cpp: "PlayerInterface::minerals"
+  c: bwapi_player_minerals
+  self: player
+  returns: int32
+  doc: >-
+    The player's current minerals. 0 when the player's information is inaccessible to this bot.
+
+- cpp: "PlayerInterface::gas"
+  c: bwapi_player_gas
+  self: player
+  returns: int32
+  doc: >-
+    The player's current vespene gas. 0 when the player's information is inaccessible to this bot.
+
+- cpp: "PlayerInterface::gatheredMinerals"
+  c: bwapi_player_gathered_minerals
+  self: player
+  returns: int32
+  doc: >-
+    The minerals the player has gathered since the game began, starting minerals included. 0 when
+    inaccessible.
+
+- cpp: "PlayerInterface::gatheredGas"
+  c: bwapi_player_gathered_gas
+  self: player
+  returns: int32
+  doc: >-
+    The vespene gas the player has gathered since the game began, starting gas included. 0 when
+    inaccessible.
+
+- cpp: "PlayerInterface::repairedMinerals"
+  c: bwapi_player_repaired_minerals
+  self: player
+  returns: int32
+  doc: >-
+    The minerals the player has spent on repairs since the game began. 0 when inaccessible.
+
+- cpp: "PlayerInterface::repairedGas"
+  c: bwapi_player_repaired_gas
+  self: player
+  returns: int32
+  doc: >-
+    The vespene gas the player has spent on repairs since the game began. 0 when inaccessible.
+
+- cpp: "PlayerInterface::refundedMinerals"
+  c: bwapi_player_refunded_minerals
+  self: player
+  returns: int32
+  doc: >-
+    The minerals the player has recovered by cancelling units and structures. 0 when inaccessible.
+
+- cpp: "PlayerInterface::refundedGas"
+  c: bwapi_player_refunded_gas
+  self: player
+  returns: int32
+  doc: >-
+    The vespene gas the player has recovered by cancelling units and structures. 0 when
+    inaccessible.
+
+- cpp: "PlayerInterface::spentMinerals"
+  c: bwapi_player_spent_minerals
+  self: player
+  returns: int32
+  doc: >-
+    The minerals the player has spent, repairs excluded. 0 when inaccessible.
+
+- cpp: "PlayerInterface::spentGas"
+  c: bwapi_player_spent_gas
+  self: player
+  returns: int32
+  doc: >-
+    The vespene gas the player has spent, repairs excluded. 0 when inaccessible.
+
+- cpp: "PlayerInterface::supplyTotal"
+  c: bwapi_player_supply_total
+  self: player
+  params: [{name: race, type: "type:Race"}]
+  returns: int32
+  doc: >-
+    The supply available to the player for the given race, or for the player's own race when
+    race is BWAPI_RACE_NONE. Supply is per race, and the value is double what the game displays,
+    as in BWAPI.
+
+- cpp: "PlayerInterface::supplyUsed"
+  c: bwapi_player_supply_used
+  self: player
+  params: [{name: race, type: "type:Race"}]
+  returns: int32
+  doc: >-
+    The supply the player is using for the given race, or for the player's own race when race is
+    BWAPI_RACE_NONE. Double what the game displays, as in BWAPI.
+
+- cpp: "PlayerInterface::allUnitCount"
+  c: bwapi_player_all_unit_count
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    How many units of the type the player has, incomplete ones included; BWAPI_UNIT_ALL_UNITS
+    counts every type. In-progress Zerg units count as their egg type until they hatch.
+
+- cpp: "PlayerInterface::visibleUnitCount"
+  c: bwapi_player_visible_unit_count
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    How many units of the type the player has that are strictly visible to this bot, even when
+    information on the player is unrestricted; BWAPI_UNIT_ALL_UNITS counts every type.
+
+- cpp: "PlayerInterface::completedUnitCount"
+  c: bwapi_player_completed_unit_count
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    How many completed units of the type the player has; BWAPI_UNIT_ALL_UNITS counts every type.
+
+- cpp: "PlayerInterface::incompleteUnitCount"
+  c: bwapi_player_incomplete_unit_count
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    How many incomplete units of the type the player has, which is the all count less the
+    completed count; BWAPI_UNIT_ALL_UNITS counts every type. Zerg units inside eggs are not
+    counted.
+
+- cpp: "PlayerInterface::deadUnitCount"
+  c: bwapi_player_dead_unit_count
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    How many of the player's units of the type have died; BWAPI_UNIT_ALL_UNITS counts every type.
+
+- cpp: "PlayerInterface::killedUnitCount"
+  c: bwapi_player_killed_unit_count
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    How many units of the type the player has killed; BWAPI_UNIT_ALL_UNITS counts every type.
+
+- cpp: "PlayerInterface::getUpgradeLevel"
+  c: bwapi_player_get_upgrade_level
+  self: player
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: int32
+  doc: >-
+    The level the player has attained for the upgrade, 0 when none.
+
+- cpp: "PlayerInterface::hasResearched"
+  c: bwapi_player_has_researched
+  self: player
+  params: [{name: tech, type: "type:TechType"}]
+  returns: bool32
+  doc: >-
+    1 when the player has researched the technology.
+
+- cpp: "PlayerInterface::isResearching"
+  c: bwapi_player_is_researching
+  self: player
+  params: [{name: tech, type: "type:TechType"}]
+  returns: bool32
+  doc: >-
+    1 while the player is researching the technology.
+
+- cpp: "PlayerInterface::isUpgrading"
+  c: bwapi_player_is_upgrading
+  self: player
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: bool32
+  doc: >-
+    1 while the player is upgrading the upgrade.
+
+- cpp: "PlayerInterface::getColor"
+  c: bwapi_player_get_color
+  self: player
+  returns: "type:Color"
+  doc: >-
+    The player's colour as a palette index, the value the drawing functions take.
+
+- cpp: "PlayerInterface::getTextColor"
+  c: bwapi_player_get_text_color
+  self: player
+  returns: int32
+  doc: >-
+    The control character that switches text to the player's colour, as a BWAPI_TEXT_* value;
+    put it in a string passed to the drawing and text functions.
+
+- cpp: "PlayerInterface::maxEnergy"
+  c: bwapi_player_max_energy
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    The maximum energy a unit of the type has for this player, the player's energy upgrades
+    included.
+
+- cpp: "PlayerInterface::topSpeed"
+  c: bwapi_player_top_speed
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: double
+  doc: >-
+    The top speed of a unit of the type for this player, the player's speed upgrades included.
+
+- cpp: "PlayerInterface::weaponMaxRange"
+  c: bwapi_player_weapon_max_range
+  self: player
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: >-
+    The maximum range of the weapon for this player, the player's range upgrades included.
+
+- cpp: "PlayerInterface::sightRange"
+  c: bwapi_player_sight_range
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    The sight range of a unit of the type for this player, the player's sight upgrades included.
+
+- cpp: "PlayerInterface::weaponDamageCooldown"
+  c: bwapi_player_weapon_damage_cooldown
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    The ground weapon cooldown of a unit of the type for this player, the player's attack speed
+    upgrades included.
+
+- cpp: "PlayerInterface::armor"
+  c: bwapi_player_armor
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: int32
+  doc: >-
+    The armour a unit of the type has for this player, upgrades included.
+
+- cpp: "PlayerInterface::damage"
+  c: bwapi_player_damage
+  self: player
+  params: [{name: weapon, type: "type:WeaponType"}]
+  returns: int32
+  doc: >-
+    The damage the weapon deals for this player, upgrades included.
+
+- cpp: "PlayerInterface::getUnitScore"
+  c: bwapi_player_get_unit_score
+  self: player
+  returns: int32
+  doc: >-
+    The player's unit score, as on the end-game score screen.
+
+- cpp: "PlayerInterface::getKillScore"
+  c: bwapi_player_get_kill_score
+  self: player
+  returns: int32
+  doc: >-
+    The player's kill score, as on the end-game score screen.
+
+- cpp: "PlayerInterface::getBuildingScore"
+  c: bwapi_player_get_building_score
+  self: player
+  returns: int32
+  doc: >-
+    The player's building score, as on the end-game score screen.
+
+- cpp: "PlayerInterface::getRazingScore"
+  c: bwapi_player_get_razing_score
+  self: player
+  returns: int32
+  doc: >-
+    The player's razing score, as on the end-game score screen.
+
+- cpp: "PlayerInterface::getCustomScore"
+  c: bwapi_player_get_custom_score
+  self: player
+  returns: int32
+  doc: >-
+    The player's custom score, which map triggers set.
+
+- cpp: "PlayerInterface::isObserver"
+  c: bwapi_player_is_observer
+  self: player
+  returns: bool32
+  doc: >-
+    1 when the player is an observer, typically in a use-map-settings observer game.
+
+- cpp: "PlayerInterface::getMaxUpgradeLevel"
+  c: bwapi_player_get_max_upgrade_level
+  self: player
+  params: [{name: upgrade, type: "type:UpgradeType"}]
+  returns: int32
+  doc: >-
+    The highest level of the upgrade available to this player, which map settings may lower
+    from the type's own maximum.
+
+- cpp: "PlayerInterface::isResearchAvailable"
+  c: bwapi_player_is_research_available
+  self: player
+  params: [{name: tech, type: "type:TechType"}]
+  returns: bool32
+  doc: >-
+    1 when the player is allowed to research the technology under the map's settings.
+
+- cpp: "PlayerInterface::isUnitAvailable"
+  c: bwapi_player_is_unit_available
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}]
+  returns: bool32
+  doc: >-
+    1 when the player is allowed to create units of the type under the map's settings.
+
+- cpp: "PlayerInterface::hasUnitTypeRequirement"
+  c: bwapi_player_has_unit_type_requirement
+  self: player
+  params: [{name: unit_type, type: "type:UnitType"}, {name: amount, type: int32}]
+  returns: bool32
+  doc: >-
+    1 when the player has at least amount completed units of the type, counting the equivalents
+    BWAPI counts: a Lair or Hive for a Hatchery, a Hive for a Lair, a sieged tank for an unsieged
+    one, and both Templar and Archon forms. Pass 1 for the plain requirement.

@@ -1,11 +1,45 @@
 {% extends "page.html" %}
-{# One table page (plan section 16.1): a constant family, a struct with its field offsets and
-   sizes and flag bits, or the error codes. emit_docs.py writes the table as Markdown in the
-   body and the family's metadata under [extra]. Phase 1 fills this template in. #}
+{# One table page (plan section 16.1): a constant family, or a struct with its fields and flag
+   bits. emit_docs.py writes the rows under [extra.rows] (and [extra.flags] for a struct) and
+   the family's or struct's metadata under [extra]; the doc is the body. #}
 {% block content %}
+{% set x = page.extra %}
 <article class="reference reference-table">
-  <h1>{{ page.title }}</h1>
-  {% if page.extra.since %}<span class="badge">since {{ page.extra.since }}</span>{% endif %}
+  <h1>{% if x.kind == "struct" %}<code>{{ page.title }}</code>{% else %}{{ page.title }}{% endif %}</h1>
+  {% if x.since %}<span class="badge">since {{ x.since }}</span>{% endif %}
   {{ page.content | safe }}
+
+  {% if x.kind == "constants" %}
+  <p class="muted">{{ x.count }} constants under <code>{{ x.prefix }}_</code>{% if x.cpp %}, from <code>{{ x.cpp }}</code>{% else %}, the ABI's own{% endif %}.</p>
+  <table>
+    <thead><tr><th>Name</th><th>Value</th>{% if x.cpp %}<th>C++</th>{% endif %}<th></th></tr></thead>
+    <tbody>
+    {% for r in x.rows %}
+      <tr><td><code>{{ r.name }}</code></td><td>{{ r.value }}</td>{% if x.cpp %}<td><code>{{ r.cpp_name }}</code></td>{% endif %}<td>{{ r.doc }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Every struct begins with <code>int32_t size</code>, which the caller sets on input and the callee on output (the conventions at the top of <code>bwapi_c2_types.h</code>).{% if x.table_c %} One row per <code>{{ x.table_class }}</code> id, filled by <a href="{{ get_url(path="@/reference/bulk/" ~ x.table_c ~ ".md") | safe }}"><code>{{ x.table_c }}</code></a>.{% endif %}</p>
+  <table>
+    <thead><tr><th>Field</th><th>Type</th><th></th></tr></thead>
+    <tbody>
+    {% for r in x.rows %}
+      <tr><td><code>{{ r.name }}</code></td><td><code>{{ r.type }}</code></td><td>{{ r.doc }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if x.flags %}
+  <h2>Flag bits</h2>
+  <table>
+    <thead><tr><th>Flag</th><th>Bit</th><th></th></tr></thead>
+    <tbody>
+    {% for f in x.flags %}
+      <tr><td><code>{{ f.name }}</code></td><td>{{ f.bit }}</td><td>{{ f.doc }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% endif %}
 </article>
 {% endblock content %}

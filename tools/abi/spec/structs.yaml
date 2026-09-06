@@ -1,0 +1,199 @@
+# The PODs that cross the boundary (plan section 4; docs/spec-format.md section 3). Phase 1
+# holds the bulk type tables (section 5.8): one row struct per type class with the scalar
+# accessors as fields, each field naming the accessor it mirrors in from:, and a table: block
+# that declares the bwapi_<class>_table() function the emitter writes from these fields; and
+# the flat requiredUnits row, whose table is hand-written in src/bulk.cpp. The events, bullets
+# and snapshots of phase 2 join this file. A class with no scalar accessor beyond getName and
+# isValid (Order, Error, BulletType, ...) has no table: its id is its whole row.
+
+- name: unittype_row
+  doc: "One row of the UnitType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only."
+  table:
+    class: UnitType
+    c: bwapi_unittype_table
+    doc: "Fills one bwapi_unittype_row per UnitType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: get_race, type: "type:Race", from: "UnitType::getRace"}
+    - {name: required_tech, type: "type:TechType", from: "UnitType::requiredTech"}
+    - {name: cloaking_tech, type: "type:TechType", from: "UnitType::cloakingTech"}
+    - {name: armor_upgrade, type: "type:UpgradeType", from: "UnitType::armorUpgrade"}
+    - {name: max_hit_points, type: int32, from: "UnitType::maxHitPoints"}
+    - {name: max_shields, type: int32, from: "UnitType::maxShields"}
+    - {name: max_energy, type: int32, from: "UnitType::maxEnergy"}
+    - {name: armor, type: int32, from: "UnitType::armor"}
+    - {name: mineral_price, type: int32, from: "UnitType::mineralPrice"}
+    - {name: gas_price, type: int32, from: "UnitType::gasPrice"}
+    - {name: build_time, type: int32, from: "UnitType::buildTime"}
+    - {name: supply_required, type: int32, from: "UnitType::supplyRequired"}
+    - {name: supply_provided, type: int32, from: "UnitType::supplyProvided"}
+    - {name: space_required, type: int32, from: "UnitType::spaceRequired"}
+    - {name: space_provided, type: int32, from: "UnitType::spaceProvided"}
+    - {name: build_score, type: int32, from: "UnitType::buildScore"}
+    - {name: destroy_score, type: int32, from: "UnitType::destroyScore"}
+    - {name: size_type, type: "type:UnitSizeType", from: "UnitType::size"}
+    - {name: tile_width, type: int32, from: "UnitType::tileWidth"}
+    - {name: tile_height, type: int32, from: "UnitType::tileHeight"}
+    - {name: dimension_left, type: int32, from: "UnitType::dimensionLeft"}
+    - {name: dimension_up, type: int32, from: "UnitType::dimensionUp"}
+    - {name: dimension_right, type: int32, from: "UnitType::dimensionRight"}
+    - {name: dimension_down, type: int32, from: "UnitType::dimensionDown"}
+    - {name: width, type: int32, from: "UnitType::width"}
+    - {name: height, type: int32, from: "UnitType::height"}
+    - {name: seek_range, type: int32, from: "UnitType::seekRange"}
+    - {name: sight_range, type: int32, from: "UnitType::sightRange"}
+    - {name: ground_weapon, type: "type:WeaponType", from: "UnitType::groundWeapon"}
+    - {name: max_ground_hits, type: int32, from: "UnitType::maxGroundHits"}
+    - {name: air_weapon, type: "type:WeaponType", from: "UnitType::airWeapon"}
+    - {name: max_air_hits, type: int32, from: "UnitType::maxAirHits"}
+    - {name: top_speed, type: double, from: "UnitType::topSpeed"}
+    - {name: acceleration, type: int32, from: "UnitType::acceleration"}
+    - {name: halt_distance, type: int32, from: "UnitType::haltDistance"}
+    - {name: turn_radius, type: int32, from: "UnitType::turnRadius"}
+    - {name: can_produce, type: bool32, from: "UnitType::canProduce"}
+    - {name: can_attack, type: bool32, from: "UnitType::canAttack"}
+    - {name: can_move, type: bool32, from: "UnitType::canMove"}
+    - {name: is_flyer, type: bool32, from: "UnitType::isFlyer"}
+    - {name: regenerates_hp, type: bool32, from: "UnitType::regeneratesHP"}
+    - {name: is_spellcaster, type: bool32, from: "UnitType::isSpellcaster"}
+    - {name: has_permanent_cloak, type: bool32, from: "UnitType::hasPermanentCloak"}
+    - {name: is_invincible, type: bool32, from: "UnitType::isInvincible"}
+    - {name: is_organic, type: bool32, from: "UnitType::isOrganic"}
+    - {name: is_mechanical, type: bool32, from: "UnitType::isMechanical"}
+    - {name: is_robotic, type: bool32, from: "UnitType::isRobotic"}
+    - {name: is_detector, type: bool32, from: "UnitType::isDetector"}
+    - {name: is_resource_container, type: bool32, from: "UnitType::isResourceContainer"}
+    - {name: is_resource_depot, type: bool32, from: "UnitType::isResourceDepot"}
+    - {name: is_refinery, type: bool32, from: "UnitType::isRefinery"}
+    - {name: is_worker, type: bool32, from: "UnitType::isWorker"}
+    - {name: requires_psi, type: bool32, from: "UnitType::requiresPsi"}
+    - {name: requires_creep, type: bool32, from: "UnitType::requiresCreep"}
+    - {name: is_two_units_in_one_egg, type: bool32, from: "UnitType::isTwoUnitsInOneEgg"}
+    - {name: is_burrowable, type: bool32, from: "UnitType::isBurrowable"}
+    - {name: is_cloakable, type: bool32, from: "UnitType::isCloakable"}
+    - {name: is_building, type: bool32, from: "UnitType::isBuilding"}
+    - {name: is_addon, type: bool32, from: "UnitType::isAddon"}
+    - {name: is_flying_building, type: bool32, from: "UnitType::isFlyingBuilding"}
+    - {name: is_neutral, type: bool32, from: "UnitType::isNeutral"}
+    - {name: is_hero, type: bool32, from: "UnitType::isHero"}
+    - {name: is_powerup, type: bool32, from: "UnitType::isPowerup"}
+    - {name: is_beacon, type: bool32, from: "UnitType::isBeacon"}
+    - {name: is_flag_beacon, type: bool32, from: "UnitType::isFlagBeacon"}
+    - {name: is_special_building, type: bool32, from: "UnitType::isSpecialBuilding"}
+    - {name: is_spell, type: bool32, from: "UnitType::isSpell"}
+    - {name: produces_creep, type: bool32, from: "UnitType::producesCreep"}
+    - {name: produces_larva, type: bool32, from: "UnitType::producesLarva"}
+    - {name: is_mineral_field, type: bool32, from: "UnitType::isMineralField"}
+    - {name: is_critter, type: bool32, from: "UnitType::isCritter"}
+    - {name: can_build_addon, type: bool32, from: "UnitType::canBuildAddon"}
+
+- name: weapontype_row
+  doc: "One row of the WeaponType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only."
+  table:
+    class: WeaponType
+    c: bwapi_weapontype_table
+    doc: "Fills one bwapi_weapontype_row per WeaponType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: get_tech, type: "type:TechType", from: "WeaponType::getTech"}
+    - {name: what_uses, type: "type:UnitType", from: "WeaponType::whatUses"}
+    - {name: damage_amount, type: int32, from: "WeaponType::damageAmount"}
+    - {name: damage_bonus, type: int32, from: "WeaponType::damageBonus"}
+    - {name: damage_cooldown, type: int32, from: "WeaponType::damageCooldown"}
+    - {name: damage_factor, type: int32, from: "WeaponType::damageFactor"}
+    - {name: upgrade_type, type: "type:UpgradeType", from: "WeaponType::upgradeType"}
+    - {name: damage_type, type: "type:DamageType", from: "WeaponType::damageType"}
+    - {name: explosion_type, type: "type:ExplosionType", from: "WeaponType::explosionType"}
+    - {name: min_range, type: int32, from: "WeaponType::minRange"}
+    - {name: max_range, type: int32, from: "WeaponType::maxRange"}
+    - {name: inner_splash_radius, type: int32, from: "WeaponType::innerSplashRadius"}
+    - {name: median_splash_radius, type: int32, from: "WeaponType::medianSplashRadius"}
+    - {name: outer_splash_radius, type: int32, from: "WeaponType::outerSplashRadius"}
+    - {name: targets_air, type: bool32, from: "WeaponType::targetsAir"}
+    - {name: targets_ground, type: bool32, from: "WeaponType::targetsGround"}
+    - {name: targets_mechanical, type: bool32, from: "WeaponType::targetsMechanical"}
+    - {name: targets_organic, type: bool32, from: "WeaponType::targetsOrganic"}
+    - {name: targets_non_building, type: bool32, from: "WeaponType::targetsNonBuilding"}
+    - {name: targets_non_robotic, type: bool32, from: "WeaponType::targetsNonRobotic"}
+    - {name: targets_terrain, type: bool32, from: "WeaponType::targetsTerrain"}
+    - {name: targets_org_or_mech, type: bool32, from: "WeaponType::targetsOrgOrMech"}
+    - {name: targets_own, type: bool32, from: "WeaponType::targetsOwn"}
+
+- name: techtype_row
+  doc: "One row of the TechType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only."
+  table:
+    class: TechType
+    c: bwapi_techtype_table
+    doc: "Fills one bwapi_techtype_row per TechType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: get_race, type: "type:Race", from: "TechType::getRace"}
+    - {name: mineral_price, type: int32, from: "TechType::mineralPrice"}
+    - {name: gas_price, type: int32, from: "TechType::gasPrice"}
+    - {name: research_time, type: int32, from: "TechType::researchTime"}
+    - {name: energy_cost, type: int32, from: "TechType::energyCost"}
+    - {name: what_researches, type: "type:UnitType", from: "TechType::whatResearches"}
+    - {name: get_weapon, type: "type:WeaponType", from: "TechType::getWeapon"}
+    - {name: targets_unit, type: bool32, from: "TechType::targetsUnit"}
+    - {name: targets_position, type: bool32, from: "TechType::targetsPosition"}
+    - {name: get_order, type: "type:Order", from: "TechType::getOrder"}
+    - {name: required_unit, type: "type:UnitType", from: "TechType::requiredUnit"}
+
+- name: upgradetype_row
+  doc: "One row of the UpgradeType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only."
+  table:
+    class: UpgradeType
+    c: bwapi_upgradetype_table
+    doc: "Fills one bwapi_upgradetype_row per UpgradeType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: get_race, type: "type:Race", from: "UpgradeType::getRace"}
+    - {name: mineral_price_factor, type: int32, from: "UpgradeType::mineralPriceFactor"}
+    - {name: gas_price_factor, type: int32, from: "UpgradeType::gasPriceFactor"}
+    - {name: upgrade_time_factor, type: int32, from: "UpgradeType::upgradeTimeFactor"}
+    - {name: max_repeats, type: int32, from: "UpgradeType::maxRepeats"}
+    - {name: what_upgrades, type: "type:UnitType", from: "UpgradeType::whatUpgrades"}
+
+- name: race_row
+  doc: "One row of the Race table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only."
+  table:
+    class: Race
+    c: bwapi_race_table
+    doc: "Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: get_worker, type: "type:UnitType", from: "Race::getWorker"}
+    - {name: get_resource_depot, type: "type:UnitType", from: "Race::getResourceDepot"}
+    - {name: get_refinery, type: "type:UnitType", from: "Race::getRefinery"}
+    - {name: get_transport, type: "type:UnitType", from: "Race::getTransport"}
+    - {name: get_supply_provider, type: "type:UnitType", from: "Race::getSupplyProvider"}
+
+- name: playertype_row
+  doc: "One row of the PlayerType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only."
+  table:
+    class: PlayerType
+    c: bwapi_playertype_table
+    doc: "Fills one bwapi_playertype_row per PlayerType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: is_lobby_type, type: bool32, from: "PlayerType::isLobbyType"}
+    - {name: is_game_type, type: bool32, from: "PlayerType::isGameType"}
+
+- name: color_row
+  doc: "One row of the Color table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only."
+  table:
+    class: Color
+    c: bwapi_color_table
+    doc: "Fills one bwapi_color_row per Color id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: red, type: int32, from: "Color::red"}
+    - {name: green, type: int32, from: "Color::green"}
+    - {name: blue, type: int32, from: "Color::blue"}
+
+- name: required_unit
+  doc: "One requirement of one unit type, for the flat requiredUnits table: the type, the type it requires, and how many of it."
+  fields:
+    - {name: type, type: "type:UnitType", doc: "the unit type that has the requirement"}
+    - {name: required_type, type: "type:UnitType", doc: "the unit type it requires"}
+    - {name: count, type: int32, doc: "how many of the required type"}

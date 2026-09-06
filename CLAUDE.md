@@ -17,15 +17,25 @@ what changed and why in prose. For plan revisions, the body walks the sections t
 ## What this repository is
 
 `bwapi-c2` is a flat C ABI over BWAPI (the C++ StarCraft: Brood War bot API) and BWEM (map
-analysis), so languages with a C FFI can drive both without C++. **Phase 0 of the
-implementation plan is done; the ABI itself has one export.** The repository holds the design
+analysis), so languages with a C FFI can drive both without C++. **Phases 0 and 1 of the
+implementation plan are done: the generator exists and the ABI has 246 exports** (the ABI's own
+surface, `Player`, the static type data and the bulk tables). The repository holds the design
 plan, the research that settled its premises, the license files, the two pinned submodules
 under `third_party/` (see `docs/pins.md`; both nest their sources one directory down, and
 BWEM's own submodules must never be fetched), the CMake build of the BWAPI+BWEM closure and
-`bwapi_c2.dll`, the three hand-written header skeletons under `include/`, `src/abi.cpp`, the
-test suite under `tests/`, the Zola site under `site/`, and two workflows. `tools/abi/` and
-`bindings/` do not exist yet; they arrive with phases 1 and 4. Do not create them, or hand-write
-any wrapper beyond `bwapi_abi_version`, outside the implementation plan's step order.
+`bwapi_c2.dll`, the generator under `tools/abi/`, the generated headers, sources, `.def` and
+`api.json`, the hand-written boundary under `src/`, the raw-layer generators under
+`bindings/`, the test suite under `tests/`, the Zola site under `site/`, and two workflows.
+Phases 2 to 4 add the read surface, the write surface with BWEM, and the consumers; do not
+write ahead of the implementation plan's step order.
+
+**The spec is the source of truth and the generated files are output.** `include/bwapi_c2.h`,
+`include/bwapi_c2_types.h`, `src/*.gen.cpp`, `bwapi_c2.def` and `api.json` are written by
+`tools/abi/regen.py` from `tools/abi/spec/*.yaml` and checked in; never edit them by hand. A
+change to the ABI is a change to a spec file (`docs/spec-format.md`), then `regen.py`, then a
+commit of both; CI fails on any diff (`tests/regen_check.sh`). `bwapi_c2_bwem.h` is still the
+phase-0 skeleton until phase 3 generates it. The raw layers under `bindings/` are generated
+from `api.json` by each binding's `gen.py` and are not committed.
 
 ## Layout
 
@@ -84,8 +94,10 @@ ctest --test-dir build --output-on-failure
 - `cmake/closure.cmake` names every translation unit of the closure; never glob.
 - `tests/` is one directory per row of `§11`'s table: `header_hygiene`, `layout_dump`,
   `derive_closure`, `exports`, `fixture` (the shared synthetic-`GameData` builder every suite
-  uses), `read_write`, `bwem`. New tests use `bwapi_c2_add_test()` and the `Fixture` builder;
-  do not build a `GameData` by hand. The one exception is `tests/bwem/overlap_asserts.cpp`: it
+  uses), `read_write`, `errors`, `bwem`, plus `types_test.cpp` (the static type data, no game)
+  and `regen_check.sh` (a CI step). New tests use `bwapi_c2_add_test()` and the `Fixture`
+  builder; do not build a `GameData` by hand. The exports are tested through the C boundary
+  (`read_write/player.cpp` is the model), with the ABI linked as objects beside the fixture. The one exception is `tests/bwem/overlap_asserts.cpp`: it
   must die inside BWEM's `Neutral::PutOnTiles()` to prove the assertions are live, so it cannot
   be a doctest runner and plants its overlapping neutrals past the builder on purpose. Do not
   copy its shape for tests that can use the helper.
@@ -95,6 +107,11 @@ ctest --test-dir build --output-on-failure
   green sanitized run, `tools/test-sanitizers.sh <build-dir>` proves the sanitizers are live in
   that build: every object instrumented, both runtimes linked into every image, and a
   use-after-free, a signed overflow and a leak each diagnosed.
+- The generator: `tools/abi/draft_spec.py` drafts a spec from clang's AST (never the source of
+  truth; drafts are gitignored), `tools/abi/regen.py` runs the five emitters, and
+  `tools/abi/audit.sh` runs the coverage audit against `tools/abi/backlog.txt`, off the merge
+  path (needs `pip install libclang` at clang's major, and PyYAML for the emitters). The audit's
+  numbers are recorded in `docs/pins.md` at each pin.
 - The site: `cd site && zola check && zola build`, with Zola at the version pinned in
   `.github/workflows/docs.yml`. Reference pages under `site/content/reference/` are generated
   and gitignored.

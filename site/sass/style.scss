@@ -145,7 +145,12 @@ th { background: var(--paper-raised); }
   background: var(--badge-bg);
   color: var(--badge-ink);
   vertical-align: middle;
+  margin-right: 0.35em;
 }
+.badge-muted { background: var(--paper-raised); color: var(--ink-muted); }
+.badge-warn { background: #f3e3c4; color: #6b4a00; }
+.badges { margin: -0.5em 0 1em; }
+.reference th { text-align: left; white-space: nowrap; }
 
 // Previous/next.
 .pager { display: flex; justify-content: space-between; gap: 1rem; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: var(--size-small); }

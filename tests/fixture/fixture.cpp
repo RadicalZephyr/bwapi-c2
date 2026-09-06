@@ -159,11 +159,24 @@ int Fixture::allocate_unit(int owner, BWAPI::UnitType type, int x, int y, const 
   u.upgrade = BWAPI::UpgradeTypes::None;
   data_->unitArray[id] = id;
   data_->initialUnitCount = unit_count_;
-  // The server keeps per-type tallies in PlayerData that nothing derives from the unit sets.
+  // The server keeps per-type tallies in PlayerData that nothing derives from the unit sets,
+  // and beside each type it tallies the four class pseudo-types the same way
+  // (BWAPI/Source/BWAPI/GameUnits.cpp): AllUnits always; Buildings or Men by isBuilding(); and
+  // Factories for a building that canProduce() or producesLarva().
   auto& tally = data_->players[owner];
-  ++tally.allUnitCount[type];
-  ++tally.visibleUnitCount[type];
-  if (opts.completed) ++tally.completedUnitCount[type];
+  auto count = [&](BWAPI::UnitType t) {
+    ++tally.allUnitCount[t];
+    ++tally.visibleUnitCount[t];
+    if (opts.completed) ++tally.completedUnitCount[t];
+  };
+  count(type);
+  count(BWAPI::UnitTypes::AllUnits);
+  if (type.isBuilding()) {
+    count(BWAPI::UnitTypes::Buildings);
+    if (type.canProduce() || type.producesLarva()) count(BWAPI::UnitTypes::Factories);
+  } else {
+    count(BWAPI::UnitTypes::Men);
+  }
   return id;
 }
 

@@ -50,6 +50,14 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: true          # direct submodules only; never `recursive`
+      # The generator's one dependency beyond the toolchain matrix. Only the plain configuration
+      # runs the regenerate-and-diff check; the generated files are the same in all three.
+      - name: Install PyYAML
+        if: matrix.name == 'plain'
+        run: sudo apt-get install -y --no-install-recommends python3-yaml
+      - name: Regenerate and diff the generated files
+        if: matrix.name == 'plain'
+        run: tests/regen_check.sh
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
@@ -64,6 +72,16 @@ jobs:
         run: ./tools/test-sanitizers.sh
       - name: Test
         run: ctest --test-dir build --output-on-failure
+      # The Python raw layer against the built library: generate from api.json, import, call. The
+      # C# layer builds on Windows only, where dotnet is; the Python check runs here too because it
+      # is the cheap one (implementation plan 1.7).
+      - name: Generate and import the Python raw layer
+        if: matrix.name == 'plain'
+        env:
+          BWAPI_C2_LIBRARY: ${{ github.workspace }}/build/libbwapi_c2.so
+        run: |
+          python3 bindings/python/gen.py
+          python3 -c "import sys; sys.path.insert(0, 'bindings/python'); import bwapi_c2._raw as r; assert r.bwapi_client_version() == 10003; assert r.bwapi_unittype_max_hit_points(r.BWAPI_UNIT_ZERG_ZERGLING) == 35; print('python raw layer ok')"
 
   # The artifact: bwapi_c2.dll for Win32 and x64 with the CRT static, exporting exactly what
   # bwapi_c2.def says, undecorated. The header hygiene tests run under /TC here, the layout
@@ -80,6 +98,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: true          # direct submodules only; never `recursive`
+      # ctypes can only load a DLL of Python's own bitness, so the Win32 leg gets a 32-bit
+      # Python and the x64 leg a 64-bit one; the raw-layer import then proves both DLLs load.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: ${{ matrix.arch == 'Win32' && 'x86' || 'x64' }}
       - name: Configure
         run: cmake -S . -B build -A ${{ matrix.arch }} -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
       - name: Build
@@ -88,6 +112,19 @@ jobs:
       # in this step and not repeated after it.
       - name: Test
         run: ctest --test-dir build --build-config Release --output-on-failure
+      # Both raw layers from api.json (implementation plan 1.7): the Python one imports against the
+      # DLL just built and calls into it; the C# one builds. Behaviour comes in phase 4 with the
+      # transport fake. Neither generator needs anything beyond the standard library.
+      - name: Generate and import the Python raw layer
+        env:
+          BWAPI_C2_LIBRARY: ${{ github.workspace }}\build\Release\bwapi_c2.dll
+        run: |
+          python bindings/python/gen.py
+          python -c "import sys; sys.path.insert(0, 'bindings/python'); import bwapi_c2._raw as r; assert r.bwapi_client_version() == 10003; assert r.bwapi_unittype_max_hit_points(r.BWAPI_UNIT_ZERG_ZERGLING) == 35; print('python raw layer ok')"
+      - name: Generate and build the C# raw layer
+        run: |
+          python bindings/csharp/gen.py
+          dotnet build bindings/csharp/BwapiC2.Raw/BwapiC2.Raw.csproj -c Release --nologo
       - uses: actions/upload-artifact@v4
         with:
           name: bwapi_c2-${{ matrix.arch }}

@@ -1,0 +1,741 @@
+# The declarations the coverage audit reports as unaccounted: the phase-2 and phase-3
+# backlog (implementation plan 1.6). check_coverage.py --backlog passes while the
+# unaccounted set is exactly this list; a declaration that gains a spec entry or a skip
+# must leave it, and a new one must be decided, not added. Rewritten by --write-backlog.
+BWEM::Area::AccessibleFrom
+BWEM::Area::AccessibleNeighbours
+BWEM::Area::AddChokePoints
+BWEM::Area::AddGeyser
+BWEM::Area::AddMineral
+BWEM::Area::AddTileInformation
+BWEM::Area::Bases()
+BWEM::Area::BottomRight
+BWEM::Area::BoundingBoxSize
+BWEM::Area::ChokePoints()
+BWEM::Area::ChokePoints(Area *)
+BWEM::Area::ChokePointsByArea
+BWEM::Area::ComputeDistances
+BWEM::Area::CreateBases
+BWEM::Area::GetMap
+BWEM::Area::Geysers
+BWEM::Area::GroupId
+BWEM::Area::HighGroundPercentage
+BWEM::Area::Id
+BWEM::Area::LowGroundPercentage
+BWEM::Area::MaxAltitude
+BWEM::Area::Minerals
+BWEM::Area::MiniTiles
+BWEM::Area::OnMineralDestroyed
+BWEM::Area::PostCollectInformation
+BWEM::Area::SetGroupId
+BWEM::Area::Top
+BWEM::Area::TopLeft
+BWEM::Area::UpdateAccessibleNeighbours
+BWEM::Area::VeryHighGroundPercentage
+BWEM::Base::BlockingMinerals
+BWEM::Base::Center
+BWEM::Base::GetArea
+BWEM::Base::Geysers
+BWEM::Base::Location
+BWEM::Base::Minerals
+BWEM::Base::OnMineralDestroyed
+BWEM::Base::SetStartingLocation
+BWEM::Base::Starting
+BWEM::ChokePoint::AccessibleFrom
+BWEM::ChokePoint::Blocked
+BWEM::ChokePoint::BlockingNeutral
+BWEM::ChokePoint::Center
+BWEM::ChokePoint::DistanceFrom
+BWEM::ChokePoint::Geometry
+BWEM::ChokePoint::GetAreas
+BWEM::ChokePoint::GetMap
+BWEM::ChokePoint::GetPathTo
+BWEM::ChokePoint::Index
+BWEM::ChokePoint::IsPseudo
+BWEM::ChokePoint::OnBlockingNeutralDestroyed
+BWEM::ChokePoint::PathBackTrace
+BWEM::ChokePoint::Pos
+BWEM::ChokePoint::PosInArea
+BWEM::ChokePoint::SetPathBackTrace
+BWEM::Geyser::IsGeyser()
+BWEM::Map::Areas
+BWEM::Map::AutomaticPathUpdate
+BWEM::Map::BaseCount
+BWEM::Map::BreadthFirstSearch()
+BWEM::Map::Center
+BWEM::Map::ChokePointCount
+BWEM::Map::Crop(Position)
+BWEM::Map::Crop(TilePosition)
+BWEM::Map::Crop(WalkPosition)
+BWEM::Map::Draw
+BWEM::Map::EnableAutomaticPathAnalysis
+BWEM::Map::FindBasesForStartingLocations
+BWEM::Map::GetArea(Area::id)
+BWEM::Map::GetArea(TilePosition)
+BWEM::Map::GetArea(WalkPosition)
+BWEM::Map::GetGeyser
+BWEM::Map::GetMineral
+BWEM::Map::GetMiniTile
+BWEM::Map::GetNearestArea(TilePosition)
+BWEM::Map::GetNearestArea(WalkPosition)
+BWEM::Map::GetPath
+BWEM::Map::GetTTile()
+BWEM::Map::GetTTile(TilePosition, utils::check_t)
+BWEM::Map::GetTTile(WalkPosition, utils::check_t)
+BWEM::Map::GetTile
+BWEM::Map::Geysers
+BWEM::Map::Initialize
+BWEM::Map::Initialized
+BWEM::Map::Instance
+BWEM::Map::MaxAltitude
+BWEM::Map::Minerals
+BWEM::Map::MiniTiles
+BWEM::Map::OnMineralDestroyed
+BWEM::Map::OnStaticBuildingDestroyed
+BWEM::Map::RandomPosition
+BWEM::Map::RawFrontier
+BWEM::Map::ResetInstance
+BWEM::Map::Size
+BWEM::Map::StartingLocations
+BWEM::Map::StaticBuildings
+BWEM::Map::Tiles
+BWEM::Map::Valid(Position)
+BWEM::Map::Valid(TilePosition)
+BWEM::Map::Valid(WalkPosition)
+BWEM::Map::WalkSize
+BWEM::Mineral::IsMineral()
+BWEM::MiniTile::Altitude
+BWEM::MiniTile::AltitudeMissing
+BWEM::MiniTile::AreaId
+BWEM::MiniTile::AreaIdMissing
+BWEM::MiniTile::Blocked
+BWEM::MiniTile::Lake
+BWEM::MiniTile::ReplaceAreaId
+BWEM::MiniTile::ReplaceBlockedAreaId
+BWEM::MiniTile::Sea
+BWEM::MiniTile::SeaOrLake
+BWEM::MiniTile::SetAltitude
+BWEM::MiniTile::SetAreaId
+BWEM::MiniTile::SetBlocked
+BWEM::MiniTile::SetLake
+BWEM::MiniTile::SetSea
+BWEM::MiniTile::SetWalkable
+BWEM::MiniTile::Terrain
+BWEM::MiniTile::Walkable
+BWEM::Neutral::BlockedAreas
+BWEM::Neutral::Blocking
+BWEM::Neutral::BottomRight
+BWEM::Neutral::IsGeyser()
+BWEM::Neutral::IsMineral()
+BWEM::Neutral::IsRessource()
+BWEM::Neutral::IsStaticBuilding()
+BWEM::Neutral::LastStacked
+BWEM::Neutral::NextStacked
+BWEM::Neutral::Pos
+BWEM::Neutral::SetBlocking
+BWEM::Neutral::Size
+BWEM::Neutral::TopLeft
+BWEM::Neutral::Type
+BWEM::Neutral::Unit
+BWEM::Ressource::Amount
+BWEM::Ressource::InitialAmount
+BWEM::Ressource::IsRessource()
+BWEM::StaticBuilding::IsStaticBuilding()
+BWEM::Tile::AddNeutral
+BWEM::Tile::AreaId
+BWEM::Tile::Buildable
+BWEM::Tile::Doodad
+BWEM::Tile::GetNeutral
+BWEM::Tile::GroundHeight
+BWEM::Tile::InternalData
+BWEM::Tile::MinAltitude
+BWEM::Tile::RemoveNeutral
+BWEM::Tile::ResetAreaId
+BWEM::Tile::SetAreaId
+BWEM::Tile::SetBuildable
+BWEM::Tile::SetDoodad
+BWEM::Tile::SetGroundHeight
+BWEM::Tile::SetInternalData
+BWEM::Tile::SetMinAltitude
+BWEM::Tile::StackedNeutrals
+BWEM::Tile::Terrain
+BWEM::Tile::Walkable
+BWEM::minAltitudeBottom
+BWEM::minAltitudeLeft
+BWEM::minAltitudeRight
+BWEM::minAltitudeTop
+BWEM::utils::seaSide
+BulletInterface::exists
+BulletInterface::getAngle
+BulletInterface::getID
+BulletInterface::getPlayer
+BulletInterface::getPosition
+BulletInterface::getRemoveTimer
+BulletInterface::getSource
+BulletInterface::getTarget
+BulletInterface::getTargetPosition
+BulletInterface::getType
+BulletInterface::getVelocityX
+BulletInterface::getVelocityY
+BulletInterface::isVisible
+Event::MatchEnd
+Event::MatchFrame
+Event::MatchStart
+Event::MenuFrame
+Event::NukeDetect
+Event::PlayerLeft
+Event::ReceiveText
+Event::SaveGame
+Event::SendText
+Event::UnitComplete
+Event::UnitCreate
+Event::UnitDestroy
+Event::UnitDiscover
+Event::UnitEvade
+Event::UnitHide
+Event::UnitMorph
+Event::UnitRenegade
+Event::UnitShow
+Event::getPlayer
+Event::getPosition
+Event::getText
+Event::getType
+Event::getUnit
+Event::isWinner
+Event::setPlayer
+Event::setPosition
+Event::setText
+Event::setType
+Event::setUnit
+Event::setWinner
+ForceInterface::getID
+ForceInterface::getName
+ForceInterface::getPlayers
+Game::allies
+Game::canBuildHere
+Game::canMake
+Game::canResearch
+Game::canUpgrade
+Game::countdownTimer
+Game::drawBox
+Game::drawBoxMap(Position, Position, Color, bool)
+Game::drawBoxMap(int, int, int, int, Color, bool)
+Game::drawBoxMouse(Position, Position, Color, bool)
+Game::drawBoxMouse(int, int, int, int, Color, bool)
+Game::drawBoxScreen(Position, Position, Color, bool)
+Game::drawBoxScreen(int, int, int, int, Color, bool)
+Game::drawCircle
+Game::drawCircleMap(Position, int, Color, bool)
+Game::drawCircleMap(int, int, int, Color, bool)
+Game::drawCircleMouse(Position, int, Color, bool)
+Game::drawCircleMouse(int, int, int, Color, bool)
+Game::drawCircleScreen(Position, int, Color, bool)
+Game::drawCircleScreen(int, int, int, Color, bool)
+Game::drawDot
+Game::drawDotMap(Position, Color)
+Game::drawDotMap(int, int, Color)
+Game::drawDotMouse(Position, Color)
+Game::drawDotMouse(int, int, Color)
+Game::drawDotScreen(Position, Color)
+Game::drawDotScreen(int, int, Color)
+Game::drawEllipse
+Game::drawEllipseMap(Position, int, int, Color, bool)
+Game::drawEllipseMap(int, int, int, int, Color, bool)
+Game::drawEllipseMouse(Position, int, int, Color, bool)
+Game::drawEllipseMouse(int, int, int, int, Color, bool)
+Game::drawEllipseScreen(Position, int, int, Color, bool)
+Game::drawEllipseScreen(int, int, int, int, Color, bool)
+Game::drawLine
+Game::drawLineMap(Position, Position, Color)
+Game::drawLineMap(int, int, int, int, Color)
+Game::drawLineMouse(Position, Position, Color)
+Game::drawLineMouse(int, int, int, int, Color)
+Game::drawLineScreen(Position, Position, Color)
+Game::drawLineScreen(int, int, int, int, Color)
+Game::drawText
+Game::drawTextMap(Position, char *)
+Game::drawTextMap(int, int, char *)
+Game::drawTextMouse(Position, char *)
+Game::drawTextMouse(int, int, char *)
+Game::drawTextScreen(Position, char *)
+Game::drawTextScreen(int, int, char *)
+Game::drawTriangle
+Game::drawTriangleMap(Position, Position, Position, Color, bool)
+Game::drawTriangleMap(int, int, int, int, int, int, Color, bool)
+Game::drawTriangleMouse(Position, Position, Position, Color, bool)
+Game::drawTriangleMouse(int, int, int, int, int, int, Color, bool)
+Game::drawTriangleScreen(Position, Position, Position, Color, bool)
+Game::drawTriangleScreen(int, int, int, int, int, int, Color, bool)
+Game::elapsedTime
+Game::enableFlag
+Game::enemies
+Game::enemy
+Game::getAPM
+Game::getAllRegions
+Game::getAllUnits
+Game::getAverageFPS
+Game::getBestUnit
+Game::getBuildLocation
+Game::getBullets
+Game::getClientVersion
+Game::getClosestUnit
+Game::getClosestUnitInRectangle
+Game::getDamageFrom
+Game::getDamageTo
+Game::getEvents
+Game::getFPS
+Game::getForce
+Game::getForces
+Game::getFrameCount
+Game::getGameType
+Game::getGeysers
+Game::getGroundHeight(TilePosition)
+Game::getGroundHeight(int, int)
+Game::getInstanceNumber
+Game::getKeyState
+Game::getLastError
+Game::getLastEventTime
+Game::getLatency
+Game::getLatencyFrames
+Game::getLatencyTime
+Game::getMinerals
+Game::getMousePosition
+Game::getMouseState
+Game::getNeutralUnits
+Game::getNukeDots
+Game::getPlayer
+Game::getPlayers
+Game::getRandomSeed
+Game::getRegion
+Game::getRegionAt(Position)
+Game::getRegionAt(int, int)
+Game::getRemainingLatencyFrames
+Game::getRemainingLatencyTime
+Game::getReplayFrameCount
+Game::getRevision
+Game::getScreenPosition
+Game::getSelectedUnits
+Game::getStartLocations
+Game::getStaticGeysers
+Game::getStaticMinerals
+Game::getStaticNeutralUnits
+Game::getUnit
+Game::getUnitsInRadius(Position, int, UnitFilter)
+Game::getUnitsInRadius(int, int, int, UnitFilter)
+Game::getUnitsInRectangle(Position, Position, UnitFilter)
+Game::getUnitsInRectangle(int, int, int, int, UnitFilter)
+Game::getUnitsOnTile(TilePosition, UnitFilter)
+Game::getUnitsOnTile(int, int, UnitFilter)
+Game::hasCreep(TilePosition)
+Game::hasCreep(int, int)
+Game::hasPath
+Game::hasPower(TilePosition, UnitType)
+Game::hasPower(TilePosition, int, int, UnitType)
+Game::hasPower(int, int, UnitType)
+Game::hasPower(int, int, int, int, UnitType)
+Game::hasPowerPrecise(Position, UnitType)
+Game::hasPowerPrecise(int, int, UnitType)
+Game::indexToUnit
+Game::isBattleNet
+Game::isBuildable(TilePosition, bool)
+Game::isBuildable(int, int, bool)
+Game::isDebug
+Game::isExplored(TilePosition)
+Game::isExplored(int, int)
+Game::isFlagEnabled
+Game::isGUIEnabled
+Game::isInGame
+Game::isLatComEnabled
+Game::isMultiplayer
+Game::isPaused
+Game::isReplay
+Game::isVisible(TilePosition)
+Game::isVisible(int, int)
+Game::isWalkable(WalkPosition)
+Game::isWalkable(int, int)
+Game::issueCommand
+Game::leaveGame
+Game::mapFileName
+Game::mapHash
+Game::mapHeight
+Game::mapName
+Game::mapPathName
+Game::mapWidth
+Game::neutral
+Game::observers
+Game::pauseGame
+Game::pingMinimap(Position)
+Game::pingMinimap(int, int)
+Game::printf
+Game::restartGame
+Game::resumeGame
+Game::self
+Game::sendText
+Game::sendTextEx
+Game::setAlliance
+Game::setCommandOptimizationLevel
+Game::setFrameSkip
+Game::setGUI
+Game::setLastError
+Game::setLatCom
+Game::setLocalSpeed
+Game::setMap(char *)
+Game::setMap(std::string)
+Game::setRevealAll
+Game::setScreenPosition(Position)
+Game::setScreenPosition(int, int)
+Game::setTextSize
+Game::setVision
+Game::vDrawText
+Game::vPrintf
+Game::vSendText
+Game::vSendTextEx
+RegionInterface::getBoundsBottom
+RegionInterface::getBoundsLeft
+RegionInterface::getBoundsRight
+RegionInterface::getBoundsTop
+RegionInterface::getCenter
+RegionInterface::getClosestAccessibleRegion
+RegionInterface::getClosestInaccessibleRegion
+RegionInterface::getDefensePriority
+RegionInterface::getDistance
+RegionInterface::getID
+RegionInterface::getNeighbors
+RegionInterface::getRegionGroupID
+RegionInterface::getUnits
+RegionInterface::isAccessible
+RegionInterface::isHigherGround
+UnitCommand::assignTarget
+UnitCommand::attack(Unit, Position, bool)
+UnitCommand::attack(Unit, Unit, bool)
+UnitCommand::build
+UnitCommand::buildAddon
+UnitCommand::burrow
+UnitCommand::cancelAddon
+UnitCommand::cancelConstruction
+UnitCommand::cancelMorph
+UnitCommand::cancelResearch
+UnitCommand::cancelTrain
+UnitCommand::cancelUpgrade
+UnitCommand::cloak
+UnitCommand::decloak
+UnitCommand::follow
+UnitCommand::gather
+UnitCommand::getSlot
+UnitCommand::getTarget
+UnitCommand::getTargetPosition
+UnitCommand::getTargetTilePosition
+UnitCommand::getTechType
+UnitCommand::getType
+UnitCommand::getUnit
+UnitCommand::getUnitType
+UnitCommand::getUpgradeType
+UnitCommand::haltConstruction
+UnitCommand::holdPosition
+UnitCommand::isQueued
+UnitCommand::land
+UnitCommand::lift
+UnitCommand::load
+UnitCommand::morph
+UnitCommand::move
+UnitCommand::patrol
+UnitCommand::placeCOP
+UnitCommand::repair
+UnitCommand::research
+UnitCommand::returnCargo
+UnitCommand::rightClick(Unit, Position, bool)
+UnitCommand::rightClick(Unit, Unit, bool)
+UnitCommand::setRallyPoint(Unit, Position)
+UnitCommand::setRallyPoint(Unit, Unit)
+UnitCommand::siege
+UnitCommand::stop
+UnitCommand::train
+UnitCommand::unburrow
+UnitCommand::unload
+UnitCommand::unloadAll(Unit, Position, bool)
+UnitCommand::unloadAll(Unit, bool)
+UnitCommand::unsiege
+UnitCommand::upgrade
+UnitCommand::useTech(Unit, TechType)
+UnitCommand::useTech(Unit, TechType, Position)
+UnitCommand::useTech(Unit, TechType, Unit)
+UnitInterface::attack(Position, bool)
+UnitInterface::attack(Unit, bool)
+UnitInterface::build
+UnitInterface::buildAddon
+UnitInterface::burrow
+UnitInterface::canAttack(Position, bool, bool, bool)
+UnitInterface::canAttack(Unit, bool, bool, bool)
+UnitInterface::canAttack(bool)
+UnitInterface::canAttackGrouped(Position, bool, bool, bool, bool)
+UnitInterface::canAttackGrouped(Unit, bool, bool, bool, bool)
+UnitInterface::canAttackGrouped(bool, bool)
+UnitInterface::canAttackMove
+UnitInterface::canAttackMoveGrouped
+UnitInterface::canAttackUnit(Unit, bool, bool, bool)
+UnitInterface::canAttackUnit(bool)
+UnitInterface::canAttackUnitGrouped(Unit, bool, bool, bool, bool)
+UnitInterface::canAttackUnitGrouped(bool, bool)
+UnitInterface::canBuild(UnitType, TilePosition, bool, bool, bool)
+UnitInterface::canBuild(UnitType, bool, bool)
+UnitInterface::canBuild(bool)
+UnitInterface::canBuildAddon(UnitType, bool, bool)
+UnitInterface::canBuildAddon(bool)
+UnitInterface::canBurrow
+UnitInterface::canCancelAddon
+UnitInterface::canCancelConstruction
+UnitInterface::canCancelMorph
+UnitInterface::canCancelResearch
+UnitInterface::canCancelTrain
+UnitInterface::canCancelTrainSlot(bool)
+UnitInterface::canCancelTrainSlot(int, bool, bool)
+UnitInterface::canCancelUpgrade
+UnitInterface::canCloak
+UnitInterface::canCommand
+UnitInterface::canCommandGrouped
+UnitInterface::canDecloak
+UnitInterface::canFollow(Unit, bool, bool, bool)
+UnitInterface::canFollow(bool)
+UnitInterface::canGather(Unit, bool, bool, bool)
+UnitInterface::canGather(bool)
+UnitInterface::canHaltConstruction
+UnitInterface::canHoldPosition
+UnitInterface::canIssueCommand
+UnitInterface::canIssueCommandGrouped
+UnitInterface::canIssueCommandType
+UnitInterface::canIssueCommandTypeGrouped
+UnitInterface::canLand(TilePosition, bool, bool)
+UnitInterface::canLand(bool)
+UnitInterface::canLift
+UnitInterface::canLoad(Unit, bool, bool, bool)
+UnitInterface::canLoad(bool)
+UnitInterface::canMorph(UnitType, bool, bool)
+UnitInterface::canMorph(bool)
+UnitInterface::canMove
+UnitInterface::canMoveGrouped
+UnitInterface::canPatrol
+UnitInterface::canPatrolGrouped
+UnitInterface::canPlaceCOP(TilePosition, bool, bool)
+UnitInterface::canPlaceCOP(bool)
+UnitInterface::canRepair(Unit, bool, bool, bool)
+UnitInterface::canRepair(bool)
+UnitInterface::canResearch(TechType, bool)
+UnitInterface::canResearch(bool)
+UnitInterface::canReturnCargo
+UnitInterface::canRightClick(Position, bool, bool, bool)
+UnitInterface::canRightClick(Unit, bool, bool, bool)
+UnitInterface::canRightClick(bool)
+UnitInterface::canRightClickGrouped(Position, bool, bool, bool, bool)
+UnitInterface::canRightClickGrouped(Unit, bool, bool, bool, bool)
+UnitInterface::canRightClickGrouped(bool, bool)
+UnitInterface::canRightClickPosition
+UnitInterface::canRightClickPositionGrouped
+UnitInterface::canRightClickUnit(Unit, bool, bool, bool)
+UnitInterface::canRightClickUnit(bool)
+UnitInterface::canRightClickUnitGrouped(Unit, bool, bool, bool, bool)
+UnitInterface::canRightClickUnitGrouped(bool, bool)
+UnitInterface::canSetRallyPoint(Position, bool, bool, bool)
+UnitInterface::canSetRallyPoint(Unit, bool, bool, bool)
+UnitInterface::canSetRallyPoint(bool)
+UnitInterface::canSetRallyPosition
+UnitInterface::canSetRallyUnit(Unit, bool, bool, bool)
+UnitInterface::canSetRallyUnit(bool)
+UnitInterface::canSiege
+UnitInterface::canStop
+UnitInterface::canTargetUnit
+UnitInterface::canTrain(UnitType, bool, bool)
+UnitInterface::canTrain(bool)
+UnitInterface::canUnburrow
+UnitInterface::canUnload(Unit, bool, bool, bool, bool)
+UnitInterface::canUnload(bool)
+UnitInterface::canUnloadAll
+UnitInterface::canUnloadAllPosition(Position, bool, bool)
+UnitInterface::canUnloadAllPosition(bool)
+UnitInterface::canUnloadAtPosition
+UnitInterface::canUnloadWithOrWithoutTarget
+UnitInterface::canUnsiege
+UnitInterface::canUpgrade(UpgradeType, bool)
+UnitInterface::canUpgrade(bool)
+UnitInterface::canUseTech(TechType, Position, bool, bool, bool, bool)
+UnitInterface::canUseTech(TechType, Unit, bool, bool, bool, bool)
+UnitInterface::canUseTechPosition(TechType, Position, bool, bool, bool)
+UnitInterface::canUseTechPosition(TechType, bool, bool)
+UnitInterface::canUseTechUnit(TechType, Unit, bool, bool, bool, bool)
+UnitInterface::canUseTechUnit(TechType, bool, bool)
+UnitInterface::canUseTechWithOrWithoutTarget(TechType, bool, bool)
+UnitInterface::canUseTechWithOrWithoutTarget(bool)
+UnitInterface::canUseTechWithoutTarget
+UnitInterface::cancelAddon
+UnitInterface::cancelConstruction
+UnitInterface::cancelMorph
+UnitInterface::cancelResearch
+UnitInterface::cancelTrain
+UnitInterface::cancelUpgrade
+UnitInterface::cloak
+UnitInterface::decloak
+UnitInterface::exists
+UnitInterface::follow
+UnitInterface::gather
+UnitInterface::getAcidSporeCount
+UnitInterface::getAddon
+UnitInterface::getAirWeaponCooldown
+UnitInterface::getAngle
+UnitInterface::getBottom
+UnitInterface::getBuildType
+UnitInterface::getBuildUnit
+UnitInterface::getCarrier
+UnitInterface::getClosestUnit
+UnitInterface::getDefenseMatrixPoints
+UnitInterface::getDefenseMatrixTimer
+UnitInterface::getDistance(Position)
+UnitInterface::getDistance(Unit)
+UnitInterface::getEnergy
+UnitInterface::getEnsnareTimer
+UnitInterface::getGroundWeaponCooldown
+UnitInterface::getHatchery
+UnitInterface::getHitPoints
+UnitInterface::getID
+UnitInterface::getInitialHitPoints
+UnitInterface::getInitialPosition
+UnitInterface::getInitialResources
+UnitInterface::getInitialTilePosition
+UnitInterface::getInitialType
+UnitInterface::getInterceptorCount
+UnitInterface::getInterceptors
+UnitInterface::getIrradiateTimer
+UnitInterface::getKillCount
+UnitInterface::getLarva
+UnitInterface::getLastAttackingPlayer
+UnitInterface::getLastCommand
+UnitInterface::getLastCommandFrame
+UnitInterface::getLeft
+UnitInterface::getLoadedUnits
+UnitInterface::getLockdownTimer
+UnitInterface::getMaelstromTimer
+UnitInterface::getNydusExit
+UnitInterface::getOrder
+UnitInterface::getOrderTarget
+UnitInterface::getOrderTargetPosition
+UnitInterface::getOrderTimer
+UnitInterface::getPlagueTimer
+UnitInterface::getPlayer
+UnitInterface::getPosition
+UnitInterface::getPowerUp
+UnitInterface::getRallyPosition
+UnitInterface::getRallyUnit
+UnitInterface::getRegion
+UnitInterface::getRemainingBuildTime
+UnitInterface::getRemainingResearchTime
+UnitInterface::getRemainingTrainTime
+UnitInterface::getRemainingUpgradeTime
+UnitInterface::getRemoveTimer
+UnitInterface::getReplayID
+UnitInterface::getResourceGroup
+UnitInterface::getResources
+UnitInterface::getRight
+UnitInterface::getScarabCount
+UnitInterface::getSecondaryOrder
+UnitInterface::getShields
+UnitInterface::getSpaceRemaining
+UnitInterface::getSpellCooldown
+UnitInterface::getSpiderMineCount
+UnitInterface::getStasisTimer
+UnitInterface::getStimTimer
+UnitInterface::getTarget
+UnitInterface::getTargetPosition
+UnitInterface::getTech
+UnitInterface::getTilePosition
+UnitInterface::getTop
+UnitInterface::getTrainingQueue
+UnitInterface::getTransport
+UnitInterface::getType
+UnitInterface::getUnitsInRadius
+UnitInterface::getUnitsInWeaponRange
+UnitInterface::getUpgrade
+UnitInterface::getVelocityX
+UnitInterface::getVelocityY
+UnitInterface::haltConstruction
+UnitInterface::hasNuke
+UnitInterface::hasPath(Position)
+UnitInterface::hasPath(Unit)
+UnitInterface::holdPosition
+UnitInterface::isAccelerating
+UnitInterface::isAttackFrame
+UnitInterface::isAttacking
+UnitInterface::isBeingConstructed
+UnitInterface::isBeingGathered
+UnitInterface::isBeingHealed
+UnitInterface::isBlind
+UnitInterface::isBraking
+UnitInterface::isBurrowed
+UnitInterface::isCarryingGas
+UnitInterface::isCarryingMinerals
+UnitInterface::isCloaked
+UnitInterface::isCompleted
+UnitInterface::isConstructing
+UnitInterface::isDefenseMatrixed
+UnitInterface::isDetected
+UnitInterface::isEnsnared
+UnitInterface::isFlying
+UnitInterface::isFollowing
+UnitInterface::isGatheringGas
+UnitInterface::isGatheringMinerals
+UnitInterface::isHallucination
+UnitInterface::isHoldingPosition
+UnitInterface::isIdle
+UnitInterface::isInWeaponRange
+UnitInterface::isInterruptible
+UnitInterface::isInvincible
+UnitInterface::isIrradiated
+UnitInterface::isLifted
+UnitInterface::isLoaded
+UnitInterface::isLockedDown
+UnitInterface::isMaelstrommed
+UnitInterface::isMorphing
+UnitInterface::isMoving
+UnitInterface::isParasited
+UnitInterface::isPatrolling
+UnitInterface::isPlagued
+UnitInterface::isPowered
+UnitInterface::isRepairing
+UnitInterface::isResearching
+UnitInterface::isSelected
+UnitInterface::isSieged
+UnitInterface::isStartingAttack
+UnitInterface::isStasised
+UnitInterface::isStimmed
+UnitInterface::isStuck
+UnitInterface::isTargetable
+UnitInterface::isTraining
+UnitInterface::isUnderAttack
+UnitInterface::isUnderDarkSwarm
+UnitInterface::isUnderDisruptionWeb
+UnitInterface::isUnderStorm
+UnitInterface::isUpgrading
+UnitInterface::isVisible
+UnitInterface::issueCommand
+UnitInterface::land
+UnitInterface::lift
+UnitInterface::load
+UnitInterface::morph
+UnitInterface::move
+UnitInterface::patrol
+UnitInterface::placeCOP
+UnitInterface::repair
+UnitInterface::research
+UnitInterface::returnCargo
+UnitInterface::rightClick(Position, bool)
+UnitInterface::rightClick(Unit, bool)
+UnitInterface::setRallyPoint(Position)
+UnitInterface::setRallyPoint(Unit)
+UnitInterface::siege
+UnitInterface::stop
+UnitInterface::train
+UnitInterface::unburrow
+UnitInterface::unload
+UnitInterface::unloadAll(Position, bool)
+UnitInterface::unloadAll(bool)
+UnitInterface::unsiege
+UnitInterface::upgrade
+UnitInterface::useTech(TechType, Position)
+UnitInterface::useTech(TechType, Unit)
