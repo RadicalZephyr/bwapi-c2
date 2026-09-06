@@ -17,11 +17,14 @@ There are three kinds of spec file, all YAML, all under `tools/abi/spec/`:
 |---|---|---|
 | `<interface>.yaml` — `client`, `player`, `game`, `unit`, `force_region`, `types`, `bwem`, … | Function entries, one per export or per skipped declaration | phase 1 |
 | `constants.yaml` | The constant families: which enums export, under which prefix, with their values | phase 1 |
-| `structs.yaml` | The PODs that cross the boundary: fields, types, flag bits | phase 2 |
+| `structs.yaml` | The PODs that cross the boundary: fields, types, flag bits, and the bulk tables (§3) | phase 1 |
 
-Files are read in sorted name order and concatenated; the file a function lives in decides
-nothing about its output. The header groups by `self`, the `.def` sorts by name, `api.json`
-lists in spec order, and the source emitter writes one `src/<file>.gen.cpp` per spec file.
+Files are read in sorted name order and concatenated. The file a function lives in decides
+which header section it lands in and which `src/<file>.gen.cpp` defines it, and nothing else:
+`emit_header.py` groups the declarations by spec file, in the order its section list gives
+(`client`, `game`, `player`, `unit`, `force_region` into `bwapi_c2.h`; `types` and `bulk` into
+`bwapi_c2_types.h`; `bwem*` into `bwapi_c2_bwem.h`), the `.def` sorts by name, and `api.json`
+lists in spec order with the file as each function's `section`.
 
 ## 1. A function entry
 
@@ -254,12 +257,36 @@ same way.
 
 ## 3. Structs
 
-`structs.yaml` arrives with the first POD that crosses the boundary (phase 2: `bwapi_event`,
-`bwapi_bullet`, the snapshots). Its shape is fixed now so `api.json` can carry it from the
-start: a list of `{name, doc, fields: [{name, type, doc}], flags: [{name, bit, doc}]}`, where
-`type` is one of the parameter types of §1.3 without the pointer forms plus `int32[3]`-style
-fixed arrays, `size` is always the first field and never listed, and `flags` names the bits of
-a `uint32_t flags` field when the struct has one.
+`structs.yaml` holds every POD that crosses the boundary: from phase 1 the bulk type table rows
+of plan §5.8 and the flat `requiredUnits` row; from phase 2 `bwapi_event`, `bwapi_bullet` and
+the snapshots. A struct is `{name, doc, fields: [{name, type, doc}], flags: [{name, bit, doc}]}`,
+where `type` is one of `int32`, `bool32`, `double`, `int16`, `uint8`, `uint32`, `type:<Class>`
+(an `int32_t` holding a type id), any of those with an `int32[3]`-style fixed-array suffix;
+`size` is always the first field and never listed; and `flags` names the bits of a
+`uint32_t flags` field when the struct has one. The C type is `bwapi_<name>`.
+
+A struct that is one row of a bulk table also carries a `table: {class, c, doc}` block, and
+each field after `id` a `from:` naming the accessor it mirrors:
+
+```yaml
+- name: race_row
+  doc: "One row of the Race table: every scalar accessor of the class for one id."
+  table:
+    class: Race
+    c: bwapi_race_table
+    doc: "Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap; returns the total."
+  fields:
+    - {name: id, type: int32, doc: "the type id, which is also the row's index"}
+    - {name: get_worker, type: "type:UnitType", from: "Race::getWorker"}
+```
+
+The `table:` block declares a function the loader adds to the `bulk` section as a `body:` entry
+(`bwapi_race_table(bwapi_race_row* out, int32_t cap)`, `self: none`, `returns:
+struct_array:race_row`): one row per id of the class, `0` to `Unknown` inclusive, each field
+filled by the accessor its `from:` names and converted by the field's type, through the stride
+rule of plan §4. `from:` is meaningful only under a `table:`, and a table row's first field is
+always `id`. The one table a `from:` cannot express, the flat `requiredUnits` table, is a
+hand-written `source:` entry in `bulk.yaml` over a plain struct.
 
 ## 4. What is deliberately not in the format
 
