@@ -91,10 +91,12 @@ def declarations_for(spec, header):
     return "\n".join(out).rstrip("\n")
 
 
-def defines(family_prefix, rows, doc_of=None):
-    """Aligned #define lines. rows: (macro, value, comment)."""
+def defines(rows):
+    """Aligned #define lines. rows: (macro, value, comment). Numeric values are right-aligned in
+    a column; macro-expression values are not, because there is no digit place to line up."""
     width = max(len(m) for m, _, _ in rows)
-    vwidth = max(len(str(v)) for _, v, _ in rows)
+    numeric = all(isinstance(v, int) for _, v, _ in rows)
+    vwidth = max(len(str(v)) for _, v, _ in rows) if numeric else 0
     lines = []
     for macro, value, note in rows:
         line = f"#define {macro:<{width}} {str(value):>{vwidth}}"
@@ -106,20 +108,16 @@ def defines(family_prefix, rows, doc_of=None):
 
 def abi_constant_block(family):
     rows = [(f"{family['prefix']}_{name}", value, note) for name, value, note in family["values"]]
-    return defines(family["prefix"], rows)
+    return defines(rows)
 
 
 def position_sentinels():
     fam = next(f for f in abispec.ABI_CONSTANTS if f["family"] == "position_sentinel")
     rows = [(f"BWAPI_{name}", value, "") for name, value, _ in fam["values"]]
-    out = [defines("BWAPI", rows), ""]
-    packed = []
-    for scale in ("POSITION", "WALKPOSITION", "TILEPOSITION"):
-        for which in ("INVALID", "NONE", "UNKNOWN", "ORIGIN"):
-            packed.append(f"#define BWAPI_{scale}_{which:<8} BWAPI_POS_MAKE(BWAPI_{scale}_{which}_X, BWAPI_{scale}_{which}_Y)")
-    width = max(len(p.split()[1]) for p in packed)
-    out.append("\n".join(f"#define {p.split()[1]:<{width}} {' '.join(p.split()[2:])}" for p in packed))
-    return "\n".join(out)
+    packed = [(f"BWAPI_{scale}_{which}", f"BWAPI_POS_MAKE(BWAPI_{scale}_{which}_X, BWAPI_{scale}_{which}_Y)", "")
+              for scale in ("POSITION", "WALKPOSITION", "TILEPOSITION")
+              for which in ("INVALID", "NONE", "UNKNOWN", "ORIGIN")]
+    return "\n".join([defines(rows), "", defines(packed)])
 
 
 def constant_families(spec):
@@ -130,7 +128,7 @@ def constant_families(spec):
         rows = [(abispec.constant_name(fam["prefix"], v["name"], fam.get("strip", "")), v["value"], "")
                 for v in fam["values"] if abispec.exportable_enumerator(v["name"])]
         blocks.append(f"/* {fam['family']}: {fam['cpp']} */")
-        blocks.append(defines(fam["prefix"], rows))
+        blocks.append(defines(rows))
         blocks.append("")
     return "\n".join(blocks).rstrip("\n")
 
