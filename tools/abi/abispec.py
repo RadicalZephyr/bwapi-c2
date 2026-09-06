@@ -270,3 +270,181 @@ class Spec:
 
     def skips(self):
         return [(stem, e) for stem, e in self.entries if "skip" in e]
+
+
+# ---- C spellings, signatures and neutral values (spec-format.md sections 1.3 to 1.5) --------------
+
+C_PARAM_TYPES = {
+    "int32": "int32_t", "bool32": "int32_t", "double": "double", "string_in": "const char*",
+    "void_ptr": "void*", "int32_out": "int32_t*", "double_out": "double*", "position_out": "bwapi_position*",
+    "int32_array_out": "int32_t*", "int16_array_out": "int16_t*", "uint8_array_out": "uint8_t*",
+    "position_array_out": "bwapi_position*",
+}
+
+
+def c_param_type(t):
+    if t in C_PARAM_TYPES:
+        return C_PARAM_TYPES[t]
+    kind, _, arg = t.partition(":")
+    return {
+        "type": "int32_t",
+        "handle": f"bwapi_{arg}_id",
+        "struct_in": f"const bwapi_{arg}*",
+        "struct_out": f"bwapi_{arg}*",
+        "struct_array_out": f"bwapi_{arg}*",
+        "callback": arg,
+    }[kind]
+
+
+def c_param_name(param):
+    """A handle: parameter named x is x_id at the C boundary; the resolved pointer is x in a
+    body (spec-format.md section 1.3)."""
+    return param["name"] + "_id" if param["type"].startswith("handle:") else param["name"]
+
+
+def c_return_type(kind):
+    base, _, arg = kind.partition(":")
+    if base in ("int32", "bool32", "string_out", "id_array", "position_array", "struct_array"):
+        return "int32_t"
+    if base == "double":
+        return "double"
+    if base in ("position", "tile_position", "walk_position"):
+        return "bwapi_position"
+    if base == "type":
+        return "int32_t"
+    if base == "handle":
+        return f"bwapi_{arg}_id"
+    if base == "void":
+        return "void"
+    raise SpecError(f"unknown return kind {kind!r}")
+
+
+def signature(entry):
+    """[(c_type, name)] in the order section 1.5 builds them: the handle, params, then the
+    buffer pair the return kind implies."""
+    sig = []
+    if entry["self"] in HANDLE_KINDS:
+        sig.append((f"bwapi_{entry['self']}_id", f"{entry['self']}_id"))
+    for p in entry.get("params") or []:
+        sig.append((c_param_type(p["type"]), c_param_name(p)))
+    r = entry["returns"]
+    if r == "string_out":
+        sig += [("char*", "buf"), ("int32_t", "buf_len")]
+    elif r == "id_array":
+        sig += [("int32_t*", "out"), ("int32_t", "cap")]
+    elif r == "position_array":
+        sig += [("bwapi_position*", "out"), ("int32_t", "cap")]
+    elif r.startswith("struct_array:"):
+        sig += [(f"bwapi_{r.partition(':')[2]}*", "out"), ("int32_t", "cap")]
+    return sig
+
+
+def c_signature(entry):
+    params = ", ".join(f"{t} {n}" for t, n in signature(entry)) or "void"
+    return f"{c_return_type(entry['returns'])} {entry['c']}({params})"
+
+
+def neutral_c(kind):
+    """The neutral value as a C expression (section 1.4), for the source and the docs."""
+    base, _, arg = kind.partition(":")
+    return {
+        "int32": "0", "bool32": "0", "double": "0.0", "string_out": "0", "id_array": "0",
+        "position_array": "0", "struct_array": "0", "void": "",
+        "position": "BWAPI_POSITION_NONE", "tile_position": "BWAPI_POSITION_NONE",
+        "walk_position": "BWAPI_POSITION_NONE", "handle": "BWAPI_NONE",
+        "type": f"BWAPI::{arg}(-1).getID()",
+    }[base]
+
+
+def neutral_doc(kind):
+    """The neutral value as the reference states it."""
+    base, _, arg = kind.partition(":")
+    if base == "type":
+        if arg == "Color":
+            return "255, the Unknown id of Color, which has no named Unknown"
+        return f"the Unknown id of {arg} (BWAPI_{family_prefix_of(arg)}_UNKNOWN)"
+    return {
+        "int32": "0", "bool32": "0", "double": "0.0",
+        "string_out": "an empty string, and 0",
+        "id_array": "nothing written, and 0", "position_array": "nothing written, and 0",
+        "struct_array": "nothing written, and 0", "void": "nothing",
+        "position": "BWAPI_POSITION_NONE", "tile_position": "BWAPI_POSITION_NONE",
+        "walk_position": "BWAPI_POSITION_NONE", "handle": "BWAPI_NONE",
+    }[base]
+
+
+# The constant-family prefix each type class's ids come from, for docs and the raw layers.
+TYPE_CLASS_PREFIX = {
+    "UnitType": "UNIT", "WeaponType": "WEAPON", "TechType": "TECH", "UpgradeType": "UPGRADE",
+    "Race": "RACE", "UnitSizeType": "UNITSIZE", "DamageType": "DAMAGE", "ExplosionType": "EXPLOSION",
+    "BulletType": "BULLET", "Order": "ORDER", "PlayerType": "PLAYERTYPE", "GameType": "GAMETYPE",
+    "UnitCommandType": "UNITCOMMAND", "Error": "ERROR", "Color": "COLOR",
+}
+
+
+def family_prefix_of(type_class):
+    if type_class not in TYPE_CLASS_PREFIX:
+        raise SpecError(f"{type_class!r} is not a type class")
+    return TYPE_CLASS_PREFIX[type_class]
+
+
+# ---- the ABI's own constants ----------------------------------------------------------------------------
+
+# Not from any enum: the error codes, the log levels and the position sentinels are the ABI's
+# own. Stated here once; emit_header.py writes them into bwapi_c2_types.h and emit_json.py into
+# api.json, so a code has one definition and the raw layers see it.
+ABI_CONSTANTS = [
+    {"family": "error", "prefix": "BWAPI_ERR", "doc": "The ABI's own error codes, latched by the sticky "
+     "first-error channel. A code says which section-4 rule fired. None of these values is ever reused.",
+     "values": [
+         ("NONE", 0, "nothing latched since the last clear"),
+         ("ALREADY_CONNECTED", 1, "bwapi_client_connect() while connected"),
+         ("WRONG_THREAD", 2, "a call from a thread other than the update thread"),
+         ("REENTRANT_MUTATION", 3, "a mutating call from inside a callback"),
+         ("BWEM", 4, "a BWEM::Exception, or a map BWEM would crash on"),
+         ("INVALID_HANDLE", 5, "an id that could never have been valid"),
+         ("NOT_CONNECTED", 6, "a game or unit call before connect, or after disconnect"),
+         ("BWEM_NOT_INITIALIZED", 7, "a bwapi_bwem_* query before bwapi_bwem_initialize()"),
+         ("BAD_BUFFER", 8, "a NULL buffer with a nonzero cap or buf_len, or a negative one"),
+         ("EXCEPTION", 9, "a C++ exception other than BWEM's escaped the wrapped call; what() is the message"),
+     ]},
+    {"family": "log_level", "prefix": "BWAPI_LOG", "doc": "The level argument of the log callback. "
+     "Client::connect()'s own std::cout and std::cerr output is not redirected in v1; these carry the "
+     "ABI's diagnostics.",
+     "values": [("INFO", 0, ""), ("WARN", 1, "a rejected re-entrant call, among others"), ("ERROR", 2, "")]},
+    {"family": "position_sentinel", "prefix": "BWAPI", "doc": "BWAPI's own position sentinels "
+     "(BWAPI/Position.h) in unpacked form, for the pixel, walk (scale 8) and tile (scale 32) scales. "
+     "The packed forms are BWAPI_POS_MAKE of each pair; packing is lossless, so a C++ bot sees the same "
+     "values. BWAPI_POSITION_NONE packed is the neutral return of every position-returning function.",
+     "values": [
+         ("POSITION_INVALID_X", 32000, ""), ("POSITION_INVALID_Y", 32000, ""),
+         ("POSITION_NONE_X", 32000, ""), ("POSITION_NONE_Y", 32032, ""),
+         ("POSITION_UNKNOWN_X", 32000, ""), ("POSITION_UNKNOWN_Y", 32064, ""),
+         ("POSITION_ORIGIN_X", 0, ""), ("POSITION_ORIGIN_Y", 0, ""),
+         ("WALKPOSITION_INVALID_X", 4000, ""), ("WALKPOSITION_INVALID_Y", 4000, ""),
+         ("WALKPOSITION_NONE_X", 4000, ""), ("WALKPOSITION_NONE_Y", 4004, ""),
+         ("WALKPOSITION_UNKNOWN_X", 4000, ""), ("WALKPOSITION_UNKNOWN_Y", 4008, ""),
+         ("WALKPOSITION_ORIGIN_X", 0, ""), ("WALKPOSITION_ORIGIN_Y", 0, ""),
+         ("TILEPOSITION_INVALID_X", 1000, ""), ("TILEPOSITION_INVALID_Y", 1000, ""),
+         ("TILEPOSITION_NONE_X", 1000, ""), ("TILEPOSITION_NONE_Y", 1001, ""),
+         ("TILEPOSITION_UNKNOWN_X", 1000, ""), ("TILEPOSITION_UNKNOWN_Y", 1002, ""),
+         ("TILEPOSITION_ORIGIN_X", 0, ""), ("TILEPOSITION_ORIGIN_Y", 0, ""),
+     ]},
+]
+
+
+def abi_version():
+    """project(bwapi_c2 VERSION x.y.z) from CMakeLists.txt: the one place the version lives."""
+    root = os.path.join(HERE, "..", "..", "CMakeLists.txt")
+    with open(root, encoding="utf-8") as f:
+        m = re.search(r"^project\(bwapi_c2\s+VERSION\s+(\d+\.\d+\.\d+)", f.read(), re.M)
+    if not m:
+        raise SpecError("project(bwapi_c2 VERSION ...) not found in CMakeLists.txt")
+    return m.group(1)
+
+
+def first_sentence(doc):
+    """The header's one line of hover text: the doc up to its first sentence end."""
+    text = " ".join(doc.split())
+    m = re.search(r"^(.*?[.!?])(\s|$)", text)
+    return m.group(1) if m else text

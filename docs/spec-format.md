@@ -93,7 +93,7 @@ declaration with every parameter explicit; the per-language wrapper re-adds the 
 | `bool32` | `int32_t` | 0 or 1; the wrapper passes `!= 0` |
 | `double` | `double` | |
 | `type:<Class>` | `int32_t` | A type id: `type:UnitType`, `type:Race`, `type:UpgradeType`, … The wrapper constructs `BWAPI::<Class>(id)` |
-| `handle:<kind>` | `bwapi_<kind>_id` | A second handle beside `self`, resolved and range-checked the same way (`bwapi_player_is_ally(self, other)`) |
+| `handle:<kind>` | `bwapi_<kind>_id` | A second handle beside `self`, resolved and range-checked the same way. A parameter named `other` is `other_id` in the C signature and the resolved pointer `other` in a body, the same pairing as `player_id` and `self` (`bwapi_player_is_ally(player_id, other_id)`) |
 | `string_in` | `const char*` | Passed through, no transcoding (plan §4) |
 | `int32_out`, `double_out`, `position_out` | `int32_t*`, `double*`, `bwapi_position*` | One value written. NULL is allowed and skips the write |
 | `int32_array_out`, `int16_array_out`, `uint8_array_out`, `position_array_out` | `int32_t*`, `int16_t*`, `uint8_t*`, `bwapi_position*` | An array the body fills; the `cap` that sizes it is a separate `int32` parameter the entry names |
@@ -166,8 +166,9 @@ and it is fully typed C++ with these names in scope:
   `const Area*` / `const ChokePoint*` / `const Base*` / `const Neutral*`, for a handle kind;
   `BWAPI::Broodwar` (a `Game*`) for `game`; `BWEM::Map::Instance()` as `map` for `bwem_map`;
   nothing for `none`;
-- every `params` entry by name, as its C type; a `handle:` parameter is already resolved to a
-  pointer under its name (a failed resolution has already returned the neutral value);
+- every `params` entry by name, as its C type; a `handle:` parameter named `x` is the C
+  parameter `x_id` and, in the body, the resolved pointer `x` (a failed resolution has already
+  returned the neutral value);
 - `buf` and `buf_len`, or `out` and `cap`, for the kinds that have them, already checked for
   the NULL-with-nonzero and negative cases;
 - everything `abi_internal.h` declares: `latch`, `log`, `write_string`, `write_ids`,

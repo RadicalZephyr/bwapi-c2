@@ -89,43 +89,7 @@ typedef int64_t bwapi_position;
  * the same values a C++ bot sees; no new bit pattern is invented. Positions::None packed is the
  * neutral return of every position-returning function given an invalid handle, whatever its
  * scale. Pixel scale, then walk (scale 8), then tile (scale 32). */
-#define BWAPI_POSITION_INVALID_X     32000
-#define BWAPI_POSITION_INVALID_Y     32000
-#define BWAPI_POSITION_NONE_X        32000
-#define BWAPI_POSITION_NONE_Y        32032
-#define BWAPI_POSITION_UNKNOWN_X     32000
-#define BWAPI_POSITION_UNKNOWN_Y     32064
-#define BWAPI_POSITION_ORIGIN_X          0
-#define BWAPI_POSITION_ORIGIN_Y          0
-#define BWAPI_WALKPOSITION_INVALID_X  4000
-#define BWAPI_WALKPOSITION_INVALID_Y  4000
-#define BWAPI_WALKPOSITION_NONE_X     4000
-#define BWAPI_WALKPOSITION_NONE_Y     4004
-#define BWAPI_WALKPOSITION_UNKNOWN_X  4000
-#define BWAPI_WALKPOSITION_UNKNOWN_Y  4008
-#define BWAPI_WALKPOSITION_ORIGIN_X      0
-#define BWAPI_WALKPOSITION_ORIGIN_Y      0
-#define BWAPI_TILEPOSITION_INVALID_X  1000
-#define BWAPI_TILEPOSITION_INVALID_Y  1000
-#define BWAPI_TILEPOSITION_NONE_X     1000
-#define BWAPI_TILEPOSITION_NONE_Y     1001
-#define BWAPI_TILEPOSITION_UNKNOWN_X  1000
-#define BWAPI_TILEPOSITION_UNKNOWN_Y  1002
-#define BWAPI_TILEPOSITION_ORIGIN_X      0
-#define BWAPI_TILEPOSITION_ORIGIN_Y      0
-
-#define BWAPI_POSITION_INVALID     BWAPI_POS_MAKE(BWAPI_POSITION_INVALID_X, BWAPI_POSITION_INVALID_Y)
-#define BWAPI_POSITION_NONE        BWAPI_POS_MAKE(BWAPI_POSITION_NONE_X, BWAPI_POSITION_NONE_Y)
-#define BWAPI_POSITION_UNKNOWN     BWAPI_POS_MAKE(BWAPI_POSITION_UNKNOWN_X, BWAPI_POSITION_UNKNOWN_Y)
-#define BWAPI_POSITION_ORIGIN      BWAPI_POS_MAKE(BWAPI_POSITION_ORIGIN_X, BWAPI_POSITION_ORIGIN_Y)
-#define BWAPI_WALKPOSITION_INVALID BWAPI_POS_MAKE(BWAPI_WALKPOSITION_INVALID_X, BWAPI_WALKPOSITION_INVALID_Y)
-#define BWAPI_WALKPOSITION_NONE    BWAPI_POS_MAKE(BWAPI_WALKPOSITION_NONE_X, BWAPI_WALKPOSITION_NONE_Y)
-#define BWAPI_WALKPOSITION_UNKNOWN BWAPI_POS_MAKE(BWAPI_WALKPOSITION_UNKNOWN_X, BWAPI_WALKPOSITION_UNKNOWN_Y)
-#define BWAPI_WALKPOSITION_ORIGIN  BWAPI_POS_MAKE(BWAPI_WALKPOSITION_ORIGIN_X, BWAPI_WALKPOSITION_ORIGIN_Y)
-#define BWAPI_TILEPOSITION_INVALID BWAPI_POS_MAKE(BWAPI_TILEPOSITION_INVALID_X, BWAPI_TILEPOSITION_INVALID_Y)
-#define BWAPI_TILEPOSITION_NONE    BWAPI_POS_MAKE(BWAPI_TILEPOSITION_NONE_X, BWAPI_TILEPOSITION_NONE_Y)
-#define BWAPI_TILEPOSITION_UNKNOWN BWAPI_POS_MAKE(BWAPI_TILEPOSITION_UNKNOWN_X, BWAPI_TILEPOSITION_UNKNOWN_Y)
-#define BWAPI_TILEPOSITION_ORIGIN  BWAPI_POS_MAKE(BWAPI_TILEPOSITION_ORIGIN_X, BWAPI_TILEPOSITION_ORIGIN_Y)
+@POSITION_SENTINELS@
 
 /* ---- handles -------------------------------------------------------------------------- */
 
@@ -164,24 +128,13 @@ typedef int32_t bwapi_bwem_base_id; /* synthesised by the ABI, 0..N-1; BWEM has 
  * bwapi_game_get_last_error(), on a different lifetime. A code says WHICH section-4 rule
  * fired, because the error callback exists so a wrapper can raise at the failing call. None of
  * these values is ever reused. */
-#define BWAPI_ERR_NONE                 0 /* nothing latched since the last clear */
-#define BWAPI_ERR_ALREADY_CONNECTED    1 /* bwapi_client_connect() while connected */
-#define BWAPI_ERR_WRONG_THREAD         2 /* a call from a thread other than the update thread */
-#define BWAPI_ERR_REENTRANT_MUTATION   3 /* a mutating call from inside a callback */
-#define BWAPI_ERR_BWEM                 4 /* a BWEM::Exception, or a map BWEM would crash on */
-#define BWAPI_ERR_INVALID_HANDLE       5 /* an id that could never have been valid */
-#define BWAPI_ERR_NOT_CONNECTED        6 /* a game or unit call before connect, or after disconnect */
-#define BWAPI_ERR_BWEM_NOT_INITIALIZED 7 /* a bwapi_bwem_* query before bwapi_bwem_initialize() */
-#define BWAPI_ERR_BAD_BUFFER           8 /* a NULL buffer with a nonzero cap or buf_len, or a negative one */
-#define BWAPI_ERR_EXCEPTION            9 /* a C++ exception other than BWEM's escaped the wrapped call; what() is the message */
+@ERROR_CODES@
 
 /* ---- log levels ------------------------------------------------------------------------- */
 
 /* The level argument of the log callback (bwapi_c2.h). Client::connect()'s own std::cout and
  * std::cerr output is not redirected in v1; these carry the ABI's diagnostics. */
-#define BWAPI_LOG_INFO  0
-#define BWAPI_LOG_WARN  1 /* a rejected re-entrant call, among others */
-#define BWAPI_LOG_ERROR 2
+@LOG_LEVELS@
 
 /* ---- callbacks ---------------------------------------------------------------------------- */
 
@@ -195,7 +148,7 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
 /* Every enumeration a signature refers to, as #defines (plan section 5.8): the name is the
  * enumerator's, the value is upstream's, and src/types.gen.cpp asserts each one against the
  * C++ enumerator at compile time, so nothing here can drift. */
-/* (no constant families yet: spec/constants.yaml arrives in implementation plan 1.5) */
+@CONSTANTS@
 
 /* ---- static type data ------------------------------------------------------------------- */
 
@@ -206,7 +159,7 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
 extern "C" {
 #endif
 
-/* (nothing yet: the spec files for this header arrive with implementation plan 1.5) */
+@DECLARATIONS@
 
 #ifdef __cplusplus
 } /* extern "C" */
