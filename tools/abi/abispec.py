@@ -382,6 +382,15 @@ TYPE_CLASS_PREFIX = {
 }
 
 
+# The constant family each type class's ids are listed under, for the reference's links.
+TYPE_CLASS_FAMILY = {
+    "UnitType": "unit_type", "WeaponType": "weapon_type", "TechType": "tech_type", "UpgradeType": "upgrade_type",
+    "Race": "race", "UnitSizeType": "unit_size_type", "DamageType": "damage_type", "ExplosionType": "explosion_type",
+    "BulletType": "bullet_type", "Order": "order", "PlayerType": "player_type", "GameType": "game_type",
+    "UnitCommandType": "unit_command_type", "Error": "error_code", "Color": "color",
+}
+
+
 def family_prefix_of(type_class):
     if type_class not in TYPE_CLASS_PREFIX:
         raise SpecError(f"{type_class!r} is not a type class")

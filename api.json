@@ -407,7 +407,8 @@
         "c_type": "int32_t",
         "neutral": "the Unknown id of Race (BWAPI_RACE_UNKNOWN)",
         "type_class": "Race",
-        "constants": "BWAPI_RACE"
+        "constants": "BWAPI_RACE",
+        "family": "race"
       },
       "reentrant": "allowed",
       "legit_none": false,
@@ -432,7 +433,8 @@
         "c_type": "int32_t",
         "neutral": "the Unknown id of PlayerType (BWAPI_PLAYERTYPE_UNKNOWN)",
         "type_class": "PlayerType",
-        "constants": "BWAPI_PLAYERTYPE"
+        "constants": "BWAPI_PLAYERTYPE",
+        "family": "player_type"
       },
       "reentrant": "allowed",
       "legit_none": false,
@@ -1219,7 +1221,8 @@
         "c_type": "int32_t",
         "neutral": "255, the Unknown id of Color, which has no named Unknown",
         "type_class": "Color",
-        "constants": "BWAPI_COLOR"
+        "constants": "BWAPI_COLOR",
+        "family": "color"
       },
       "reentrant": "allowed",
       "legit_none": false,

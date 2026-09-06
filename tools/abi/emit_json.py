@@ -43,6 +43,7 @@ def function_json(stem, e):
     if base == "type":
         returns["type_class"] = arg
         returns["constants"] = "BWAPI_" + abispec.family_prefix_of(arg)
+        returns["family"] = abispec.TYPE_CLASS_FAMILY[arg]
     if base == "handle":
         returns["handle_kind"] = arg
     if base in ("position", "tile_position", "walk_position"):

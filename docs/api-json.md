@@ -63,6 +63,7 @@ returns the neutral value and latches `BWAPI_ERR_INVALID_HANDLE`.
 | `neutral` | string | The value returned when the function does not run (wrong thread, not connected, invalid handle, bad buffer, exception), as prose: `"0"`, `"BWAPI_NONE"`, `"BWAPI_POSITION_NONE"`, `"an empty string, and 0"`, … |
 | `type_class` | string | For `type:` kinds: the C++ type class (`Race`, `UnitType`, …) |
 | `constants` | string | For `type:` kinds: the prefix of the constant family the ids belong to (`BWAPI_RACE`) |
+| `family` | string | For `type:` kinds: the `family` in `constants` the ids are listed under (`race`) |
 | `handle_kind` | string | For `handle:` kinds: the kind (`force`, `unit`, …) |
 | `scale` | string | For the position kinds: `pixel`, `tile` or `walk`. All three are one packed `int64_t` with the same neutral value |
 

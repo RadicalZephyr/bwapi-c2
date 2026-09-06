@@ -11,6 +11,10 @@ generate_feeds = false
 # Every page is Markdown, including the generated reference, so the index covers everything.
 build_search_index = true
 
+# Keep underscores in paths: a reference page's URL is its C name, /reference/player/bwapi_player_minerals/.
+[slugify]
+paths = "safe"
+
 # Internal links and anchors fail the build (section 16.3). External links are checked on a
 # schedule by docs.yml, never on the merge path: a dead upstream link must not block a deploy.
 [link_checker]
