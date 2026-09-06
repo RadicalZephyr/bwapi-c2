@@ -240,7 +240,7 @@ at every lower-to-upper boundary and the whole uppercased: `Terran_Marine` → `
 `__RESERVED_A`) are not exported: they are placeholders upstream, and reserved identifiers in C.
 `MAX`/`Max` sentinels are exported like anything else.
 
-Every generated constant is also a `static_assert` in `types.gen.cpp` against the C++ value
+Every generated constant is also a `static_assert` in `constants.gen.cpp` against the C++ value
 (`static_assert(BWAPI_UNIT_TERRAN_MARINE == BWAPI::UnitTypes::Enum::Terran_Marine)`), so a
 value in the spec that drifts from upstream fails the build, not a test. The position sentinels
 are not a family: they are written by hand into `bwapi_c2_types.h`'s template and asserted the
