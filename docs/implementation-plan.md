@@ -202,7 +202,9 @@ replace them in one commit** — churn accepted, recorded in §7.
   targets agree and `sizeof` is 33,017,048 on each. Added beyond the step: the same probe runs
   against the **real pinned headers** on the host target and must match R5's copy, so the copy
   cannot drift from the pin; a `layout_dump_update` target rewrites the baseline after a
-  deliberate bump; `static_assert.cpp` pins the size and the first two offsets at compile time.
+  deliberate bump; and `dump_layout.py --emit-static-asserts` turns the baseline into a
+  translation unit of `static_assert`s over the real headers, which CMake compiles on every
+  platform, so on Windows MSVC itself, not clang predicting MSVC, asserts all 84 offsets.
 
 ### 0.9 Derived closure check
 
@@ -265,7 +267,12 @@ The single most important artifact in phase 0, and the one R7 and R11.6 wrote tw
   **Done**, and the golden-`.def` check (`tests/exports/check_exports.py`, dumpbin or nm) is a
   CTest test on every platform rather than a CI-only step. The first run passed on Linux, plain
   and sanitized, and failed on Windows only on two `/W4 /WX` warnings in test code; the second
-  run is green on all four jobs.
+  run is green on all four jobs. Review added a third Linux row: a Debug build with
+  `BWAPI_C2_BWEM_ASSERTS`, which force-includes `cmake/bwem_asserts.h` because upstream's own
+  `BWEM_ASSERTS` branch in `defs.h` forgets to define `bwem_assert` and `bwem_assert_throw`.
+  In that row `tests/bwem/overlap_asserts.cpp` plants R11.6's overlapping minerals behind the
+  builder and must abort inside `Neutral::PutOnTiles()`; in release the same program segfaults
+  at teardown. Leak detection is on under ASan; valgrind finds no definite or indirect leak.
 
 ### 0.12 The site skeleton and its deploy workflow
 
