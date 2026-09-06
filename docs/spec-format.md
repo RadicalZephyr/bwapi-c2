@@ -232,6 +232,7 @@ the AST and which are never typed by hand:
 | `cpp` | The enumeration, fully qualified, as `BWAPI::UnitTypes::Enum::Enum` (BWAPI spells its type enumerations `namespace Enum { enum Enum {...} }`), `BWAPI::EventType::Enum`, `BWAPI::Key`; or the namespace, for `BWAPI::Colors` |
 | `prefix` | The macro prefix |
 | `strip` | Optional: a prefix removed from every enumerator name before the transformation (`K_` for `Key`, `M_` for `MouseButton`) |
+| `doc` | Optional: what the family is, one paragraph. It is the family's `doc` in `api.json` (`docs/api-json.md` §3) and the body of its reference table page |
 | `values` | `{name, value}` pairs in declaration order, from the AST. `draft_spec.py --enum <cpp>` prints them; `--update-constants` rewrites this list in place, which is the pin-bump step |
 
 **The C name** is `<prefix>_<NAME>`, where `NAME` is the enumerator with an underscore inserted

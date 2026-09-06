@@ -91,7 +91,7 @@ SCALAR_RETURN_KINDS = ("int32", "bool32", "double", "position", "tile_position",
 
 ENTRY_FIELDS = {"cpp", "c", "self", "params", "returns", "body", "source", "skip", "reentrant",
                 "legit_none", "doc", "guides", "since", "divergences"}
-FAMILY_FIELDS = {"family", "cpp", "prefix", "strip", "values"}
+FAMILY_FIELDS = {"family", "cpp", "prefix", "strip", "doc", "values"}
 STRUCT_FIELDS = {"name", "doc", "fields", "flags", "table"}
 FIELD_TYPES = ("int32", "bool32", "double", "int16", "uint8", "uint32")
 
