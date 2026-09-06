@@ -29,10 +29,11 @@
  *   - Every POD that crosses the boundary begins with int32_t size (see BWAPI_HAS_FIELD).
  *   - Handles are int32_t ids in disjoint spaces, with one exception: a BWEM neutral IS a
  *     BWAPI unit and is addressed by its unit id. BWAPI_NONE (-1) is the neutral id value.
- *   - A handle that could never have been valid (negative, out of range, wrong kind, used
- *     before connect) returns the documented neutral value AND latches BWAPI_ERR_INVALID_HANDLE.
- *     A handle to a unit that has since died returns what BWAPI returns for a dead unit, with
- *     no latch; bwapi_unit_exists() tells the two apart.
+ *   - A handle that could never have been valid (negative, out of range, wrong kind) returns
+ *     the documented neutral value AND latches BWAPI_ERR_INVALID_HANDLE; any handle used before
+ *     connect or after disconnect does the same and latches BWAPI_ERR_NOT_CONNECTED. A handle
+ *     to a unit that has since died returns what BWAPI returns for a dead unit, with no latch;
+ *     bwapi_unit_exists() tells the two apart.
  *   - Every export is a noexcept boundary: an exception inside latches an error and returns
  *     the neutral value. Nothing unwinds into the host.
  *   - All calls happen on the thread that calls bwapi_client_update(); any other thread gets
