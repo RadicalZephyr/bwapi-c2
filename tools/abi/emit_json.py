@@ -85,9 +85,26 @@ def constants_json(spec):
     return families
 
 
+def field_json(f):
+    ctype, suffix = abispec.c_field_type(f["type"])
+    out = {"name": f["name"], "type": f["type"], "c_type": ctype + suffix, "doc": f.get("doc", "")}
+    if "from" in f:
+        out["from"] = f["from"]
+    return out
+
+
 def structs_json(spec):
-    return [{"name": s["name"], "c_type": f"bwapi_{s['name']}", "doc": " ".join(s["doc"].split()),
-             "fields": s["fields"], "flags": s.get("flags") or []} for s in spec.structs]
+    out = []
+    for s in spec.structs:
+        item = {"name": s["name"], "c_type": f"bwapi_{s['name']}", "doc": " ".join(s["doc"].split()),
+                "fields": [{"name": "size", "type": "int32", "c_type": "int32_t",
+                            "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"}]
+                          + [field_json(f) for f in s["fields"]],
+                "flags": s.get("flags") or []}
+        if "table" in s:
+            item["table"] = {"class": s["table"]["class"], "c": s["table"]["c"]}
+        out.append(item)
+    return out
 
 
 def render(spec):

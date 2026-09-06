@@ -135,6 +135,30 @@ def constant_families(spec):
     return "\n".join(blocks).rstrip("\n")
 
 
+def struct_block(spec):
+    if not spec.structs:
+        return "/* (no structs yet: spec/structs.yaml arrives with the first POD that crosses the boundary) */"
+    blocks = []
+    for st in spec.structs:
+        rows = [("int32_t", "size", "", "the struct-evolution prefix: the caller's stride in, the bytes filled out")]
+        for f in st["fields"]:
+            ctype, suffix = abispec.c_field_type(f["type"])
+            note = f.get("doc") or (f.get("from", "") and f"{f['from']}()")
+            rows.append((ctype, f["name"], suffix, note))
+        width = max(len(f"{c} {n}{sfx};") for c, n, sfx, _ in rows)
+        blocks.append(comment(abispec.first_sentence(st["doc"]) + (f" Filled by {st['table']['c']}()." if "table" in st else "")))
+        blocks.append(f"typedef struct bwapi_{st['name']} {{")
+        for ctype, name, suffix, note in rows:
+            decl = f"{ctype} {name}{suffix};"
+            blocks.append(f"  {decl:<{width}}" + (f" /* {note} */" if note else ""))
+        blocks.append(f"}} bwapi_{st['name']};")
+        if "flags" in st and st["flags"]:
+            for flag in st["flags"]:
+                blocks.append(f"#define BWAPI_{st['name'].upper()}_{flag['name'].upper()} (1u << {flag['bit']})")
+        blocks.append("")
+    return "\n".join(blocks).rstrip("\n")
+
+
 def render(spec, header):
     with open(os.path.join(TEMPLATES, header + ".in"), encoding="utf-8") as f:
         text = f.read()
@@ -146,6 +170,7 @@ def render(spec, header):
         text = text.replace("@LOG_LEVELS@", abi_constant_block(levels))
         text = text.replace("@POSITION_SENTINELS@", position_sentinels())
         text = text.replace("@CONSTANTS@", constant_families(spec))
+        text = text.replace("@STRUCTS@", struct_block(spec))
     leftover = re.findall(r"@[A-Z_]+@", text)
     if leftover:
         raise abispec.SpecError(f"{header}.in: unfilled placeholder(s) {leftover}")

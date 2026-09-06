@@ -141,6 +141,32 @@ int32_t write_ids(int32_t* out, int32_t cap, const Range& range) {
   return static_cast<int32_t>(ids.size());
 }
 
+// The struct-array convention (section 4): the caller sets size on element zero and that is the
+// stride of the whole array; the callee writes the fields it knows into each row, zero-fills
+// the remainder of the caller's stride, sets each row's size to the bytes it filled (so
+// BWAPI_HAS_FIELD on a returned row says what is valid), and never writes past cap rows or
+// past the stride. Returns the total. A stride that cannot hold size itself is BAD_BUFFER.
+template <class Row, class Fill>
+int32_t write_rows(Row* out, int32_t cap, int32_t total, Fill fill) {
+  if (cap <= 0) return total;
+  const int32_t stride = out[0].size;
+  if (stride < static_cast<int32_t>(sizeof(int32_t))) {
+    latch(BWAPI_ERR_BAD_BUFFER, "struct array: size on element zero must be the caller's stride");
+    return 0;
+  }
+  const size_t filled = std::min(static_cast<size_t>(stride), sizeof(Row));
+  char* dst = reinterpret_cast<char*>(out);
+  const int32_t n = std::min(cap, total);
+  for (int32_t i = 0; i < n; ++i, dst += stride) {
+    Row row{};
+    fill(row, i);
+    row.size = static_cast<int32_t>(filled);
+    std::memset(dst, 0, static_cast<size_t>(stride));
+    std::memcpy(dst, &row, filled);
+  }
+  return total;
+}
+
 // Packed positions in upstream's order (a chokepoint's geometry is a polyline), the first cap
 // written, the total returned.
 template <class Range>

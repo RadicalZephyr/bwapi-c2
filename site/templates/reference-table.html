@@ -20,11 +20,10 @@
     </tbody>
   </table>
   {% else %}
-  <p class="muted">Every struct begins with <code>int32_t size</code>, which the caller sets on input and the callee on output (the conventions at the top of <code>bwapi_c2_types.h</code>).</p>
+  <p class="muted">Every struct begins with <code>int32_t size</code>, which the caller sets on input and the callee on output (the conventions at the top of <code>bwapi_c2_types.h</code>).{% if x.table_c %} One row per <code>{{ x.table_class }}</code> id, filled by <a href="{{ get_url(path="@/reference/bulk/" ~ x.table_c ~ ".md") | safe }}"><code>{{ x.table_c }}</code></a>.{% endif %}</p>
   <table>
     <thead><tr><th>Field</th><th>Type</th><th></th></tr></thead>
     <tbody>
-      <tr><td><code>size</code></td><td><code>int32_t</code></td><td>the struct-evolution prefix</td></tr>
     {% for r in x.rows %}
       <tr><td><code>{{ r.name }}</code></td><td><code>{{ r.type }}</code></td><td>{{ r.doc }}</td></tr>
     {% endfor %}

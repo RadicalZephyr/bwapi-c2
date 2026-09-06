@@ -67,7 +67,8 @@ Every entry is a mapping in a top-level list. The plan's example, with every fie
 | `divergences` | no | A list of plan §15 row numbers the function departs from upstream on. Rendered as links on the reference page |
 
 An entry has either `c` or `skip`, never both and never neither. Unknown fields are an error,
-so a typo cannot silently drop a flag.
+so a typo cannot silently drop a flag. One declaration may back more than one export
+(`UnitType::requiredUnits` is an accessor and a table), but not an export and a skip.
 
 ### 1.2 The `cpp` string
 

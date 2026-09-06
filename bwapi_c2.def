@@ -19,6 +19,7 @@ EXPORTS
     bwapi_color_green
     bwapi_color_is_valid
     bwapi_color_red
+    bwapi_color_table
     bwapi_damagetype_get_name
     bwapi_damagetype_is_valid
     bwapi_error_get_name
@@ -90,6 +91,7 @@ EXPORTS
     bwapi_playertype_is_game_type
     bwapi_playertype_is_lobby_type
     bwapi_playertype_is_valid
+    bwapi_playertype_table
     bwapi_race_get_name
     bwapi_race_get_refinery
     bwapi_race_get_resource_depot
@@ -97,6 +99,7 @@ EXPORTS
     bwapi_race_get_transport
     bwapi_race_get_worker
     bwapi_race_is_valid
+    bwapi_race_table
     bwapi_revision
     bwapi_set_error_callback
     bwapi_set_log_callback
@@ -110,6 +113,7 @@ EXPORTS
     bwapi_techtype_mineral_price
     bwapi_techtype_required_unit
     bwapi_techtype_research_time
+    bwapi_techtype_table
     bwapi_techtype_targets_position
     bwapi_techtype_targets_unit
     bwapi_techtype_what_researches
@@ -182,6 +186,7 @@ EXPORTS
     bwapi_unittype_regenerates_hp
     bwapi_unittype_required_tech
     bwapi_unittype_required_units
+    bwapi_unittype_required_units_table
     bwapi_unittype_requires_creep
     bwapi_unittype_requires_psi
     bwapi_unittype_researches_what
@@ -192,6 +197,7 @@ EXPORTS
     bwapi_unittype_space_required
     bwapi_unittype_supply_provided
     bwapi_unittype_supply_required
+    bwapi_unittype_table
     bwapi_unittype_tile_height
     bwapi_unittype_tile_size
     bwapi_unittype_tile_width
@@ -209,6 +215,7 @@ EXPORTS
     bwapi_upgradetype_max_repeats
     bwapi_upgradetype_mineral_price
     bwapi_upgradetype_mineral_price_factor
+    bwapi_upgradetype_table
     bwapi_upgradetype_upgrade_time
     bwapi_upgradetype_upgrade_time_factor
     bwapi_upgradetype_what_upgrades
@@ -228,6 +235,7 @@ EXPORTS
     bwapi_weapontype_median_splash_radius
     bwapi_weapontype_min_range
     bwapi_weapontype_outer_splash_radius
+    bwapi_weapontype_table
     bwapi_weapontype_targets_air
     bwapi_weapontype_targets_ground
     bwapi_weapontype_targets_mechanical

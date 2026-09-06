@@ -1343,6 +1343,191 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
 #define BWAPI_LATENCY_BATTLENET_MEDIUM 19
 #define BWAPI_LATENCY_BATTLENET_HIGH   24
 
+/* ---- structs ------------------------------------------------------------------------------ */
+
+/* Every POD that crosses the boundary (plan section 4), size-prefixed. The table rows carry
+ * the scalar accessors of one type class each, one row per id; bwapi_<class>_table() fills
+ * them under the stride rule stated above. */
+/* One row of the UnitType table: every scalar accessor of the class for one id, in one crossing.
+ * Filled by bwapi_unittype_table(). */
+typedef struct bwapi_unittype_row {
+  int32_t size;                    /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t id;                      /* the type id, which is also the row's index */
+  int32_t get_race;                /* UnitType::getRace() */
+  int32_t required_tech;           /* UnitType::requiredTech() */
+  int32_t cloaking_tech;           /* UnitType::cloakingTech() */
+  int32_t armor_upgrade;           /* UnitType::armorUpgrade() */
+  int32_t max_hit_points;          /* UnitType::maxHitPoints() */
+  int32_t max_shields;             /* UnitType::maxShields() */
+  int32_t max_energy;              /* UnitType::maxEnergy() */
+  int32_t armor;                   /* UnitType::armor() */
+  int32_t mineral_price;           /* UnitType::mineralPrice() */
+  int32_t gas_price;               /* UnitType::gasPrice() */
+  int32_t build_time;              /* UnitType::buildTime() */
+  int32_t supply_required;         /* UnitType::supplyRequired() */
+  int32_t supply_provided;         /* UnitType::supplyProvided() */
+  int32_t space_required;          /* UnitType::spaceRequired() */
+  int32_t space_provided;          /* UnitType::spaceProvided() */
+  int32_t build_score;             /* UnitType::buildScore() */
+  int32_t destroy_score;           /* UnitType::destroyScore() */
+  int32_t size_type;               /* UnitType::size() */
+  int32_t tile_width;              /* UnitType::tileWidth() */
+  int32_t tile_height;             /* UnitType::tileHeight() */
+  int32_t dimension_left;          /* UnitType::dimensionLeft() */
+  int32_t dimension_up;            /* UnitType::dimensionUp() */
+  int32_t dimension_right;         /* UnitType::dimensionRight() */
+  int32_t dimension_down;          /* UnitType::dimensionDown() */
+  int32_t width;                   /* UnitType::width() */
+  int32_t height;                  /* UnitType::height() */
+  int32_t seek_range;              /* UnitType::seekRange() */
+  int32_t sight_range;             /* UnitType::sightRange() */
+  int32_t ground_weapon;           /* UnitType::groundWeapon() */
+  int32_t max_ground_hits;         /* UnitType::maxGroundHits() */
+  int32_t air_weapon;              /* UnitType::airWeapon() */
+  int32_t max_air_hits;            /* UnitType::maxAirHits() */
+  double top_speed;                /* UnitType::topSpeed() */
+  int32_t acceleration;            /* UnitType::acceleration() */
+  int32_t halt_distance;           /* UnitType::haltDistance() */
+  int32_t turn_radius;             /* UnitType::turnRadius() */
+  int32_t can_produce;             /* UnitType::canProduce() */
+  int32_t can_attack;              /* UnitType::canAttack() */
+  int32_t can_move;                /* UnitType::canMove() */
+  int32_t is_flyer;                /* UnitType::isFlyer() */
+  int32_t regenerates_hp;          /* UnitType::regeneratesHP() */
+  int32_t is_spellcaster;          /* UnitType::isSpellcaster() */
+  int32_t has_permanent_cloak;     /* UnitType::hasPermanentCloak() */
+  int32_t is_invincible;           /* UnitType::isInvincible() */
+  int32_t is_organic;              /* UnitType::isOrganic() */
+  int32_t is_mechanical;           /* UnitType::isMechanical() */
+  int32_t is_robotic;              /* UnitType::isRobotic() */
+  int32_t is_detector;             /* UnitType::isDetector() */
+  int32_t is_resource_container;   /* UnitType::isResourceContainer() */
+  int32_t is_resource_depot;       /* UnitType::isResourceDepot() */
+  int32_t is_refinery;             /* UnitType::isRefinery() */
+  int32_t is_worker;               /* UnitType::isWorker() */
+  int32_t requires_psi;            /* UnitType::requiresPsi() */
+  int32_t requires_creep;          /* UnitType::requiresCreep() */
+  int32_t is_two_units_in_one_egg; /* UnitType::isTwoUnitsInOneEgg() */
+  int32_t is_burrowable;           /* UnitType::isBurrowable() */
+  int32_t is_cloakable;            /* UnitType::isCloakable() */
+  int32_t is_building;             /* UnitType::isBuilding() */
+  int32_t is_addon;                /* UnitType::isAddon() */
+  int32_t is_flying_building;      /* UnitType::isFlyingBuilding() */
+  int32_t is_neutral;              /* UnitType::isNeutral() */
+  int32_t is_hero;                 /* UnitType::isHero() */
+  int32_t is_powerup;              /* UnitType::isPowerup() */
+  int32_t is_beacon;               /* UnitType::isBeacon() */
+  int32_t is_flag_beacon;          /* UnitType::isFlagBeacon() */
+  int32_t is_special_building;     /* UnitType::isSpecialBuilding() */
+  int32_t is_spell;                /* UnitType::isSpell() */
+  int32_t produces_creep;          /* UnitType::producesCreep() */
+  int32_t produces_larva;          /* UnitType::producesLarva() */
+  int32_t is_mineral_field;        /* UnitType::isMineralField() */
+  int32_t is_critter;              /* UnitType::isCritter() */
+  int32_t can_build_addon;         /* UnitType::canBuildAddon() */
+} bwapi_unittype_row;
+
+/* One row of the WeaponType table: every scalar accessor of the class for one id, in one
+ * crossing. Filled by bwapi_weapontype_table(). */
+typedef struct bwapi_weapontype_row {
+  int32_t size;                 /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t id;                   /* the type id, which is also the row's index */
+  int32_t get_tech;             /* WeaponType::getTech() */
+  int32_t what_uses;            /* WeaponType::whatUses() */
+  int32_t damage_amount;        /* WeaponType::damageAmount() */
+  int32_t damage_bonus;         /* WeaponType::damageBonus() */
+  int32_t damage_cooldown;      /* WeaponType::damageCooldown() */
+  int32_t damage_factor;        /* WeaponType::damageFactor() */
+  int32_t upgrade_type;         /* WeaponType::upgradeType() */
+  int32_t damage_type;          /* WeaponType::damageType() */
+  int32_t explosion_type;       /* WeaponType::explosionType() */
+  int32_t min_range;            /* WeaponType::minRange() */
+  int32_t max_range;            /* WeaponType::maxRange() */
+  int32_t inner_splash_radius;  /* WeaponType::innerSplashRadius() */
+  int32_t median_splash_radius; /* WeaponType::medianSplashRadius() */
+  int32_t outer_splash_radius;  /* WeaponType::outerSplashRadius() */
+  int32_t targets_air;          /* WeaponType::targetsAir() */
+  int32_t targets_ground;       /* WeaponType::targetsGround() */
+  int32_t targets_mechanical;   /* WeaponType::targetsMechanical() */
+  int32_t targets_organic;      /* WeaponType::targetsOrganic() */
+  int32_t targets_non_building; /* WeaponType::targetsNonBuilding() */
+  int32_t targets_non_robotic;  /* WeaponType::targetsNonRobotic() */
+  int32_t targets_terrain;      /* WeaponType::targetsTerrain() */
+  int32_t targets_org_or_mech;  /* WeaponType::targetsOrgOrMech() */
+  int32_t targets_own;          /* WeaponType::targetsOwn() */
+} bwapi_weapontype_row;
+
+/* One row of the TechType table: every scalar accessor of the class for one id, in one crossing.
+ * Filled by bwapi_techtype_table(). */
+typedef struct bwapi_techtype_row {
+  int32_t size;             /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t id;               /* the type id, which is also the row's index */
+  int32_t get_race;         /* TechType::getRace() */
+  int32_t mineral_price;    /* TechType::mineralPrice() */
+  int32_t gas_price;        /* TechType::gasPrice() */
+  int32_t research_time;    /* TechType::researchTime() */
+  int32_t energy_cost;      /* TechType::energyCost() */
+  int32_t what_researches;  /* TechType::whatResearches() */
+  int32_t get_weapon;       /* TechType::getWeapon() */
+  int32_t targets_unit;     /* TechType::targetsUnit() */
+  int32_t targets_position; /* TechType::targetsPosition() */
+  int32_t get_order;        /* TechType::getOrder() */
+  int32_t required_unit;    /* TechType::requiredUnit() */
+} bwapi_techtype_row;
+
+/* One row of the UpgradeType table: every scalar accessor of the class for one id, in one
+ * crossing. Filled by bwapi_upgradetype_table(). */
+typedef struct bwapi_upgradetype_row {
+  int32_t size;                 /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t id;                   /* the type id, which is also the row's index */
+  int32_t get_race;             /* UpgradeType::getRace() */
+  int32_t mineral_price_factor; /* UpgradeType::mineralPriceFactor() */
+  int32_t gas_price_factor;     /* UpgradeType::gasPriceFactor() */
+  int32_t upgrade_time_factor;  /* UpgradeType::upgradeTimeFactor() */
+  int32_t max_repeats;          /* UpgradeType::maxRepeats() */
+  int32_t what_upgrades;        /* UpgradeType::whatUpgrades() */
+} bwapi_upgradetype_row;
+
+/* One row of the Race table: every scalar accessor of the class for one id, in one crossing.
+ * Filled by bwapi_race_table(). */
+typedef struct bwapi_race_row {
+  int32_t size;                /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t id;                  /* the type id, which is also the row's index */
+  int32_t get_worker;          /* Race::getWorker() */
+  int32_t get_resource_depot;  /* Race::getResourceDepot() */
+  int32_t get_refinery;        /* Race::getRefinery() */
+  int32_t get_transport;       /* Race::getTransport() */
+  int32_t get_supply_provider; /* Race::getSupplyProvider() */
+} bwapi_race_row;
+
+/* One row of the PlayerType table: every scalar accessor of the class for one id, in one
+ * crossing. Filled by bwapi_playertype_table(). */
+typedef struct bwapi_playertype_row {
+  int32_t size;          /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t id;            /* the type id, which is also the row's index */
+  int32_t is_lobby_type; /* PlayerType::isLobbyType() */
+  int32_t is_game_type;  /* PlayerType::isGameType() */
+} bwapi_playertype_row;
+
+/* One row of the Color table: every scalar accessor of the class for one id, in one crossing.
+ * Filled by bwapi_color_table(). */
+typedef struct bwapi_color_row {
+  int32_t size;  /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t id;    /* the type id, which is also the row's index */
+  int32_t red;   /* Color::red() */
+  int32_t green; /* Color::green() */
+  int32_t blue;  /* Color::blue() */
+} bwapi_color_row;
+
+/* One requirement of one unit type, for the flat requiredUnits table: the type, the type it
+ * requires, and how many of it. */
+typedef struct bwapi_required_unit {
+  int32_t size;          /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t type;          /* the unit type that has the requirement */
+  int32_t required_type; /* the unit type it requires */
+  int32_t count;         /* how many of the required type */
+} bwapi_required_unit;
+
 /* ---- static type data ------------------------------------------------------------------- */
 
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,
@@ -1730,6 +1915,33 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_red(int32_t color) BWAPI_C2_NOEXC
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_green(int32_t color) BWAPI_C2_NOEXCEPT;
 /* Retrieves the blue component of the color. */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_blue(int32_t color) BWAPI_C2_NOEXCEPT;
+
+/* ---- bulk type tables ---------------------------------------------------------------------------- */
+
+/* Every unit type requirement in the game as a flat table of (type, required_type, count) rows,
+ * ascending by type and then by required type, up to cap; returns the total number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_required_units_table(bwapi_required_unit* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Fills one bwapi_unittype_row per UnitType id, 0 to Unknown inclusive, up to cap, and returns
+ * the total number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_table(bwapi_unittype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Fills one bwapi_weapontype_row per WeaponType id, 0 to Unknown inclusive, up to cap, and
+ * returns the total number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_weapontype_table(bwapi_weapontype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Fills one bwapi_techtype_row per TechType id, 0 to Unknown inclusive, up to cap, and returns
+ * the total number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_techtype_table(bwapi_techtype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Fills one bwapi_upgradetype_row per UpgradeType id, 0 to Unknown inclusive, up to cap, and
+ * returns the total number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_upgradetype_table(bwapi_upgradetype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap, and returns the total
+ * number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_race_table(bwapi_race_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Fills one bwapi_playertype_row per PlayerType id, 0 to Unknown inclusive, up to cap, and
+ * returns the total number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_playertype_table(bwapi_playertype_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
+/* Fills one bwapi_color_row per Color id, 0 to Unknown inclusive, up to cap, and returns the
+ * total number of rows. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_color_table(bwapi_color_row* out, int32_t cap) BWAPI_C2_NOEXCEPT;
 
 #ifdef __cplusplus
 } /* extern "C" */

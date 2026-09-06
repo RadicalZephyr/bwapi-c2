@@ -1,0 +1,16 @@
+# The bulk type tables (plan section 5.8; implementation plan 1.5). The fifteen per-class tables
+# are declared by the table: blocks of spec/structs.yaml and land in this section; the flat
+# requiredUnits table below is hand-written in src/bulk.cpp, the one shape a from: field cannot
+# express.
+
+- cpp: "UnitType::requiredUnits"
+  c: bwapi_unittype_required_units_table
+  self: none
+  returns: "struct_array:required_unit"
+  source: src/bulk.cpp
+  doc: >-
+    Every unit type requirement in the game as a flat table of (type, required_type, count) rows,
+    ascending by type and then by required type, up to cap; returns the total number of rows.
+    The caller sets size on element zero to its row size and that is the stride; each row comes
+    back with size set to the bytes filled. A cap of 0 with NULL queries the count. The rows for
+    one type are exactly what bwapi_unittype_required_units() returns for it.

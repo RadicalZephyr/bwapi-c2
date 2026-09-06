@@ -150,6 +150,13 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
  * C++ enumerator at compile time, so nothing here can drift. */
 @CONSTANTS@
 
+/* ---- structs ------------------------------------------------------------------------------ */
+
+/* Every POD that crosses the boundary (plan section 4), size-prefixed. The table rows carry
+ * the scalar accessors of one type class each, one row per id; bwapi_<class>_table() fills
+ * them under the stride rule stated above. */
+@STRUCTS@
+
 /* ---- static type data ------------------------------------------------------------------- */
 
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,

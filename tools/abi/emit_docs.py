@@ -139,9 +139,12 @@ def struct_page(s, weight):
     lines = ["+++", f"title = {toml_str(s['c_type'])}", f"description = {toml_str(first_sentence(s['doc']))}",
              'template = "reference-table.html"', f"weight = {weight}", "", "[extra]", 'kind = "struct"',
              f"c_type = {toml_str(s['c_type'])}"]
+    if "table" in s:
+        lines.append(f"table_c = {toml_str(s['table']['c'])}")
+        lines.append(f"table_class = {toml_str(s['table']['class'])}")
     for f in s["fields"]:
-        lines += ["", "[[extra.rows]]", f"name = {toml_str(f['name'])}", f"type = {toml_str(f['type'])}",
-                  f"doc = {toml_str(f.get('doc', ''))}"]
+        lines += ["", "[[extra.rows]]", f"name = {toml_str(f['name'])}", f"type = {toml_str(f['c_type'])}",
+                  f"doc = {toml_str(f.get('doc') or f.get('from', ''))}"]
     for f in s["flags"]:
         lines += ["", "[[extra.flags]]", f"name = {toml_str(f['name'])}", f"bit = {f['bit']}",
                   f"doc = {toml_str(f.get('doc', ''))}"]

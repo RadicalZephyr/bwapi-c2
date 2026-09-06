@@ -92,7 +92,8 @@ SCALAR_RETURN_KINDS = ("int32", "bool32", "double", "position", "tile_position",
 ENTRY_FIELDS = {"cpp", "c", "self", "params", "returns", "body", "source", "skip", "reentrant",
                 "legit_none", "doc", "guides", "since", "divergences"}
 FAMILY_FIELDS = {"family", "cpp", "prefix", "strip", "values"}
-STRUCT_FIELDS = {"name", "doc", "fields", "flags"}
+STRUCT_FIELDS = {"name", "doc", "fields", "flags", "table"}
+FIELD_TYPES = ("int32", "bool32", "double", "int16", "uint8", "uint32")
 
 
 class SpecError(Exception):
@@ -198,10 +199,23 @@ def validate_struct(s, where):
         if required not in s:
             raise SpecError(f"{where}: missing {required}:")
     for i, fld in enumerate(s["fields"]):
-        if set(fld) - {"name", "type", "doc"} or "name" not in fld or "type" not in fld:
-            raise SpecError(f"{where}: fields[{i}] must be {{name, type, doc?}}")
+        if set(fld) - {"name", "type", "doc", "from"} or "name" not in fld or "type" not in fld:
+            raise SpecError(f"{where}: fields[{i}] must be {{name, type, doc?, from?}}")
         if fld["name"] == "size":
             raise SpecError(f"{where}: size is implied, never listed")
+        base = re.sub(r"\[\d+\]$", "", fld["type"])
+        if base not in FIELD_TYPES and not base.startswith("type:"):
+            raise SpecError(f"{where}: fields[{i}] type {fld['type']!r} is not a struct field type")
+        if "from" in fld and "table" not in s:
+            raise SpecError(f"{where}: fields[{i}] from: is only meaningful in a table: struct")
+    if "table" in s:
+        t = s["table"]
+        if set(t) != {"class", "c", "doc"}:
+            raise SpecError(f"{where}: table: must be {{class, c, doc}}")
+        if t["class"] not in TYPE_CLASS_PREFIX:
+            raise SpecError(f"{where}: table.class {t['class']!r} is not a type class")
+        if not s["fields"] or s["fields"][0]["name"] != "id":
+            raise SpecError(f"{where}: a table row's first field is id")
     for i, flag in enumerate(s.get("flags") or []):
         if set(flag) - {"name", "bit", "doc"} or "name" not in flag or "bit" not in flag:
             raise SpecError(f"{where}: flags[{i}] must be {{name, bit, doc?}}")
@@ -235,6 +249,8 @@ class Spec:
                 elif stem == "structs":
                     validate_struct(item, where)
                     self.structs.append(item)
+                    if "table" in item:
+                        self.entries.append(("bulk", table_entry(item)))
                 else:
                     validate_entry(item, where)
                     self.entries.append((stem, item))
@@ -247,10 +263,14 @@ class Spec:
                 if e["c"] in seen_c:
                     raise SpecError(f"{e['c']} is defined in both {seen_c[e['c']]} and {stem}")
                 seen_c[e["c"]] = stem
+            # One declaration may back more than one export (UnitType::requiredUnits is an
+            # accessor and a table), but a declaration skipped in one place cannot be exported in
+            # another.
             if "cpp" in e:
-                if e["cpp"] in seen_cpp:
-                    raise SpecError(f"cpp {e['cpp']!r} appears twice ({seen_cpp[e['cpp']]} and {stem})")
-                seen_cpp[e["cpp"]] = stem
+                kind = "skip" if "skip" in e else "export"
+                prior = seen_cpp.setdefault(e["cpp"], kind)
+                if prior != kind:
+                    raise SpecError(f"cpp {e['cpp']!r} is both skipped and exported")
         names = [c for c, _ in ((f["family"], f) for f in self.families)]
         if len(names) != len(set(names)):
             raise SpecError("a constant family is listed twice")
@@ -280,6 +300,49 @@ C_PARAM_TYPES = {
     "int32_array_out": "int32_t*", "int16_array_out": "int16_t*", "uint8_array_out": "uint8_t*",
     "position_array_out": "bwapi_position*",
 }
+
+
+def c_field_type(t):
+    """A struct field's C spelling; a trailing [N] is a fixed array."""
+    base, _, count = t.partition("[")
+    scalar = {"int32": "int32_t", "bool32": "int32_t", "double": "double", "int16": "int16_t",
+              "uint8": "uint8_t", "uint32": "uint32_t"}.get(base, "int32_t" if base.startswith("type:") else None)
+    if scalar is None:
+        raise SpecError(f"unknown field type {t!r}")
+    return scalar, ("[" + count) if count else ""
+
+
+def field_conversion(kind, expr):
+    """The C++ value of an accessor to a table field of the field's type (section 1.4's rules)."""
+    base = kind.partition(":")[0]
+    if base in ("int32", "int16", "uint8", "uint32"):
+        return f"static_cast<{c_field_type(kind)[0]}>({expr})"
+    if base == "bool32":
+        return f"({expr}) ? 1 : 0"
+    if base == "double":
+        return f"static_cast<double>({expr})"
+    if base == "type":
+        return f"({expr}).getID()"
+    raise SpecError(f"no conversion for field type {kind}")
+
+
+def table_entry(struct):
+    """The function entry a table: struct declares (spec-format.md section 3): one row per id of
+    the class, 0 to Unknown inclusive, each field filled from the accessor its from: names,
+    through the stride rule of section 4 (the caller's size on element zero)."""
+    t = struct["table"]
+    cls = t["class"]
+    lines = [f"const int32_t total = BWAPI::{cls}(-1).getID() + 1;",
+             f"return write_rows(out, cap, total, [](bwapi_{struct['name']}& row, int32_t id) {{",
+             f"  const BWAPI::{cls} t(id);", "  row.id = id;"]
+    for f in struct["fields"][1:]:
+        if "from" not in f:
+            raise SpecError(f"struct {struct['name']}: table field {f['name']} needs from:")
+        _, method, _ = split_cpp(f["from"])
+        lines.append(f"  row.{f['name']} = {field_conversion(f['type'], f't.{method}()')};")
+    lines.append("});")
+    return {"c": t["c"], "self": "none", "returns": f"struct_array:{struct['name']}", "doc": t["doc"],
+            "body": "\n".join(lines)}
 
 
 def c_param_type(t):
