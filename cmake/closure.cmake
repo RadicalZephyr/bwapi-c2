@@ -129,6 +129,17 @@ else()
   target_compile_options(bwapi_c2_closure PRIVATE -w -fvisibility=hidden)
 endif()
 
+if(BWAPI_C2_BWEM_ASSERTS)
+  # cmake/bwem_asserts.h defines BWEM_ASSERTS and the three macros upstream's defs.h forgets in
+  # that branch (see the header). Force-included rather than -D'd: CMake drops function-style
+  # entries from target_compile_definitions, and MSVC's /D cannot express them at all. PUBLIC,
+  # because every translation unit that includes bwem.h must see the same definitions.
+  if(MSVC)
+    message(FATAL_ERROR "BWAPI_C2_BWEM_ASSERTS uses -include, which MSVC does not have (/FI would; not wired)")
+  endif()
+  target_compile_options(bwapi_c2_closure PUBLIC "SHELL:-include ${CMAKE_CURRENT_SOURCE_DIR}/cmake/bwem_asserts.h")
+endif()
+
 if(BWAPI_CUSTOM_COMPILE_FLAGS)
   separate_arguments(_bwapi_c2_custom_flags NATIVE_COMMAND "${BWAPI_CUSTOM_COMPILE_FLAGS}")
   target_compile_options(bwapi_c2_closure PRIVATE ${_bwapi_c2_custom_flags})

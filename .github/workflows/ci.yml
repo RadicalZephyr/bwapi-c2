@@ -15,8 +15,11 @@ permissions:
 
 jobs:
   # The whole suite is Linux-native (section 11): the closure, both fixture-driven suites, the
-  # layout dumps across all three targets and the derived-closure test. Twice: plain, and under
-  # AddressSanitizer and UndefinedBehaviorSanitizer.
+  # layout dumps across all three targets and the derived-closure test. Three times: plain; under
+  # AddressSanitizer and UndefinedBehaviorSanitizer; and as a Debug build with BWEM's own
+  # assertions compiled in (BWAPI_C2_BWEM_ASSERTS), so a fixture that BWEM would accept silently
+  # in release (R11.9: a partially overlapping neutral) fails at the point of cause, not at
+  # teardown.
   linux:
     name: linux (clang, ${{ matrix.name }})
     runs-on: ubuntu-24.04
@@ -25,9 +28,17 @@ jobs:
       matrix:
         include:
           - name: plain
+            build_type: RelWithDebInfo
             sanitizers: ""
+            bwem_asserts: "OFF"
           - name: asan+ubsan
+            build_type: RelWithDebInfo
             sanitizers: address,undefined
+            bwem_asserts: "OFF"
+          - name: debug+bwem-asserts
+            build_type: Debug
+            sanitizers: ""
+            bwem_asserts: "ON"
     env:
       CC: clang
       CXX: clang++
@@ -42,9 +53,10 @@ jobs:
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
           -DBWAPI_C2_SANITIZERS=${{ matrix.sanitizers }}
+          -DBWAPI_C2_BWEM_ASSERTS=${{ matrix.bwem_asserts }}
       - name: Build
         run: cmake --build build
       - name: Test

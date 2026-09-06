@@ -23,6 +23,12 @@ set(BWAPI_CUSTOM_COMPILE_FLAGS "" CACHE STRING "Extra compile options for the BW
 
 option(BWAPI_C2_BUILD_TESTS "Build the test suite (section 11)" ${PROJECT_IS_TOP_LEVEL})
 
+# BWEM's own assertions (section 8.3, R11.9). Upstream compiles bwem_assert to nothing unless
+# BWEM_ASSERTS is defined, and BWEM accepts a partially overlapping neutral silently in that
+# state. With this ON, a fixture mistake fails at the point of cause instead of at teardown. Pair
+# it with a Debug build: assert() is itself a no-op under NDEBUG. Non-MSVC only; see closure.cmake.
+option(BWAPI_C2_BWEM_ASSERTS "Compile BWEM with its assertions enabled (non-MSVC, Debug build)" OFF)
+
 # Sanitizers for the whole tree, closure included: "address,undefined" is what CI's second Linux
 # configuration runs the suite under (implementation plan 0.11). Empty means none.
 set(BWAPI_C2_SANITIZERS "" CACHE STRING "Comma-separated -fsanitize= list applied to every target")
