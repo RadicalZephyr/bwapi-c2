@@ -543,6 +543,43 @@ phases 2 and 3 exist; read as intended — every declaration is either an entry,
 `skip:`, or on a recorded list that phases 2 and 3 burn down to zero — it is checkable now.
 That reading is adopted (§7).
 
+**Where the checklist stands** after the phase-1 commits: every row is green in CI on the PR
+branch, the audit row by hand and recorded in `docs/pins.md`. The numbers the plan estimated
+were counted once the tooling existed, and the counts are the deliverable, not the estimates:
+**1,103 constants** in 23 families (the plan said 848; `Key` alone is 227 of the difference),
+**167 accessor entries** plus three free functions across the fifteen type classes (the plan
+said 185 across fourteen), **21,568 assertions** in `types_test` (the plan said ~500; the loops
+over every id are the point), **959 declarations** in the 30 audited headers with 222 accounted
+and 737 on the backlog. Where a step ran differently from its text above, the difference is
+recorded here and in §7 rather than by rewriting the step:
+
+- **1.1** landed as three commits, not four: the error channel and the boundary template share
+  `abi.cpp` and `abi_internal.h`. A fifth ABI error code, `BWAPI_ERR_EXCEPTION` (9), joined the
+  four of §7 row 10, because a `std::exception` that is not BWEM's had no code and "which rule
+  fired" was the whole point of having codes. The fixture-driven suites never connect, so the
+  thread check is unbound until `connect()` binds it, and the latch test binds it by hand.
+- **1.2** added two things to the plan's field list and says why in `docs/spec-format.md`:
+  `self: game` and `self: bwem_map` beside `none`, and `source:` beside `body:` for the
+  hand-written files. A `handle:` parameter named `x` is `x_id` in C and the resolved `x` in a
+  body, the same pairing as `player_id` and `self`.
+- **1.3** spells the type enumerations as clang sees them, `UnitTypes::Enum::Enum`, and the
+  drafts carry upstream's `<summary>` line as the draft `doc:`, which is where the 167 docs of
+  1.5 started.
+- **1.4** groups the header by spec file rather than by `self` (a section per file reads
+  better than the versions beside the type accessors), keeps `bwapi_c2_bwem.h` as the phase-0
+  skeleton until `spec/bwem.yaml` exists in 3.2, and keeps underscores in the site's paths so a
+  reference URL is the C name. The class pseudo-type counters (`AllUnits`, `Men`, `Buildings`,
+  `Factories`) were missing from the fixture's tallies; the Player suite found it.
+- **1.5** generates the bulk tables from `spec/structs.yaml` rather than hand-writing them
+  (§7 row 15); only the seven classes with a scalar accessor beyond `getName` and `isValid` get
+  one. `isValid` needed a body: `Type<>(id)` clamps before it could answer. `UnitType::size()`
+  mirrors as the field `size_type`, since `size` is the prefix.
+- **1.6** dropped `-fms-compatibility` from the audit flags: the pinned headers parse without it
+  and with it libstdc++ loses `char16_t`. The backlog is a checked-in file the audit diffs
+  against, so a declaration cannot drift onto or off it silently.
+- **1.7** generates both raw layers in CI and gitignores the output (§7 row 16); the Python one
+  is also imported against `libbwapi_c2.so` in the plain Linux job because it is cheap.
+
 ---
 
 ## 3. Phase 2 — Read surface
@@ -933,6 +970,9 @@ changes a §4 convention.
 | 12 | Own Zola templates, no third-party theme (0.12) | A documentation theme | The reference layout is not one any theme ships, and a theme is a dependency with a release cadence. The sidebar and prev/next are a few dozen lines |
 | 13 | The site skeleton lands in phase 0, not when there is a reference to show (0.12) | First site work in phase 1 with `emit_docs.py` | Two Explanation pages can be written from the plan today, and a deploy pipeline that has run fifty times before the reference arrives is one fewer thing to debug at the moment it matters |
 | 14 | Zola installed in CI from a pinned, checksummed release tarball (0.12) | A marketplace action | The docs job is the only job that could publish something; its toolchain is not delegated to a third party |
+| 15 | The per-class bulk tables are generated from `spec/structs.yaml`, each field naming the accessor it mirrors in `from:` and a `table:` block declaring the function (1.5) | Hand-written in `src/bulk.cpp`, as 1.5 said | A row that is a pure function of the spec is what the generator exists for; the test that checks every row against the accessor of the same id is the same either way, and 72 fields typed by hand is 72 places to be wrong. The flat `requiredUnits` table stays hand-written: it is the one shape a `from:` cannot express |
+| 16 | The Python and C# raw layers are generated in CI from `api.json` and never committed (1.7) | Check them in under rule 2 | Rule 2 names the ABI's own outputs, which something compiles against; a raw layer is a pure function of `api.json` that CI regenerates on every run, and committing it would put the same diff in two places. `regen.py` leaves them alone; the `gen.py` of each binding is the only way to make one |
+| 17 | The spec's `self` has `game` and `bwem_map` beside the plan's list, and entries may carry `source:` instead of `body:` (1.2) | `none` for everything without a handle; hand-written functions specced with an empty `body:` | Without `game`, a `Game::mapName()` wrapper and a `UnitType::maxHitPoints()` wrapper are both `none` and the emitter cannot tell which needs the connected check; without `source:`, a hand-written definition would have to be pasted into YAML to be declared. Both are format, documented in `docs/spec-format.md` |
 
 ### Questions worth settling before 0.2
 

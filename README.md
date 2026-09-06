@@ -50,6 +50,17 @@ ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 \
   ctest --test-dir build-asan --output-on-failure
 ```
 
+The public headers, the generated sources, `bwapi_c2.def` and `api.json` are emitted from the
+spec under `tools/abi/spec/` (the format is [docs/spec-format.md](docs/spec-format.md)) and
+checked in. To change the ABI, change a spec file and regenerate; CI fails on a stale output:
+
+```sh
+pip install pyyaml                        # the emitters' one dependency
+tools/abi/regen.py                        # headers, src/*.gen.cpp, .def, api.json, the reference pages
+tools/abi/audit.sh                        # the coverage audit, off the merge path; needs pip install libclang
+bindings/python/gen.py                    # the raw ctypes layer from api.json (not committed)
+```
+
 The site under `site/` builds with Zola, pinned to the version and checksum in
 `.github/workflows/docs.yml`; `zola check` there must pass before a docs change lands. The one
 repository setting not in the tree is Pages' source, which must be "GitHub Actions".
