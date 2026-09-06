@@ -12,11 +12,14 @@
 
 #include <BWAPI.h>
 
+#include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <exception>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace bwapi_c2 {
 
@@ -99,8 +102,44 @@ int32_t write_string(char* buf, int32_t buf_len, const std::string& s);
 // The neutral value of a string_out return: an empty string when there is room for one, and 0.
 int32_t empty_string(char* buf, int32_t buf_len);
 
-// The same rule for an array-out buffer: false having latched when (out, cap) is malformed.
+// The buffer rule checked up front, before the call, so a malformed buffer never reaches BWAPI:
+// false having latched BWAPI_ERR_BAD_BUFFER when (buf, buf_len) or (out, cap) is NULL with a
+// nonzero length, or negative.
+bool check_string_buffer(const char* buf, int32_t buf_len);
 bool check_buffer(const void* out, int32_t cap);
+
+// ---- conversions the generated wrappers apply (spec-format.md section 1.4) --------------------
+
+// A BWAPI interface pointer to its id; null is BWAPI_NONE.
+template <class T>
+inline int32_t id_of(T* p) {
+  return p ? static_cast<int32_t>(p->getID()) : BWAPI_NONE;
+}
+
+// The collection convention (section 4): the ids of a range of interface pointers, ascending,
+// the first cap of them written, the total returned. Assumes check_buffer() passed.
+template <class Range>
+int32_t write_ids(int32_t* out, int32_t cap, const Range& range) {
+  std::vector<int32_t> ids;
+  for (auto* p : range)
+    if (p) ids.push_back(static_cast<int32_t>(p->getID()));
+  std::sort(ids.begin(), ids.end());
+  const size_t n = std::min(ids.size(), static_cast<size_t>(cap));
+  if (n) std::memcpy(out, ids.data(), n * sizeof(int32_t));
+  return static_cast<int32_t>(ids.size());
+}
+
+// Packed positions in upstream's order (a chokepoint's geometry is a polyline), the first cap
+// written, the total returned.
+template <class Range>
+int32_t write_positions(bwapi_position* out, int32_t cap, const Range& range) {
+  int32_t total = 0;
+  for (const auto& p : range) {
+    if (total < cap) out[total] = BWAPI_POS_MAKE(p.x, p.y);
+    ++total;
+  }
+  return total;
+}
 
 // ---- handles (handles.cpp) --------------------------------------------------------------------
 

@@ -125,6 +125,14 @@ int32_t empty_string(char* buf, int32_t buf_len) {
   return 0;
 }
 
+bool check_string_buffer(const char* buf, int32_t buf_len) {
+  if (buf_len < 0 || (buf == nullptr && buf_len != 0)) {
+    latch(BWAPI_ERR_BAD_BUFFER, "string out: NULL buffer with a nonzero length, or a negative length");
+    return false;
+  }
+  return true;
+}
+
 bool check_buffer(const void* out, int32_t cap) {
   if (cap < 0 || (out == nullptr && cap != 0)) {
     latch(BWAPI_ERR_BAD_BUFFER, "array out: NULL buffer with a nonzero cap, or a negative cap");
