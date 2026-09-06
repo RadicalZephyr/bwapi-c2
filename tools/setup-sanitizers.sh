@@ -90,11 +90,19 @@ ${BOLD}Sanitizer toolchain ready.${OFF}
   runtimes     x86_64
   symbolizer   $(command -v llvm-symbolizer 2>/dev/null || echo 'MISSING - stack traces will not be symbolized')
 
-Compile flags:
-  -fsanitize=address,undefined -fno-sanitize-recover=all
-  -fno-omit-frame-pointer -g -O1
+Configure, build and run the suite the way CI's sanitized job does:
 
-Runtime options:
-  export ASAN_OPTIONS=detect_leaks=1:detect_stack_use_after_return=1:abort_on_error=1
+  CXX=clang++ cmake -B build-asan -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo \\
+    -DBWAPI_C2_SANITIZERS=address,undefined
+  cmake --build build-asan
+  tools/test-sanitizers.sh build-asan
+  export ASAN_OPTIONS=detect_leaks=1
   export UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1
+  ctest --test-dir build-asan --output-on-failure
+
+CMakeLists.txt is what puts -fsanitize=address,undefined -fno-omit-frame-pointer on
+every target; there are no other sanitizer flags. In particular the build does not
+pass -fno-sanitize-recover, so a UBSan diagnostic is recoverable and the process
+carries on and exits 0 without the UBSAN_OPTIONS=halt_on_error=1 above. Set it, or
+the suite goes green over reported undefined behaviour.
 EOF
