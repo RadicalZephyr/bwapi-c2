@@ -81,13 +81,10 @@ jobs:
         run: cmake -S . -B build -A ${{ matrix.arch }} -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
       - name: Build
         run: cmake --build build --config Release
+      # exports.def_matches_library runs check_exports.py over dumpbin here, so the .def diff is
+      # in this step and not repeated after it.
       - name: Test
         run: ctest --test-dir build --build-config Release --output-on-failure
-      - name: Exports are the .def, undecorated
-        shell: pwsh
-        run: |
-          $dll = Get-ChildItem -Recurse build -Filter bwapi_c2.dll | Select-Object -First 1
-          python tests/exports/check_exports.py --lib $dll.FullName --def bwapi_c2.def
       - uses: actions/upload-artifact@v4
         with:
           name: bwapi_c2-${{ matrix.arch }}
