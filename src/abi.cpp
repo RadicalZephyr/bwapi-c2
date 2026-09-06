@@ -102,11 +102,16 @@ bool game_ready(const char* fn) {
   return true;
 }
 
-int32_t write_string(char* buf, int32_t buf_len, const char* s, size_t len) {
+bool check_string_buffer(const char* buf, int32_t buf_len) {
   if (buf_len < 0 || (buf == nullptr && buf_len != 0)) {
     latch(BWAPI_ERR_BAD_BUFFER, "string out: NULL buffer with a nonzero length, or a negative length");
-    return 0;
+    return false;
   }
+  return true;
+}
+
+int32_t write_string(char* buf, int32_t buf_len, const char* s, size_t len) {
+  if (!check_string_buffer(buf, buf_len)) return 0;
   if (buf_len > 0) {
     const size_t room = static_cast<size_t>(buf_len) - 1;
     const size_t n = len < room ? len : room;
@@ -123,14 +128,6 @@ int32_t write_string(char* buf, int32_t buf_len, const std::string& s) {
 int32_t empty_string(char* buf, int32_t buf_len) {
   if (buf && buf_len > 0) buf[0] = '\0';
   return 0;
-}
-
-bool check_string_buffer(const char* buf, int32_t buf_len) {
-  if (buf_len < 0 || (buf == nullptr && buf_len != 0)) {
-    latch(BWAPI_ERR_BAD_BUFFER, "string out: NULL buffer with a nonzero length, or a negative length");
-    return false;
-  }
-  return true;
 }
 
 bool check_buffer(const void* out, int32_t cap) {
