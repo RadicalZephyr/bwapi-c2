@@ -211,7 +211,7 @@ the AST and which are never typed by hand:
 
 ```yaml
 - family: unit_type
-  cpp: "BWAPI::UnitTypes::Enum"
+  cpp: "BWAPI::UnitTypes::Enum::Enum"
   prefix: BWAPI_UNIT
   values:
     - {name: Terran_Marine, value: 0}
@@ -227,7 +227,7 @@ the AST and which are never typed by hand:
 | Field | Values |
 |---|---|
 | `family` | The snake_case name the constants are grouped under in `api.json` and the reference (`unit_type`, `order`, `event_type`, `text_size`, `color`, …) |
-| `cpp` | The enumeration, fully qualified; or the namespace, for `BWAPI::Colors` |
+| `cpp` | The enumeration, fully qualified, as `BWAPI::UnitTypes::Enum::Enum` (BWAPI spells its type enumerations `namespace Enum { enum Enum {...} }`), `BWAPI::EventType::Enum`, `BWAPI::Key`; or the namespace, for `BWAPI::Colors` |
 | `prefix` | The macro prefix |
 | `strip` | Optional: a prefix removed from every enumerator name before the transformation (`K_` for `Key`, `M_` for `MouseButton`) |
 | `values` | `{name, value}` pairs in declaration order, from the AST. `draft_spec.py --enum <cpp>` prints them; `--update-constants` rewrites this list in place, which is the pin-bump step |

@@ -18,3 +18,6 @@
 /site/static/api.json
 /site/content/reference/**
 !/site/content/reference/_index.md
+
+# Drafts from draft_spec.py are never the source of truth (implementation plan 1.3).
+/tools/abi/draft/
