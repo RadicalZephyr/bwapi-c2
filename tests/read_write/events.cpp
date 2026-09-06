@@ -204,10 +204,12 @@ TEST_CASE("an out-of-range index is the neutral value plus INVALID_HANDLE, with 
     CHECK(e.size == static_cast<int32_t>(sizeof e));
     CHECK(e.type == 0x5a5a5a5a);
     CHECK(e.is_winner == 0x5a5a5a5a);
-    // The latch is sticky, and the text function fails the same way.
+    // The text function fails the same way, checked on a clear channel so the assertion is
+    // about its own latch and not the sticky one above.
+    bwapi_clear_last_error();
     CHECK(bwapi_game_event_text(bad, nullptr, 0) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_INVALID_HANDLE);
-    CHECK(message().find("bwapi_game_get_event") != std::string::npos);
+    CHECK(message().find("bwapi_game_event_text") != std::string::npos);
   }
 }
 
