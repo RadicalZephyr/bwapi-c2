@@ -644,9 +644,11 @@ a struct most bots never touch (§5.3's ~40 convenience functions are the real c
 uniformity is worth more than four bytes.
 
 `bwapi_c2_types.h` ships one capability macro, LibreOfficeKit's `LIBREOFFICEKIT_HAS_MEMBER`
-under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) <
-size` — so a consumer compiled against a newer header can test whether the DLL it loaded filled
-a field before reading it. The size prefix makes that possible; the macro makes it one line.
+under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) +
+sizeof(field) <= size` — so a consumer compiled against a newer header can test whether the DLL
+it loaded filled a field before reading it. The size prefix makes that possible; the macro
+makes it one line. It tests the field's end rather than LibreOfficeKit's start: a field the
+DLL half-filled is not present, and with every field `int32_t`-aligned the two agree anyway.
 
 **Invalid handles.** Never dereference. Validate, then return a documented neutral value (`0` /
 `-1` / packed `Positions::None` / empty) and latch it in the ABI error channel. Rationale: a
@@ -1017,7 +1019,8 @@ Zig bot's 650. Five hand transcriptions, at least two wrong. `bwapi-c` shipped n
 its own example bot is reduced to `case 7: // SCV`. **This block is the product.**
 
 The few that return containers need out-buffers: `requiredUnits()` → `std::map<UnitType,int>`
-→ parallel `(type[], count[])` arrays; `whatBuilds()` → `std::pair` → two out-params;
+→ parallel `(type[], count[])` arrays; `whatBuilds()` → `std::pair` → the builder type
+returned and the count through one out-param that may be `NULL`;
 `abilities()`/`upgrades()`/`buildsWhat()` → ID arrays.
 
 **Shipped three ways.** The 185 accessors ship as **functions**, because that is what the 1,671
@@ -1133,22 +1136,24 @@ checklist.
 ## 6. Handle model in detail
 
 ```c
-typedef int32_t bwapi_unit;    /* Game::getUnit(id)   — O(1) */
-typedef int32_t bwapi_player;  /* Game::getPlayer(id) — 0..11 */
-typedef int32_t bwapi_force;   /* Game::getForce(id)  — 0..4 */
-typedef int32_t bwapi_region;  /* Game::getRegion(id) */
+typedef int32_t bwapi_unit_id;    /* Game::getUnit(id)   — O(1) */
+typedef int32_t bwapi_player_id;  /* Game::getPlayer(id) — 0..11 */
+typedef int32_t bwapi_force_id;   /* Game::getForce(id)  — 0..4 */
+typedef int32_t bwapi_region_id;  /* Game::getRegion(id) */
 #define BWAPI_NONE (-1)
 ```
 
 Distinct typedefs (even though all are `int32_t`) so generated wrappers can newtype them and
-catch a unit ID passed where a player ID belongs. BWEM adds `bwapi_bwem_area`,
-`bwapi_bwem_choke` and `bwapi_bwem_base` (§8); neutrals are `bwapi_unit`.
+catch a unit ID passed where a player ID belongs. The `_id` suffix is deliberate: a bare
+`bwapi_unit` reads as an object, and the header has nothing that is one. BWEM adds
+`bwapi_bwem_area_id`, `bwapi_bwem_choke_id` and `bwapi_bwem_base_id` (§8); neutrals are
+`bwapi_unit_id`.
 
 ### 6.1 Resolution
 
 One internal helper per kind:
 ```cpp
-inline BWAPI::Unit resolve(bwapi_unit id) {
+inline BWAPI::Unit resolve(bwapi_unit_id id) {
   if (id < 0 || !BWAPI::BroodwarPtr) return nullptr;
   return BWAPI::BroodwarPtr->getUnit(id);
 }
@@ -2100,7 +2105,7 @@ typedef struct bwapi_bot_vtable {
   void (BWAPI_C2_CALL *on_start)(void* bot);
   void (BWAPI_C2_CALL *on_end)(void* bot, int32_t is_winner);
   void (BWAPI_C2_CALL *on_frame)(void* bot);
-  void (BWAPI_C2_CALL *on_unit_create)(void* bot, bwapi_unit u);
+  void (BWAPI_C2_CALL *on_unit_create)(void* bot, bwapi_unit_id u);
   /* … one per AIModule virtual … */
   void (BWAPI_C2_CALL *destroy)(void* bot);
 } bwapi_bot_vtable;
