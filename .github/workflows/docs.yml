@@ -29,6 +29,7 @@ env:
 
 jobs:
   build:
+    if: github.event_name != 'schedule'   # the weekly run is external-links alone
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
