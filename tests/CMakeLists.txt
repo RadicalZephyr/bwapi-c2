@@ -9,7 +9,11 @@ add_subdirectory(header_hygiene)
 add_subdirectory(layout_dump)
 add_subdirectory(derive_closure)
 add_subdirectory(fixture)
+# The static type data with no game (plan section 5.8): constants, accessors, tables. One file
+# at this level, as section 7's layout has it, on the same helper as the fixture suites.
 add_subdirectory(read_write)
 add_subdirectory(errors)
 add_subdirectory(bwem)
 add_subdirectory(exports)
+
+bwapi_c2_add_test(types_test types_test.cpp)
