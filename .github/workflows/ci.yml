@@ -57,6 +57,9 @@ jobs:
           -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
           -DBWAPI_C2_SANITIZERS=${{ matrix.sanitizers }}
           -DBWAPI_C2_BWEM_ASSERTS=${{ matrix.bwem_asserts }}
+      - name: Test Sanitizers
+        if: matrix.name == 'asan+ubsan'
+        run: ./tools/test-sanitizers.sh
       - name: Build
         run: cmake --build build
       - name: Test
