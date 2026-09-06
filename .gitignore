@@ -21,3 +21,6 @@
 
 # Drafts from draft_spec.py are never the source of truth (implementation plan 1.3).
 /tools/abi/draft/
+
+# Python bytecode caches from the generator.
+__pycache__/

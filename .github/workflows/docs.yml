@@ -16,7 +16,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    paths: ["site/**", ".github/workflows/docs.yml"]
+    paths: ["site/**", "api.json", "tools/abi/emit_docs.py", ".github/workflows/docs.yml"]
   schedule:
     - cron: "17 6 * * 1"   # Mondays 06:17 UTC: the external-link check
 
@@ -32,8 +32,14 @@ jobs:
         # No submodules: the site needs neither a compiler nor the closure.
       - name: Install Zola (pinned, checksum verified)
         run: tools/install-zola.sh
-      # From phase 1 on: copy api.json into site/static/ (this is also how /api.json is served)
-      # and run tools/abi/emit_docs.py into site/content/reference/. Neither exists yet.
+      # The reference is generated at build time from api.json and never checked in (plan
+      # section 16.1); copying api.json into static/ is also how /api.json is served. Needs only
+      # the standard library: emit_docs.py reads JSON, not the spec.
+      - name: Emit the reference pages and publish api.json
+        run: |
+          mkdir -p site/static
+          cp api.json site/static/api.json
+          python3 tools/abi/emit_docs.py
       - name: Check internal links and anchors
         run: zola check --skip-external-links
         working-directory: site

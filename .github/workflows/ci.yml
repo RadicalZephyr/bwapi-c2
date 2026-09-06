@@ -50,6 +50,14 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: true          # direct submodules only; never `recursive`
+      # The generator's one dependency beyond the toolchain matrix. Only the plain configuration
+      # runs the regenerate-and-diff check; the generated files are the same in all three.
+      - name: Install PyYAML
+        if: matrix.name == 'plain'
+        run: sudo apt-get install -y --no-install-recommends python3-yaml
+      - name: Regenerate and diff the generated files
+        if: matrix.name == 'plain'
+        run: tests/regen_check.sh
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
