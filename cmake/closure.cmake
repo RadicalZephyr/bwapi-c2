@@ -149,6 +149,14 @@ if(NOT WIN32)
   # Client.cpp is the only file that touches Win32: seven imports, all transport (Appendix B).
   # The shim declares exactly that surface and the stub defines it, so the closure links and the
   # whole test suite runs on Linux (R6, section 11). Test-only scaffolding, hence under tests/.
-  target_include_directories(bwapi_c2_closure SYSTEM PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/tests/support/shim")
+  #
+  # Upstream spells the include <Windows.h> in Client.h and <windows.h> in Client.cpp. One
+  # tracked file becomes both names here, in the build tree, rather than two paths differing only
+  # in case in the source tree, which a case-insensitive checkout cannot hold.
+  set(_bwapi_c2_shim_src "${CMAKE_CURRENT_SOURCE_DIR}/tests/support/shim/win32shim.h")
+  set(_bwapi_c2_shim_dir "${CMAKE_CURRENT_BINARY_DIR}/shim")
+  configure_file("${_bwapi_c2_shim_src}" "${_bwapi_c2_shim_dir}/Windows.h" COPYONLY)
+  configure_file("${_bwapi_c2_shim_src}" "${_bwapi_c2_shim_dir}/windows.h" COPYONLY)
+  target_include_directories(bwapi_c2_closure SYSTEM PUBLIC "${_bwapi_c2_shim_dir}")
   target_sources(bwapi_c2_closure PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests/support/win32stub.cpp")
 endif()

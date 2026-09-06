@@ -3,6 +3,11 @@
 // Minimal Win32 shim for non-Windows builds (R6): exactly the surface BWAPI/Client/Client.h and
 // BWAPIClient/Source/Client.cpp use. Declarations only, never defined, so the
 // Win32 imports appear as undefined symbols -- which is the point.
+//
+// Client.h includes <Windows.h> and Client.cpp <windows.h>. Tracking both spellings would put
+// two paths differing only in case into the tree, which a case-insensitive checkout (Windows,
+// macOS) collapses into one permanently modified file; so this is the one tracked copy, and
+// cmake/closure.cmake copies it under both names into the build tree at configure time.
 typedef void*         HANDLE;
 typedef int           BOOL;
 typedef unsigned long DWORD;
