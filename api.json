@@ -329,6 +329,84 @@
       "doc": "1 while connected. Becomes 0 when the server goes away during bwapi_client_update()."
     },
     {
+      "c": "bwapi_game_event_count",
+      "section": "game",
+      "signature": "int32_t bwapi_game_event_count(void)",
+      "cpp": "Game::getEvents",
+      "self": "game",
+      "params": [],
+      "returns": {
+        "kind": "int32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "How many events the current frame carries: the size of the snapshot bwapi_client_update() took of Game::getEvents(), which is what bwapi_game_get_event() and bwapi_game_event_text() index. Valid until the next update; a MatchStart frame carries a UnitDiscover per initial unit beside the MatchStart itself, so it is often the largest."
+    },
+    {
+      "c": "bwapi_game_get_event",
+      "section": "game",
+      "signature": "int32_t bwapi_game_get_event(int32_t index, bwapi_event* out)",
+      "cpp": "Event::getType",
+      "self": "game",
+      "params": [
+        {
+          "name": "index",
+          "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "out",
+          "type": "struct_out:event",
+          "c_type": "bwapi_event*"
+        }
+      ],
+      "returns": {
+        "kind": "bool32",
+        "c_type": "int32_t",
+        "neutral": "0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "Fills out with the event at index, 0 to bwapi_game_event_count() minus one, and returns 1. The caller sets out->size to its own sizeof(bwapi_event); the fields the library knows are written, the rest of that size is zeroed, and out->size comes back as the bytes filled, so BWAPI_HAS_FIELD says which fields are valid. An index outside the frame's events latches BWAPI_ERR_INVALID_HANDLE and returns 0 with nothing written; a NULL out, or a size too small to hold size itself, latches BWAPI_ERR_BAD_BUFFER the same way."
+    },
+    {
+      "c": "bwapi_game_event_text",
+      "section": "game",
+      "signature": "int32_t bwapi_game_event_text(int32_t index, char* buf, int32_t buf_len)",
+      "cpp": "Event::getText",
+      "self": "game",
+      "params": [
+        {
+          "name": "index",
+          "type": "int32",
+          "c_type": "int32_t"
+        },
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The text of the event at index: what was typed for SendText, what was received for ReceiveText, the file name for SaveGame, and the empty string for every other type. Under the string convention the return is the length the text needs, so no text_len field is needed on bwapi_event. An index outside the frame's events latches BWAPI_ERR_INVALID_HANDLE and returns the empty string."
+    },
+    {
       "c": "bwapi_player_get_name",
       "section": "player",
       "signature": "int32_t bwapi_player_get_name(bwapi_player_id player_id, char* buf, int32_t buf_len)",
@@ -14242,6 +14320,56 @@
           "type": "int32",
           "c_type": "int32_t",
           "doc": "how many of the required type"
+        }
+      ],
+      "flags": []
+    },
+    {
+      "name": "event",
+      "c_type": "bwapi_event",
+      "doc": "One event of the current frame, as bwapi_game_get_event() fills it: the BWAPI_EVENT_* type, and whichever of a unit, a player, a position and a winner flag that type carries, with BWAPI_NONE or the pixel-scale None in the others. The text of a SendText, ReceiveText or SaveGame event is not in the struct; bwapi_game_event_text() returns it for the same index.",
+      "fields": [
+        {
+          "name": "size",
+          "type": "int32",
+          "c_type": "int32_t",
+          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
+        },
+        {
+          "name": "type",
+          "type": "int32",
+          "c_type": "int32_t",
+          "doc": "the kind of event, a BWAPI_EVENT_* constant"
+        },
+        {
+          "name": "unit_id",
+          "type": "int32",
+          "c_type": "int32_t",
+          "doc": "the unit of the nine unit events, UnitDiscover through UnitComplete; BWAPI_NONE for every other type"
+        },
+        {
+          "name": "player_id",
+          "type": "int32",
+          "c_type": "int32_t",
+          "doc": "the player of PlayerLeft and ReceiveText; BWAPI_NONE for every other type"
+        },
+        {
+          "name": "x",
+          "type": "int32",
+          "c_type": "int32_t",
+          "doc": "the pixel x of a NukeDetect target; BWAPI_POSITION_NONE_X for every other type"
+        },
+        {
+          "name": "y",
+          "type": "int32",
+          "c_type": "int32_t",
+          "doc": "the pixel y of a NukeDetect target; BWAPI_POSITION_NONE_Y for every other type"
+        },
+        {
+          "name": "is_winner",
+          "type": "bool32",
+          "c_type": "int32_t",
+          "doc": "1 when a MatchEnd event says the bot's player won; 0 for a lost match and for every other type"
         }
       ],
       "flags": []

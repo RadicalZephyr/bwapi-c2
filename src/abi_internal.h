@@ -186,6 +186,32 @@ int32_t write_rows(Row* out, int32_t cap, int32_t total, Fill fill) {
   return total;
 }
 
+// The struct-out convention for one struct rather than an array: the caller's size says how
+// much of out may be written. check_struct_out() is the up-front check, like check_buffer():
+// false having latched BWAPI_ERR_BAD_BUFFER for NULL or a size that cannot hold size itself.
+// write_struct() then fills the fields it knows, zeroes the rest of the caller's size, sets
+// size to the bytes filled and never writes past the caller's size. Like cap, the size is the
+// caller's word for how much memory is there.
+template <class Row>
+bool check_struct_out(const Row* out) {
+  if (out == nullptr || out->size < static_cast<int32_t>(sizeof(int32_t))) {
+    latch(BWAPI_ERR_BAD_BUFFER, "struct out: NULL, or a size that cannot hold size itself");
+    return false;
+  }
+  return true;
+}
+
+template <class Row, class Fill>
+void write_struct(Row* out, Fill fill) {
+  const int32_t stride = out->size;
+  const size_t filled = std::min(static_cast<size_t>(stride), sizeof(Row));
+  Row row{};
+  fill(row);
+  row.size = static_cast<int32_t>(filled);
+  std::memset(reinterpret_cast<char*>(out), 0, static_cast<size_t>(stride));
+  std::memcpy(out, &row, filled);
+}
+
 // Packed positions in upstream's order (a chokepoint's geometry is a polyline), the first cap
 // written, the total returned.
 template <class Range>
@@ -212,6 +238,17 @@ BWAPI::Region resolve_region(bwapi_region_id id, const char* fn);
 
 // What disconnect() runs before the client goes: BWEM's teardown. A no-op until phase 3.
 void teardown_bwem();
+
+// ---- the frame's events (client.cpp) ---------------------------------------------------------
+
+// Game::getEvents() is a std::list, so update() snapshots it into a vector once per frame and
+// the event exports index that (section 5.6). snapshot_events() is that step on its own:
+// bwapi_client_update() calls it after the pump, and the fixture-driven tests call it after
+// GameImpl::onMatchStart() or onMatchFrame(), which is how they pump without a server, the same
+// way they call bind_abi_thread() for what connect() does. With no game it empties the vector.
+// frame_events() is the snapshot, stable until the next call.
+void snapshot_events();
+const std::vector<BWAPI::Event>& frame_events();
 
 // ---- packing ---------------------------------------------------------------------------------
 

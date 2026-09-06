@@ -1531,6 +1531,19 @@ typedef struct bwapi_required_unit {
   int32_t count;         /* how many of the required type */
 } bwapi_required_unit;
 
+/* One event of the current frame, as bwapi_game_get_event() fills it: the BWAPI_EVENT_* type,
+ * and whichever of a unit, a player, a position and a winner flag that type carries, with
+ * BWAPI_NONE or the pixel-scale None in the others. */
+typedef struct bwapi_event {
+  int32_t size;      /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
+  int32_t type;      /* the kind of event, a BWAPI_EVENT_* constant */
+  int32_t unit_id;   /* the unit of the nine unit events, UnitDiscover through UnitComplete; BWAPI_NONE for every other type */
+  int32_t player_id; /* the player of PlayerLeft and ReceiveText; BWAPI_NONE for every other type */
+  int32_t x;         /* the pixel x of a NukeDetect target; BWAPI_POSITION_NONE_X for every other type */
+  int32_t y;         /* the pixel y of a NukeDetect target; BWAPI_POSITION_NONE_Y for every other type */
+  int32_t is_winner; /* 1 when a MatchEnd event says the bot's player won; 0 for a lost match and for every other type */
+} bwapi_event;
+
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,
  * WeaponType, ... accessors, one export each, plus the bulk tables. Unlike everything in
  * bwapi_c2.h these need no connection and check no thread. */

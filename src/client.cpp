@@ -12,7 +12,8 @@ namespace {
 
 // getEvents() is a std::list; indexing it would be O(n^2) over a frame's events, so update()
 // snapshots it into a vector and the indices are stable until the next update (section 5.6).
-// The vector exists now; the accessors over it come in phase 2.
+// The accessors over it are bwapi_game_event_count(), _get_event() and _event_text() in
+// bulk.cpp, through frame_events().
 std::vector<BWAPI::Event> g_events;
 
 }  // namespace
@@ -20,6 +21,15 @@ std::vector<BWAPI::Event> g_events;
 void teardown_bwem() {
   // Phase 3 makes this BWEM's reset; until then there is nothing to tear down.
 }
+
+void snapshot_events() {
+  g_events.clear();
+  if (!BWAPI::BroodwarPtr) return;
+  const auto& events = BWAPI::BroodwarPtr->getEvents();
+  g_events.assign(events.begin(), events.end());
+}
+
+const std::vector<BWAPI::Event>& frame_events() { return g_events; }
 
 }  // namespace bwapi_c2
 
@@ -47,13 +57,9 @@ BWAPI_C2_API void BWAPI_C2_CALL bwapi_client_update(void) BWAPI_C2_NOEXCEPT {
     g_events.clear();
     BWAPI::BWAPIClient.update();
     // The server may have gone away inside update(); Client::disconnect() then nulled
-    // BroodwarPtr, and there is nothing to snapshot.
-    if (!BWAPI::BroodwarPtr) {
-      unbind_abi_thread();
-      return;
-    }
-    const auto& events = BWAPI::BroodwarPtr->getEvents();
-    g_events.assign(events.begin(), events.end());
+    // BroodwarPtr, and snapshot_events() finds nothing to snapshot.
+    if (!BWAPI::BroodwarPtr) unbind_abi_thread();
+    snapshot_events();
   });
 }
 

@@ -72,6 +72,17 @@ BWAPI_C2_API void BWAPI_C2_CALL bwapi_client_disconnect(void) BWAPI_C2_NOEXCEPT;
 /* 1 while connected. */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_client_is_connected(void) BWAPI_C2_NOEXCEPT;
 
+/* ---- Game ---------------------------------------------------------------------------------------- */
+
+/* How many events the current frame carries: the size of the snapshot bwapi_client_update() took
+ * of Game::getEvents(), which is what bwapi_game_get_event() and bwapi_game_event_text() index. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_event_count(void) BWAPI_C2_NOEXCEPT;
+/* Fills out with the event at index, 0 to bwapi_game_event_count() minus one, and returns 1. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_get_event(int32_t index, bwapi_event* out) BWAPI_C2_NOEXCEPT;
+/* The text of the event at index: what was typed for SendText, what was received for
+ * ReceiveText, the file name for SaveGame, and the empty string for every other type. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_event_text(int32_t index, char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
+
 /* ---- Player -------------------------------------------------------------------------------------- */
 
 /* The player's name, as the game reports it. */

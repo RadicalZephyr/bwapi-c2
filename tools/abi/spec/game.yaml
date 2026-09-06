@@ -1,0 +1,102 @@
+# The Game surface (plan section 5; implementation plan 2.1 onwards). Phase 2 fills this file
+# step by step: the events of section 5.6 first, hand-written in src/bulk.cpp over the vector
+# bwapi_client_update() snapshots; the grids, snapshots, collections and generated getters
+# follow in their own steps. The skips for BWAPI::Event live here because the events are Game
+# surface at the boundary: a host reads them from the per-frame pump and never constructs one.
+
+- cpp: "Game::getEvents"
+  c: bwapi_game_event_count
+  self: game
+  returns: int32
+  source: src/bulk.cpp
+  doc: >-
+    How many events the current frame carries: the size of the snapshot bwapi_client_update()
+    took of Game::getEvents(), which is what bwapi_game_get_event() and bwapi_game_event_text()
+    index. Valid until the next update; a MatchStart frame carries a UnitDiscover per initial
+    unit beside the MatchStart itself, so it is often the largest.
+
+- cpp: "Event::getType"
+  c: bwapi_game_get_event
+  self: game
+  params: [{name: index, type: int32}, {name: out, type: "struct_out:event"}]
+  returns: bool32
+  source: src/bulk.cpp
+  doc: >-
+    Fills out with the event at index, 0 to bwapi_game_event_count() minus one, and returns 1.
+    The caller sets out->size to its own sizeof(bwapi_event); the fields the library knows are
+    written, the rest of that size is zeroed, and out->size comes back as the bytes filled, so
+    BWAPI_HAS_FIELD says which fields are valid. An index outside the frame's events latches
+    BWAPI_ERR_INVALID_HANDLE and returns 0 with nothing written; a NULL out, or a size too small
+    to hold size itself, latches BWAPI_ERR_BAD_BUFFER the same way.
+
+- cpp: "Event::getText"
+  c: bwapi_game_event_text
+  self: game
+  params: [{name: index, type: int32}]
+  returns: string_out
+  source: src/bulk.cpp
+  doc: >-
+    The text of the event at index: what was typed for SendText, what was received for
+    ReceiveText, the file name for SaveGame, and the empty string for every other type. Under
+    the string convention the return is the length the text needs, so no text_len field is
+    needed on bwapi_event. An index outside the frame's events latches BWAPI_ERR_INVALID_HANDLE
+    and returns the empty string.
+
+# The rest of BWAPI::Event: four accessors that are fields of bwapi_event, six setters and
+# eighteen constructors a host has no use for.
+- cpp: "Event::getUnit"
+  skip: "§5.6: a field of bwapi_event (unit_id), filled by bwapi_game_get_event()"
+- cpp: "Event::getPlayer"
+  skip: "§5.6: a field of bwapi_event (player_id), filled by bwapi_game_get_event()"
+- cpp: "Event::getPosition"
+  skip: "§5.6: two fields of bwapi_event (x, y), filled by bwapi_game_get_event()"
+- cpp: "Event::isWinner"
+  skip: "§5.6: a field of bwapi_event (is_winner), filled by bwapi_game_get_event()"
+- cpp: "Event::setType"
+  skip: "§5.6: events are polled from the frame's snapshot, never built or mutated by a host"
+- cpp: "Event::setPosition"
+  skip: "§5.6: events are polled from the frame's snapshot, never built or mutated by a host"
+- cpp: "Event::setText"
+  skip: "§5.6: events are polled from the frame's snapshot, never built or mutated by a host"
+- cpp: "Event::setUnit"
+  skip: "§5.6: events are polled from the frame's snapshot, never built or mutated by a host"
+- cpp: "Event::setPlayer"
+  skip: "§5.6: events are polled from the frame's snapshot, never built or mutated by a host"
+- cpp: "Event::setWinner"
+  skip: "§5.6: events are polled from the frame's snapshot, never built or mutated by a host"
+- cpp: "Event::MatchStart"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::MatchEnd"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::MatchFrame"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::MenuFrame"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::SendText"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::ReceiveText"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::PlayerLeft"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::NukeDetect"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitDiscover"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitEvade"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitShow"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitHide"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitCreate"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitDestroy"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitMorph"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitRenegade"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::SaveGame"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
+- cpp: "Event::UnitComplete"
+  skip: "§5.6: the static constructors build events for the server side; a host only reads them"
