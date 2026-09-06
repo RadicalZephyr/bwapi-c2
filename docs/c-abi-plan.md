@@ -1007,6 +1007,14 @@ No `text_len` field — `bwapi_game_event_text()` already returns the needed len
 string convention. Polling rather than callbacks: it is the natural client-mode shape, avoids
 re-entrancy entirely, and every host language can build its own callback dispatch on top.
 
+**An event index is a position in this frame's snapshot, not a handle.** It has no identity
+across frames the way a unit id does, so §6.2's third outcome ("was valid, no longer is, no
+latch") does not apply to it: an index outside `0..count-1`, last frame's included, is checked
+the way §6.2 checks a handle's range and latches `BWAPI_ERR_INVALID_HANDLE`, with the index and
+the count in the message. The same rule holds for every per-frame index the ABI adds later
+(bullets, §5.10's snapshots); ids that BWEM assigns per analysis are a different case and §8.2
+decides them.
+
 The same event pump is where the ABI drives BWEM's three destruction hooks internally (§8), so
 a host that never calls them still gets a correct map.
 
