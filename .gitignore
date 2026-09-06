@@ -1,0 +1,20 @@
+# CMake build trees. Anything named build* at the root is one.
+/build/
+/build-*/
+/out/
+
+# Recorded GameData buffers are contributor-local by policy (plan section 11).
+/tests/recorded/
+
+# Editor and OS noise
+*.swp
+*~
+.DS_Store
+
+# The site's build output, and what the docs build copies or generates into it (plan section
+# 16.1, 16.3): api.json under static/, and the reference pages under content/reference/, which
+# emit_docs.py writes and which are never checked in beyond the section's own _index.md.
+/site/public/
+/site/static/api.json
+/site/content/reference/**
+!/site/content/reference/_index.md

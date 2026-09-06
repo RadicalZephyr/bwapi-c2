@@ -1,0 +1,35 @@
+# The bwapi-c2 site (plan section 16): one Zola site, our own templates, Diátaxis sections, and
+# the reference emitted into content/reference/ at build time from api.json (phase 1).
+base_url = "https://radicalzephyr.github.io/bwapi-c2"
+title = "bwapi-c2"
+description = "A flat C ABI over BWAPI and BWEM, so any language with a C FFI can drive a StarCraft: Brood War bot."
+default_language = "en"
+compile_sass = true
+minify_html = false
+generate_feeds = false
+
+# Every page is Markdown, including the generated reference, so the index covers everything.
+build_search_index = true
+
+# Internal links and anchors fail the build (section 16.3). External links are checked on a
+# schedule by docs.yml, never on the merge path: a dead upstream link must not block a deploy.
+[link_checker]
+internal_level = "error"
+external_level = "warn"
+
+[search]
+index_format = "elasticlunr_javascript"
+include_title = true
+include_description = true
+include_content = true
+
+[markdown]
+highlight_code = true
+highlight_theme = "css"
+external_links_target_blank = false
+smart_punctuation = false
+
+[extra]
+repo = "https://github.com/RadicalZephyr/bwapi-c2"
+plan = "https://github.com/RadicalZephyr/bwapi-c2/blob/main/docs/c-abi-plan.md"
+research = "https://github.com/RadicalZephyr/bwapi-c2/tree/main/docs/research"

@@ -1,0 +1,50 @@
+bwapi-c2 — NOTICE
+
+bwapi-c2 is licensed under the GNU Lesser General Public License, version 3.0 only
+(SPDX: LGPL-3.0-only). The license text is in COPYING.LESSER; the GNU General Public
+License it incorporates by reference is in COPYING.
+
+bwapi_c2.dll contains object code compiled from two third-party libraries:
+
+1. BWAPI — the Brood War Application Programming Interface
+   https://github.com/bwapi/bwapi
+   License: LGPL-3.0 (COPYING.LESSER)
+   Upstream commit: d727fed68558c506163048ea889131d8cbb33915
+   Pinned as: https://github.com/RadicalZephyr/bwapi, tag bwapi-c2-pin-20260905, commit
+     621ef61e0d423b5ed48f75f0126cd1dfb7efb47a
+   Modifications carried by bwapi-c2 (the commits between the two):
+     BWAPIClient/Source/Convenience.h, `va_list &ap` changed to `va_list ap`, so the
+     client closure compiles with non-MSVC compilers; a POSIX revisionUpdate.sh; and the
+     generated include/svnrev.h committed.
+
+2. BWEM — the Brood War Easy Map library, community fork
+   https://github.com/N00byEdge/BWEM-community
+   License: MIT/X11, Copyright (c) 2015, 2017, Igor Dimitrijevic (LICENSE.BWEM)
+   Upstream commit: 9a63141f301f7830e9e09a2bae95c304fcc03cc5
+   Pinned as: https://github.com/RadicalZephyr/BWEM-community, tag bwapi-c2-pin-20260905, commit
+     70d7b34a2ae2043e1bf42e024461ef26dca6967c
+   Modification carried by bwapi-c2 (the one commit between the two):
+     adds `void Map::ResetInstance()`, which lets a host destroy the map singleton
+     explicitly — between games, or before the game data it analysed goes away — instead
+     of only at static destruction.
+
+Corresponding Source (GPL-3.0 §6(d), LGPL-3.0 §4):
+   https://github.com/RadicalZephyr/bwapi-c2
+   Release tag: <set by the release process; unreleased trees identify by commit>
+   The tag pins the two dependency commits above as submodules under third_party/; each is
+   itself a tag on its fork, so both stay reachable however the forks' branches move.
+
+--------------------------------------------------------------------------------------
+For bot authors who distribute a bot together with bwapi_c2.dll (LGPL-3.0 §4(a)–(c)),
+copy this section verbatim into your distribution:
+
+   This program uses bwapi-c2 (https://github.com/RadicalZephyr/bwapi-c2), which is
+   licensed under the GNU Lesser General Public License v3.0 and contains BWAPI
+   (LGPL-3.0, https://github.com/bwapi/bwapi) and BWEM (MIT/X11, Copyright (c) 2015,
+   2017, Igor Dimitrijevic). The license texts are provided alongside this program in
+   COPYING, COPYING.LESSER and LICENSE.BWEM.
+
+Your bot's own code stays yours. Your *distribution* — a tournament zip containing your
+bot and bwapi_c2.dll is one — carries COPYING, COPYING.LESSER, LICENSE.BWEM and this
+NOTICE, and if your bot displays copyright notices it includes the ones above. Consume
+bwapi_c2.dll dynamically; it is deliberately not offered as a static library (LGPL §4(d)).

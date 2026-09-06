@@ -1,5 +1,12 @@
 # R11.6 — Test substrate for a map-analysis library
 
+> **Status:** the crash diagnosis in this document is **corrected by
+> [R11.9](r11-9-bwem-teardown-retest.md)**. The teardown segfault is caused by partially
+> overlapping minerals in this fixture, not by BWEM's in-place reset, and `Map::ResetInstance()`
+> does not prevent it. The substrate, the invariants and the decision to carry the patch stand;
+> the patch's rationale is restated in plan revision 4.3.
+
+
 Reproducible via [`r11/run-bwem-fixture.sh`](r11/run-bwem-fixture.sh) and
 [`r11/bwem_fixture.cpp`](r11/bwem_fixture.cpp).
 

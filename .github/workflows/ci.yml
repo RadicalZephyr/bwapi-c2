@@ -1,0 +1,99 @@
+# The build and the test suite (implementation plan 0.11; plan section 11).
+#
+# Nothing here downloads anything but the repository and its two direct submodules. The
+# checkout is never recursive: BWEM's own submodules are googletest, OpenBW's BWAPI fork and the
+# unlicensed OpenBW engine, and nothing in this tree may fetch them (docs/pins.md).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The whole suite is Linux-native (section 11): the closure, both fixture-driven suites, the
+  # layout dumps across all three targets and the derived-closure test. Three times: plain; under
+  # AddressSanitizer and UndefinedBehaviorSanitizer; and as a Debug build with BWEM's own
+  # assertions compiled in (BWAPI_C2_BWEM_ASSERTS), so a fixture that BWEM would accept silently
+  # in release (R11.9: a partially overlapping neutral) fails at the point of cause, not at
+  # teardown.
+  linux:
+    name: linux (clang, ${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: plain
+            build_type: RelWithDebInfo
+            sanitizers: ""
+            bwem_asserts: "OFF"
+          - name: asan+ubsan
+            build_type: RelWithDebInfo
+            sanitizers: address,undefined
+            bwem_asserts: "OFF"
+          - name: debug+bwem-asserts
+            build_type: Debug
+            sanitizers: ""
+            bwem_asserts: "ON"
+    env:
+      CC: clang
+      CXX: clang++
+      # Leak detection stays on: the teardown order the fixture enforces (section 8.2) is what
+      # LeakSanitizer checks, and valgrind finds no definite or indirect leak in either suite.
+      ASAN_OPTIONS: detect_leaks=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true          # direct submodules only; never `recursive`
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          -DBWAPI_C2_SANITIZERS=${{ matrix.sanitizers }}
+          -DBWAPI_C2_BWEM_ASSERTS=${{ matrix.bwem_asserts }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  # The artifact: bwapi_c2.dll for Win32 and x64 with the CRT static, exporting exactly what
+  # bwapi_c2.def says, undecorated. The header hygiene tests run under /TC here, the layout
+  # static assertion compiles against the real headers, and the fixture-driven suites run on
+  # MSVC too.
+  windows:
+    name: windows (msvc, ${{ matrix.arch }})
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [Win32, x64]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true          # direct submodules only; never `recursive`
+      - name: Configure
+        run: cmake -S . -B build -A ${{ matrix.arch }} -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+      - name: Build
+        run: cmake --build build --config Release
+      # exports.def_matches_library runs check_exports.py over dumpbin here, so the .def diff is
+      # in this step and not repeated after it.
+      - name: Test
+        run: ctest --test-dir build --build-config Release --output-on-failure
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bwapi_c2-${{ matrix.arch }}
+          path: |
+            build/Release/bwapi_c2.dll
+            build/Release/bwapi_c2.lib
+            bwapi_c2.def
+            include/*.h
+            COPYING
+            COPYING.LESSER
+            LICENSE.BWEM
+            NOTICE
