@@ -24,7 +24,7 @@ const BWAPI::Event* event_at(int32_t index, const char* fn) {
                                         " events of this frame");
     return nullptr;
   }
-  return &events[static_cast<size_t>(index)];
+  return events[static_cast<size_t>(index)];
 }
 
 }  // namespace

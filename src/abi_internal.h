@@ -247,13 +247,17 @@ void teardown_bwem();
 // ---- the frame's events (client.cpp) ---------------------------------------------------------
 
 // Game::getEvents() is a std::list, so update() snapshots it into a vector once per frame and
-// the event exports index that (section 5.6). snapshot_events() is that step on its own:
-// bwapi_client_update() calls it after the pump, and the fixture-driven tests call it after
-// GameImpl::onMatchStart() or onMatchFrame(), which is how they pump without a server, the same
-// way they call bind_abi_thread() for what connect() does. With no game it empties the vector.
+// the event exports index that (section 5.6). The vector holds pointers to the list's nodes,
+// not copies: the list lives in the client GameImpl and is only cleared by the next pump, which
+// is when the vector is cleared too, so the pointers are exactly as valid as the plan says the
+// indices are, and a frame of ten thousand events costs one walk and no Event copy (an Event
+// copy allocates its text). snapshot_events() is that step on its own: bwapi_client_update()
+// calls it after the pump, and the fixture-driven tests call it after GameImpl::onMatchStart()
+// or onMatchFrame(), which is how they pump without a server, the same way they call
+// bind_abi_thread() for what connect() does. With no game it empties the vector.
 // frame_events() is the snapshot, stable until the next call.
 void snapshot_events();
-const std::vector<BWAPI::Event>& frame_events();
+const std::vector<const BWAPI::Event*>& frame_events();
 
 // ---- packing ---------------------------------------------------------------------------------
 

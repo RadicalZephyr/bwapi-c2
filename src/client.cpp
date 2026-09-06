@@ -11,10 +11,10 @@ namespace bwapi_c2 {
 namespace {
 
 // getEvents() is a std::list; indexing it would be O(n^2) over a frame's events, so update()
-// snapshots it into a vector and the indices are stable until the next update (section 5.6).
-// The accessors over it are bwapi_game_event_count(), _get_event() and _event_text() in
-// bulk.cpp, through frame_events().
-std::vector<BWAPI::Event> g_events;
+// snapshots its nodes into a vector and the indices are stable until the next update
+// (section 5.6). The accessors over it are bwapi_game_event_count(), _get_event() and
+// _event_text() in bulk.cpp, through frame_events().
+std::vector<const BWAPI::Event*> g_events;
 
 }  // namespace
 
@@ -26,10 +26,11 @@ void snapshot_events() {
   g_events.clear();
   if (!BWAPI::BroodwarPtr) return;
   const auto& events = BWAPI::BroodwarPtr->getEvents();
-  g_events.assign(events.begin(), events.end());
+  g_events.reserve(events.size());
+  for (const BWAPI::Event& e : events) g_events.push_back(&e);
 }
 
-const std::vector<BWAPI::Event>& frame_events() { return g_events; }
+const std::vector<const BWAPI::Event*>& frame_events() { return g_events; }
 
 }  // namespace bwapi_c2
 
