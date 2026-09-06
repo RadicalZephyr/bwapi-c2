@@ -35,7 +35,7 @@ jobs:
       # From phase 1 on: copy api.json into site/static/ (this is also how /api.json is served)
       # and run tools/abi/emit_docs.py into site/content/reference/. Neither exists yet.
       - name: Check internal links and anchors
-        run: zola check
+        run: zola check --skip-external-links
         working-directory: site
       - name: Build
         run: zola build
