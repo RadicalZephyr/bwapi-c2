@@ -271,7 +271,7 @@ class Spec:
                 prior = seen_cpp.setdefault(e["cpp"], kind)
                 if prior != kind:
                     raise SpecError(f"cpp {e['cpp']!r} is both skipped and exported")
-        names = [c for c, _ in ((f["family"], f) for f in self.families)]
+        names = [f["family"] for f in self.families]
         if len(names) != len(set(names)):
             raise SpecError("a constant family is listed twice")
         macros = {}
