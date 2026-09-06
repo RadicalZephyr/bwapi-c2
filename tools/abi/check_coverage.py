@@ -33,16 +33,17 @@ def load_libclang():
         from clang import cindex
     except ImportError:
         sys.exit("check_coverage: the libclang Python bindings are missing: pip install libclang")
+    # The system library first, under the spellings distributions use, then whatever the pip
+    # package bundles. A spelling that fails to load leaves nothing behind: cindex sets
+    # Config.loaded and caches the library only once a load succeeds, so the next spelling
+    # starts clean and no reset is needed between attempts.
     for candidate in ("libclang-18.so.1", "libclang.so.18", "libclang-18.so", "libclang.so.1", "libclang.so"):
         try:
             cindex.Config.set_library_file(candidate)
             cindex.Index.create()
             return cindex
         except Exception:  # noqa: BLE001 - try the next spelling
-            cindex.Config.loaded = False
-            cindex.conf.lib = None if hasattr(cindex.conf, "lib") else None
             continue
-    # The pip package bundles its own library; a bare create() finds it.
     cindex.Config.library_file = None
     cindex.Index.create()
     return cindex
