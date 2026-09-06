@@ -1,19 +1,19 @@
-// Every event export against the fixture (implementation plan 2.1): bwapi_game_event_count(),
-// bwapi_game_get_event() and bwapi_game_event_text() over the snapshot the library takes of
+// Every event export against the fixture (implementation plan 2.1 and 2.2): bwapi_game_event_count(),
+// bwapi_game_get_events() and bwapi_game_event_text() over the snapshot the library takes of
 // Game::getEvents(). The fixture pumps through GameImpl directly, as every suite's does, and
 // runs the library's own after-the-pump step behind start() and frame(), so the snapshot here
 // is the one bwapi_client_update() would have taken. It is also the first suite over a
-// size-prefixed output struct, so it proves the struct-out half of the section-4 rule: the
-// caller's size is honoured up and down.
+// per-frame struct array, so it proves that half of the section-4 rule on a collection whose
+// order is BWAPI's rather than sorted.
 #include "doctest.h"
 #include "fixture.h"
 
 #include "bwapi_c2.h"
 
 #include <climits>
-#include <cstddef>
 #include <cstring>
 #include <string>
+#include <vector>
 
 using namespace BWAPI;
 using bwapi_c2::test::Fixture;
@@ -47,12 +47,21 @@ struct EventScenario {
   ~EventScenario() { bwapi_clear_last_error(); }
 };
 
+// The whole frame, drained in one call at the caller's own stride.
+std::vector<bwapi_event> drain(int32_t cap = 64) {
+  std::vector<bwapi_event> rows(static_cast<size_t>(cap));
+  std::memset(rows.data(), 0x5a, rows.size() * sizeof(bwapi_event));
+  const int32_t n = bwapi_game_get_events(rows.data(), cap, sizeof(bwapi_event));
+  REQUIRE(n >= 0);
+  rows.resize(static_cast<size_t>(n < cap ? n : cap));
+  return rows;
+}
+
+// One row of this frame, by position, for the per-event assertions below.
 bwapi_event get(int32_t index) {
-  bwapi_event e;
-  std::memset(&e, 0x5a, sizeof e);
-  e.size = sizeof e;
-  REQUIRE(bwapi_game_get_event(index, &e, sizeof e) == 1);
-  return e;
+  const auto rows = drain();
+  REQUIRE(index < static_cast<int32_t>(rows.size()));
+  return rows[static_cast<size_t>(index)];
 }
 
 std::string text_of(int32_t index) {
@@ -180,71 +189,104 @@ TEST_CASE("a text longer than a shared-memory slot arrives cut to 255 bytes") {
   CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
 }
 
-TEST_CASE("an out-of-range index is the neutral value plus INVALID_HANDLE, with nothing written") {
+// bwapi_game_event_text() is the only event export that takes an index, so it carries the
+// section-5.6 rule on its own: an index is a position in this frame's snapshot, not a handle.
+TEST_CASE("an out-of-range index is the neutral value plus INVALID_HANDLE") {
   EventScenario s;
   for (int32_t bad : {-1, EventScenario::kCount, INT_MAX, INT_MIN}) {
-    bwapi_clear_last_error();
-    bwapi_event e;
-    std::memset(&e, 0x5a, sizeof e);
-    e.size = sizeof e;
-    CHECK(bwapi_game_get_event(bad, &e, sizeof e) == 0);
-    CHECK(bwapi_last_error() == BWAPI_ERR_INVALID_HANDLE);
-    CHECK(message().find("bwapi_game_get_event") != std::string::npos);
-    CHECK(message().find("10 events") != std::string::npos);
-    // Untouched past the size the caller set: no field is written on failure.
-    CHECK(e.size == static_cast<int32_t>(sizeof e));
-    CHECK(e.type == 0x5a5a5a5a);
-    CHECK(e.is_winner == 0x5a5a5a5a);
-    // The text function fails the same way, checked on a clear channel so the assertion is
-    // about its own latch and not the sticky one above.
     bwapi_clear_last_error();
     CHECK(bwapi_game_event_text(bad, nullptr, 0) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_INVALID_HANDLE);
     CHECK(message().find("bwapi_game_event_text") != std::string::npos);
+    CHECK(message().find("10 events") != std::string::npos);
   }
 }
 
-TEST_CASE("the struct-out rule: the caller's size is honoured going in and coming out") {
+TEST_CASE("the struct-array rule: cap, stride and the order the rows come back in") {
   EventScenario s;
+  constexpr int32_t kRow = static_cast<int32_t>(sizeof(bwapi_event));
 
-  SUBCASE("a larger size is zero-filled past the known fields and size says what was filled") {
+  SUBCASE("the rows are in BWAPI's queue order, not sorted") {
+    const auto rows = drain();
+    REQUIRE(rows.size() == static_cast<size_t>(EventScenario::kCount));
+    // The builder queues three UnitDiscover events and then seven of seven other kinds; the
+    // ids in those rows are not ascending, which is what section 4's sort would have made them.
+    CHECK(rows[0].type == BWAPI_EVENT_UNIT_DISCOVER);
+    CHECK(rows[3].type == BWAPI_EVENT_NUKE_DETECT);
+    CHECK(rows[4].type == BWAPI_EVENT_PLAYER_LEFT);
+    CHECK(rows[5].type == BWAPI_EVENT_MATCH_END);
+    CHECK(rows[6].type == BWAPI_EVENT_SEND_TEXT);
+    CHECK(rows[7].type == BWAPI_EVENT_RECEIVE_TEXT);
+    CHECK(rows[8].type == BWAPI_EVENT_SAVE_GAME);
+    CHECK(rows[9].type == BWAPI_EVENT_UNIT_COMPLETE);
+    CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
+  }
+  SUBCASE("a cap of 0 with NULL is the count, and reads nothing") {
+    CHECK(bwapi_game_get_events(nullptr, 0, 0) == EventScenario::kCount);
+    CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
+  }
+  SUBCASE("a cap short of the count fills cap rows and returns the total") {
+    constexpr int32_t cap = 4;
+    bwapi_event rows[cap + 1];
+    std::memset(rows, 0x5a, sizeof rows);
+    CHECK(bwapi_game_get_events(rows, cap, kRow) == EventScenario::kCount);
+    for (int32_t i = 0; i < cap; ++i) CHECK(rows[i].size == kRow);
+    CHECK(rows[cap].size == 0x5a5a5a5a);   // nothing past cap
+    CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
+  }
+  SUBCASE("a stride larger than the row zero-fills each row's tail and reports what was filled") {
     struct Bigger {
       bwapi_event e;
       int32_t extra[4];
-    } b;
-    std::memset(&b, 0xab, sizeof b);
-    REQUIRE(bwapi_game_get_event(3, &b.e, sizeof b) == 1);
-    CHECK(b.e.size == static_cast<int32_t>(sizeof(bwapi_event)));
-    CHECK(b.e.type == BWAPI_EVENT_NUKE_DETECT);
-    CHECK(b.e.x == 640);
-    for (int32_t v : b.extra) CHECK(v == 0);
-    CHECK(BWAPI_HAS_FIELD(bwapi_event, is_winner, b.e.size));
+    };
+    Bigger rows[EventScenario::kCount];
+    std::memset(rows, 0xab, sizeof rows);
+    CHECK(bwapi_game_get_events(reinterpret_cast<bwapi_event*>(rows), EventScenario::kCount,
+                                sizeof(Bigger)) == EventScenario::kCount);
+    for (const auto& r : rows) {
+      CHECK(r.e.size == kRow);
+      for (int32_t v : r.extra) CHECK(v == 0);
+      CHECK(BWAPI_HAS_FIELD(bwapi_event, is_winner, r.e.size));
+      CHECK_FALSE(BWAPI_HAS_FIELD(Bigger, extra, r.e.size));
+    }
+    CHECK(rows[3].e.type == BWAPI_EVENT_NUKE_DETECT);
+    CHECK(rows[3].e.x == 640);
+  }
+  SUBCASE("a stride smaller than the row, an older consumer's, is written only that far") {
+    struct Older { int32_t size, type; };
+    Older rows[EventScenario::kCount];
+    std::memset(rows, 0x5a, sizeof rows);
+    CHECK(bwapi_game_get_events(reinterpret_cast<bwapi_event*>(rows), EventScenario::kCount,
+                                sizeof(Older)) == EventScenario::kCount);
+    for (const auto& r : rows) CHECK(r.size == static_cast<int32_t>(sizeof(Older)));
+    CHECK(rows[3].type == BWAPI_EVENT_NUKE_DETECT);
+    CHECK_FALSE(BWAPI_HAS_FIELD(bwapi_event, unit_id, rows[0].size));
+  }
+  SUBCASE("one buffer reused across two frames stays correct (R12)") {
+    struct Bigger {
+      bwapi_event e;
+      int32_t extra[4];
+    };
+    Bigger rows[EventScenario::kCount];
+    std::memset(rows, 0xab, sizeof rows);
+    for (int32_t call = 0; call < 2; ++call) {
+      CHECK(bwapi_game_get_events(reinterpret_cast<bwapi_event*>(rows), EventScenario::kCount,
+                                  sizeof(Bigger)) == EventScenario::kCount);
+      CHECK(rows[0].e.size == kRow);
+      CHECK(rows[3].e.type == BWAPI_EVENT_NUKE_DETECT);
+      CHECK(rows[9].e.type == BWAPI_EVENT_UNIT_COMPLETE);
+    }
     CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
   }
-  SUBCASE("a smaller size, an older consumer's, is written only that far") {
-    bwapi_event e;
-    std::memset(&e, 0x5a, sizeof e);
-    // size and type only, as an older consumer's struct would be
-    REQUIRE(bwapi_game_get_event(0, &e, offsetof(bwapi_event, unit_id)) == 1);
-    CHECK(e.size == static_cast<int32_t>(offsetof(bwapi_event, unit_id)));
-    CHECK(e.type == BWAPI_EVENT_UNIT_DISCOVER);
-    CHECK(e.unit_id == 0x5a5a5a5a);  // never written past the caller's size
-    CHECK(BWAPI_HAS_FIELD(bwapi_event, type, e.size));
-    CHECK_FALSE(BWAPI_HAS_FIELD(bwapi_event, unit_id, e.size));
-    CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
-  }
-  SUBCASE("NULL, or a size that cannot hold size itself, is BAD_BUFFER before the index is looked at") {
-    CHECK(bwapi_game_get_event(0, nullptr, sizeof(bwapi_event)) == 0);
+  SUBCASE("NULL with a nonzero cap, or a stride that cannot hold size itself, is BAD_BUFFER") {
+    CHECK(bwapi_game_get_events(nullptr, 1, kRow) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
     bwapi_clear_last_error();
-    bwapi_event e;
-    std::memset(&e, 0x5a, sizeof e);
-    CHECK(bwapi_game_get_event(0, &e, 3) == 0);
+    bwapi_event one;
+    std::memset(&one, 0x5a, sizeof one);
+    CHECK(bwapi_game_get_events(&one, 1, 3) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
-    CHECK(e.size == 0x5a5a5a5a);  // and wrote nothing
-    bwapi_clear_last_error();
-    CHECK(bwapi_game_get_event(-1, &e, 0) == 0);
-    CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
+    CHECK(one.size == 0x5a5a5a5a);   // and wrote nothing
   }
 }
 
@@ -258,9 +300,8 @@ TEST_CASE("the next frame replaces the snapshot and its indices") {
     CHECK(get(0).type == BWAPI_EVENT_MATCH_FRAME);
     CHECK(get(0).unit_id == BWAPI_NONE);
     // Last frame's indices are gone with it.
-    bwapi_event e;
-    e.size = sizeof e;
-    CHECK(bwapi_game_get_event(5, &e, sizeof e) == 0);
+    CHECK(drain().size() == 1);
+    CHECK(bwapi_game_event_text(5, nullptr, 0) == 0);
     CHECK(bwapi_last_error() == BWAPI_ERR_INVALID_HANDLE);
   }
   SUBCASE("events queued between frames follow the MatchFrame") {
@@ -310,14 +351,13 @@ TEST_CASE("before the game exists every event call is NOT_CONNECTED, behind BAD_
   CHECK(bwapi_last_error() == BWAPI_ERR_NOT_CONNECTED);
   bwapi_clear_last_error();
   bwapi_event e;
-  e.size = sizeof e;
-  CHECK(bwapi_game_get_event(0, &e, sizeof e) == 0);
+  CHECK(bwapi_game_get_events(&e, 1, sizeof e) == 0);
   CHECK(bwapi_last_error() == BWAPI_ERR_NOT_CONNECTED);
   bwapi_clear_last_error();
   CHECK(bwapi_game_event_text(0, nullptr, 0) == 0);
   CHECK(bwapi_last_error() == BWAPI_ERR_NOT_CONNECTED);
   bwapi_clear_last_error();
-  CHECK(bwapi_game_get_event(0, nullptr, sizeof(bwapi_event)) == 0);
+  CHECK(bwapi_game_get_events(nullptr, 1, sizeof(bwapi_event)) == 0);
   CHECK(bwapi_last_error() == BWAPI_ERR_BAD_BUFFER);
   bwapi_clear_last_error();
 }

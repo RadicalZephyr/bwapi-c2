@@ -14,7 +14,7 @@ using namespace bwapi_c2;
 // Every body: and source: entry names the C++ declaration it stands for; these fail the build
 // when a pin bump removes or reshapes one (plan section 9).
 static_assert(sizeof(&BWAPI::Game::getEvents) > 0, "spec/game.yaml bwapi_game_event_count: Game::getEvents not found");
-static_assert(sizeof(&BWAPI::Event::getType) > 0, "spec/game.yaml bwapi_game_get_event: Event::getType not found");
+static_assert(sizeof(&BWAPI::Game::getEvents) > 0, "spec/game.yaml bwapi_game_get_events: Game::getEvents not found");
 static_assert(sizeof(&BWAPI::Event::getText) > 0, "spec/game.yaml bwapi_game_event_text: Event::getText not found");
 
 // Every export in this file is hand-written (source:); nothing to generate.

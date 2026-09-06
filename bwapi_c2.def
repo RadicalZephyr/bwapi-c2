@@ -28,7 +28,7 @@ EXPORTS
     bwapi_explosiontype_is_valid
     bwapi_game_event_count
     bwapi_game_event_text
-    bwapi_game_get_event
+    bwapi_game_get_events
     bwapi_gametype_get_name
     bwapi_gametype_is_valid
     bwapi_is_debug

@@ -348,40 +348,40 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "How many events the current frame carries: the size of the snapshot bwapi_client_update() took of Game::getEvents(), which is what bwapi_game_get_event() and bwapi_game_event_text() index. Valid until the next update; a MatchStart frame carries a UnitDiscover per initial unit beside the MatchStart itself, so it is often the largest."
+      "doc": "How many events the current frame carries: the size of the snapshot bwapi_client_update() took of Game::getEvents(), which is what bwapi_game_get_events() drains and bwapi_game_event_text() indexes. Valid until the next update; a MatchStart frame carries a UnitDiscover per initial unit beside the MatchStart itself, so it is often the largest."
     },
     {
-      "c": "bwapi_game_get_event",
+      "c": "bwapi_game_get_events",
       "section": "game",
-      "signature": "int32_t bwapi_game_get_event(int32_t index, bwapi_event* out, int32_t out_size)",
-      "cpp": "Event::getType",
+      "signature": "int32_t bwapi_game_get_events(bwapi_event* out, int32_t cap, int32_t stride)",
+      "cpp": "Game::getEvents",
       "self": "game",
       "params": [
         {
-          "name": "index",
+          "name": "out",
+          "type": "array_out",
+          "c_type": "bwapi_event*"
+        },
+        {
+          "name": "cap",
           "type": "int32",
           "c_type": "int32_t"
         },
         {
-          "name": "out",
-          "type": "struct_out:event",
-          "c_type": "bwapi_event*"
-        },
-        {
-          "name": "out_size",
+          "name": "stride",
           "type": "array_out",
           "c_type": "int32_t"
         }
       ],
       "returns": {
-        "kind": "bool32",
+        "kind": "struct_array:event",
         "c_type": "int32_t",
-        "neutral": "0"
+        "neutral": "nothing written, and 0"
       },
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills out with the event at index, 0 to bwapi_game_event_count() minus one, and returns 1. The caller sets out->size to its own sizeof(bwapi_event); the fields the library knows are written, the rest of that size is zeroed, and out->size comes back as the bytes filled, so BWAPI_HAS_FIELD says which fields are valid. An index outside the frame's events latches BWAPI_ERR_INVALID_HANDLE and returns 0 with nothing written; a NULL out, or a size too small to hold size itself, latches BWAPI_ERR_BAD_BUFFER the same way."
+      "doc": "Fills out with this frame's events, up to cap rows of stride bytes each, and returns the total the frame carries. The rows are in the order BWAPI produced them, not sorted: arrival order is information, and section 4's ID sort exists to defeat Unitset's nondeterminism, which an event list does not have. Each row's size comes back as the bytes filled, so BWAPI_HAS_FIELD says which fields are valid. A cap of 0 with NULL queries the count. The text of a SendText, ReceiveText or SaveGame row is not in the struct; bwapi_game_event_text() returns it for the same index."
     },
     {
       "c": "bwapi_game_event_text",
@@ -14372,7 +14372,7 @@
     {
       "name": "event",
       "c_type": "bwapi_event",
-      "doc": "One event of the current frame, as bwapi_game_get_event() fills it: the BWAPI_EVENT_* type, and whichever of a unit, a player, a position and a winner flag that type carries, with BWAPI_NONE or the pixel-scale None in the others. The text of a SendText, ReceiveText or SaveGame event is not in the struct; bwapi_game_event_text() returns it for the same index.",
+      "doc": "One event of the current frame, as bwapi_game_get_events() fills it: the BWAPI_EVENT_* type, and whichever of a unit, a player, a position and a winner flag that type carries, with BWAPI_NONE or the pixel-scale None in the others. The text of a SendText, ReceiveText or SaveGame event is not in the struct; bwapi_game_event_text() returns it for the same index.",
       "fields": [
         {
           "name": "size",

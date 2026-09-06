@@ -1531,7 +1531,7 @@ typedef struct bwapi_required_unit {
   int32_t count;         /* how many of the required type */
 } bwapi_required_unit;
 
-/* One event of the current frame, as bwapi_game_get_event() fills it: the BWAPI_EVENT_* type,
+/* One event of the current frame, as bwapi_game_get_events() fills it: the BWAPI_EVENT_* type,
  * and whichever of a unit, a player, a position and a winner flag that type carries, with
  * BWAPI_NONE or the pixel-scale None in the others. */
 typedef struct bwapi_event {

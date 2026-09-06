@@ -27,6 +27,18 @@ const BWAPI::Event* event_at(int32_t index, const char* fn) {
   return events[static_cast<size_t>(index)];
 }
 
+// One row from one event. The accessors default to null and Positions::None for the types that
+// do not carry them, which id_of() and the raw x, y pass through as BWAPI_NONE and the pixel
+// None, so every type fills every field and the row needs no per-type branching.
+void fill_event_row(bwapi_event& row, const BWAPI::Event& e) {
+  row.type = static_cast<int32_t>(e.getType());
+  row.unit_id = id_of(e.getUnit());
+  row.player_id = id_of(e.getPlayer());
+  row.x = e.getPosition().x;
+  row.y = e.getPosition().y;
+  row.is_winner = e.isWinner() ? 1 : 0;
+}
+
 }  // namespace
 
 extern "C" {
@@ -40,24 +52,17 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_event_count(void) BWAPI_C2_NOEXCEP
   });
 }
 
-BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_get_event(int32_t index, bwapi_event* out,
-                                                        int32_t out_size) BWAPI_C2_NOEXCEPT {
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_game_get_events(bwapi_event* out, int32_t cap,
+                                                         int32_t stride) BWAPI_C2_NOEXCEPT {
   return guard<int32_t>(0, [&]() -> int32_t {
-    if (!check_struct_out(out, out_size)) return 0;
-    if (!game_ready("bwapi_game_get_event")) return 0;
-    const BWAPI::Event* e = event_at(index, "bwapi_game_get_event");
-    if (!e) return 0;
-    write_struct(out, out_size, [&](bwapi_event& row) {
-      row.type = static_cast<int32_t>(e->getType());
-      // The accessors default to null and Positions::None for the types that do not carry
-      // them, which id_of() and the raw x, y pass through as BWAPI_NONE and the pixel None.
-      row.unit_id = id_of(e->getUnit());
-      row.player_id = id_of(e->getPlayer());
-      row.x = e->getPosition().x;
-      row.y = e->getPosition().y;
-      row.is_winner = e->isWinner() ? 1 : 0;
-    });
-    return 1;
+    if (!check_buffer(out, cap)) return 0;
+    if (!game_ready("bwapi_game_get_events")) return 0;
+    const auto& events = frame_events();
+    // Queue order, not section 4's ID sort: arrival order is information (section 5.6).
+    return write_rows(out, cap, stride, static_cast<int32_t>(events.size()),
+                      [&](bwapi_event& row, int32_t i) {
+                        fill_event_row(row, *events[static_cast<size_t>(i)]);
+                      });
   });
 }
 

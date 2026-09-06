@@ -11,23 +11,26 @@
   source: src/bulk.cpp
   doc: >-
     How many events the current frame carries: the size of the snapshot bwapi_client_update()
-    took of Game::getEvents(), which is what bwapi_game_get_event() and bwapi_game_event_text()
-    index. Valid until the next update; a MatchStart frame carries a UnitDiscover per initial
-    unit beside the MatchStart itself, so it is often the largest.
+    took of Game::getEvents(), which is what bwapi_game_get_events() drains and
+    bwapi_game_event_text() indexes. Valid until the next update; a MatchStart frame carries a
+    UnitDiscover per initial unit beside the MatchStart itself, so it is often the largest.
 
-- cpp: "Event::getType"
-  c: bwapi_game_get_event
+# The whole frame in one crossing (section 5.6). Game::getEvents backs both this and the count,
+# the way UnitType::requiredUnits backs an accessor and a table. There is no per-index accessor:
+# a host that paid a crossing per event paid it on the frames carrying the most of them.
+- cpp: "Game::getEvents"
+  c: bwapi_game_get_events
   self: game
-  params: [{name: index, type: int32}, {name: out, type: "struct_out:event"}]
-  returns: bool32
+  returns: "struct_array:event"
   source: src/bulk.cpp
   doc: >-
-    Fills out with the event at index, 0 to bwapi_game_event_count() minus one, and returns 1.
-    The caller sets out->size to its own sizeof(bwapi_event); the fields the library knows are
-    written, the rest of that size is zeroed, and out->size comes back as the bytes filled, so
-    BWAPI_HAS_FIELD says which fields are valid. An index outside the frame's events latches
-    BWAPI_ERR_INVALID_HANDLE and returns 0 with nothing written; a NULL out, or a size too small
-    to hold size itself, latches BWAPI_ERR_BAD_BUFFER the same way.
+    Fills out with this frame's events, up to cap rows of stride bytes each, and returns the
+    total the frame carries. The rows are in the order BWAPI produced them, not sorted: arrival
+    order is information, and section 4's ID sort exists to defeat Unitset's nondeterminism,
+    which an event list does not have. Each row's size comes back as the bytes filled, so
+    BWAPI_HAS_FIELD says which fields are valid. A cap of 0 with NULL queries the count. The
+    text of a SendText, ReceiveText or SaveGame row is not in the struct; bwapi_game_event_text()
+    returns it for the same index.
 
 - cpp: "Event::getText"
   c: bwapi_game_event_text
@@ -44,14 +47,17 @@
 
 # The rest of BWAPI::Event: four accessors that are fields of bwapi_event, six setters and
 # eighteen constructors a host has no use for.
+- cpp: "Event::getType"
+  skip: "§5.6: a field of bwapi_event (type), filled by bwapi_game_get_events()"
+
 - cpp: "Event::getUnit"
-  skip: "§5.6: a field of bwapi_event (unit_id), filled by bwapi_game_get_event()"
+  skip: "§5.6: a field of bwapi_event (unit_id), filled by bwapi_game_get_events()"
 - cpp: "Event::getPlayer"
-  skip: "§5.6: a field of bwapi_event (player_id), filled by bwapi_game_get_event()"
+  skip: "§5.6: a field of bwapi_event (player_id), filled by bwapi_game_get_events()"
 - cpp: "Event::getPosition"
-  skip: "§5.6: two fields of bwapi_event (x, y), filled by bwapi_game_get_event()"
+  skip: "§5.6: two fields of bwapi_event (x, y), filled by bwapi_game_get_events()"
 - cpp: "Event::isWinner"
-  skip: "§5.6: a field of bwapi_event (is_winner), filled by bwapi_game_get_event()"
+  skip: "§5.6: a field of bwapi_event (is_winner), filled by bwapi_game_get_events()"
 - cpp: "Event::setType"
   skip: "§5.6: events are polled from the frame's snapshot, never built or mutated by a host"
 - cpp: "Event::setPosition"
