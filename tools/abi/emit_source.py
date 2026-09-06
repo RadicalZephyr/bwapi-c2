@@ -96,7 +96,11 @@ def prologue(entry, neutral):
     elif r in ("id_array", "position_array") or r.startswith("struct_array:"):
         lines.append(f"    if (!check_buffer(out, cap)) {ret_neutral}")
     self_kind = entry["self"]
-    if self_kind != "none":
+    params = entry.get("params") or []
+    # A handle: parameter is resolved through BroodwarPtr just like a handle self:, so an entry
+    # that takes one needs the connected check even when it has no self: of its own; without it
+    # the resolver would dereference a null BroodwarPtr before connect.
+    if self_kind != "none" or any(p["type"].startswith("handle:") for p in params):
         lines.append(f'    if (!game_ready("{fn}")) {ret_neutral}')
     if self_kind in abispec.HANDLE_KINDS:
         ctype, resolver = RESOLVER[self_kind]
@@ -107,7 +111,7 @@ def prologue(entry, neutral):
     elif self_kind == "bwem_map":
         lines.append(f'    if (!bwem_ready("{fn}")) {ret_neutral}')
         lines.append("    const BWEM::Map& map = BWEM::Map::Instance();")
-    for p in entry.get("params") or []:
+    for p in params:
         if p["type"].startswith("handle:"):
             kind = p["type"].partition(":")[2]
             ctype, resolver = RESOLVER[kind]

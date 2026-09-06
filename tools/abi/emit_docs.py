@@ -63,13 +63,15 @@ def toml_value(v):
 
 def latches(fn):
     out = []
-    if fn["self"] != "none":
+    # The same rule emit_source.py's prologue applies: a handle: parameter is resolved through
+    # the game, so an entry that takes one is connection-checked even with self: none.
+    takes_handle = any(p["type"].startswith("handle:") for p in fn["params"])
+    if fn["self"] != "none" or takes_handle:
         out.append(LATCH_WRONG_THREAD)
         out.append(LATCH_NOT_CONNECTED)
     if fn["self"].startswith("bwem"):
         out.append(LATCH_BWEM)
-    if fn["self"] in ("unit", "player", "force", "region", "bwem_area", "bwem_choke", "bwem_base", "bwem_neutral") \
-            or any(p["type"].startswith("handle:") for p in fn["params"]):
+    if takes_handle:
         out.append(LATCH_HANDLE)
     if fn["returns"]["kind"] in ("string_out", "id_array", "position_array") or fn["returns"]["kind"].startswith("struct_array:"):
         out.append(LATCH_BUFFER)
