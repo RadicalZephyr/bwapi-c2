@@ -2148,10 +2148,20 @@ value, when it latches. Guidance does not go in it — a how-to sentence in a sp
 duplicated across 770 pages — so an entry may carry `guides:` links and the prose lives in the
 guides. Layout is the templates' job; the emitter never formats anything.
 
-**Append-only means one reference, not versioned copies.** After 1.0 every entry carries `since`
-and the page renders it as a badge. A reader on 1.2 sees everything; a reader on 1.0 filters by
-badge. Versioned documentation trees exist for APIs whose functions change meaning, and §4 says
-these do not. Before 1.0 the site says *unstable*, once, at the top of the reference.
+**One reference tree per major, and the reference in every zip.** A released `bwapi-c2` is
+valid for as long as a tournament will run a bot built on it, which is indefinitely, so its
+reference must be too. Within a major every entry carries `since` and the page renders it as a
+badge: a reader on 1.2 sees everything, a reader on 1.0 filters by badge, and a badge is all a
+minor can add (§4). Across majors the trees are separate, `/reference/` for the current major
+and `/reference/<major>/` for each earlier one, and **the site does not render them; it serves
+what the release shipped.** The release job renders the reference once, from that release's
+`api.json`, into the zip (§10.4); the docs job copies each major's latest release asset into
+place. An old `api.json` is never re-rendered with newer templates, so a published reference is
+immutable by construction and reproducible from its zip with no build at all. Before 1.0 the
+site says *unstable*, once, at the top of the reference. readthedocs was checked for this and
+declined: it hosts arbitrary HTML with a version flyout, so the generator would stay Zola
+either way, and what it adds — the flyout, pull-request previews — does not pay for a second
+host, its advertising, and the publishing toolchain leaving CI (implementation plan §7 row 14).
 
 **`api.json` is published**, at `/api.json`, because the third-party binding author it exists for
 (§7) needs a URL, not a repository path. `docs/api-json.md` becomes the reference page for its
@@ -2197,14 +2207,19 @@ closure: copy `api.json` into the site's static directory (this is also how `/ap
 served); run `emit_docs.py`; `zola check` for internal links and anchors; `zola build`;
 `actions/upload-pages-artifact` and `actions/deploy-pages` on pushes to the default branch. Pull
 requests build and check without deploying. Zola's version is pinned in the workflow like every
-other tool. **External links are checked on a schedule, not on the merge path** — a dead upstream
+other tool. For the reference (16.1) the job renders the current tree from the checked-in
+`api.json` and, for every major that has a release, fetches that major's latest release
+reference asset into `/reference/<major>/`; a version switcher of a few lines reads the list the
+job writes. Nothing is re-rendered for an old major, and a major with no release yet has no
+tree. **External links are checked on a schedule, not on the merge path** — a dead upstream
 link must not block a deploy.
 
 There is no separate `gh-pages` branch: Pages is configured to deploy from Actions, so the
 published site is always the output of one commit of `main` and nothing is committed to publish.
 
-**Not done, and why:** no Doxygen, no versioned trees, no rendered design record (all above); no
-API-reference PDF or man pages (no measured demand); no localisation.
+**Not done, and why:** no Doxygen, no rendered design record (both above); no per-minor trees,
+since a minor is a `since` badge inside its major's tree (16.1); no API-reference PDF or man
+pages (no measured demand); no localisation.
 
 ---
 
