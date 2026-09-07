@@ -99,7 +99,11 @@ scheduled drift job. The work happens in the fork first and in this repository s
 4. In this repository, `git -C third_party/<dep> checkout <new tip>`, and update the tables
    above, tag included, and `NOTICE` in the same commit.
 5. Run the layout dump and the derived-closure test; diff both against the checked-in baselines.
-6. Run `tools/abi/audit.sh`; resolve every added, removed or changed declaration, and rewrite
-   the backlog (`--write-backlog`) once each is decided. Rerun `draft_spec.py
-   --update-constants` and review the diff of `spec/constants.yaml`.
+6. Diff the public header listing against the previous pin (`git diff --stat <old> <new> --
+   bwapi/include` on the submodule, watching for added and deleted files): a header upstream
+   adds is invisible to the audit until it is on `tools/abi/audited-headers.txt`, and a header
+   it deletes leaves a stale `exclude` line. Then run `tools/abi/audit.sh`; resolve every added,
+   removed or changed declaration, and rewrite the backlog (`--write-backlog`) once each is
+   decided. Rerun `draft_spec.py --update-constants` and review the diff of
+   `spec/constants.yaml`.
 7. Rebuild; run every suite in plan §11. Record the new revision and `CLIENT_VERSION` here.
