@@ -152,6 +152,12 @@ Two goals a fork genuinely cannot reach — an OS privilege boundary between bot
 read-only state plane — are changes to the *server side of the client protocol*: a fork of
 `Server.cpp` plus a new client. Still not a rebuild from the injection layer up.
 
+**The series is planned.** [`bwapi-fork-defect-plan.md`](../bwapi-fork-defect-plan.md) sequences
+all eight rows into commit-sized steps against the fork's `main`, restates each site as the tree
+actually reads it — three rows are wider than this table records — and collects the six decisions
+the series cannot make for itself. Four rows close outright; four narrow, and the gap in each is
+the referee.
+
 **And the legal asymmetry runs the wrong way for a rebuild.** *MDY Industries v. Blizzard*, 629
 F.3d 928 (9th Cir. 2010), held that botting a Blizzard game is breach of contract rather than
 copyright infringement, with the DMCA §1201 hook attaching only to circumventing the Warden
