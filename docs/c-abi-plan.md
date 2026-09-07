@@ -2297,7 +2297,10 @@ transport*, and that is upstream code.
    handshake unchanged. Already written line-for-line on
    `basil-ladder/bwapi@linux-client-support` — ~344 lines, 8 files, unmerged since 2020, needs
    one `#include <string>` on GCC 11. It becomes a §15.2-style patch on the pinned upstream
-   BWAPI: LGPL on LGPL.
+   BWAPI: LGPL on LGPL. On upstream's `develop` the transport is already SFML sockets with a
+   Unix backend and UDP-broadcast discovery (R12), so a BWAPI 5 release would deliver this item
+   outright: a Linux client would reach a Windows StarCraft over the LAN with no OpenBW
+   involved, and only the engine half of this appendix would stay parked.
 2. **The version gate.** OpenBW's fork is `CLIENT_VERSION` 10002; upstream is 10003; `Client.cpp:120`
    refuses to connect on mismatch. Relax the check, make the constant configurable, or accept
    that OpenBW users run a fork. One decision.
