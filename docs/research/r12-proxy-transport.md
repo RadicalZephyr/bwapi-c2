@@ -133,10 +133,12 @@ miscategorised — it solves transit problems, and this is not transit.**
 
 Two things, neither of them the wire format.
 
-**The read API shape.** §2's top row. This is the one that costs real frame budget, and it is
-already recognised in the plan: `bulk.yaml` and the fifteen per-class tables of §5.8 exist for
-exactly this reason. A proxy redesign does not create the batching win; a snapshot-shaped read
-API does, and it is available in client mode today.
+**The read API shape.** §2's top row. This is the one that costs real frame budget — and the
+plan already fixes it in v1. §5.10 specifies `bwapi_game_snapshot_units()` and
+`bwapi_game_snapshot_players()`, a field-select copy into a caller buffer with booleans packed as
+bits in a `flags` word; §5.5 refuses per-cell FFI for map data on the same grounds. **A proxy
+redesign does not create the batching win and is not needed for it.** The 950–1200× lever is
+available in client mode today, and §5.10 is how it gets taken.
 
 **The server's blocking read has no deadline.** `Server::callOnFrame()`
 (`bwapi/BWAPI/Source/BWAPI/Server.cpp:737`):
