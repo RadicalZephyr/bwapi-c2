@@ -293,8 +293,8 @@ design document states the premise in one sentence: **only the plain C API is bi
 across releases**, because C++ "presents extreme technical difficulties to doing so." Every §4
 convention has a production precedent in that field — integer handles are what SkiaSharp's
 three-regime pointer model is the cost of not having; caller buffers with a true-count return
-are ICU's convention since the 1990s; the size prefix is LibreOfficeKit's `nSize`; neutral values
-on bad input are HarfBuzz's inert singletons. **SkiaSharp is the near neighbour and the caution**:
+are ICU's convention since the 1990s; neutral values on bad input are HarfBuzz's inert
+singletons. **SkiaSharp is the near neighbour and the caution**:
 Google removed Skia's C API for lack of interest, the C# binding's maintainers carry it in a fork,
 and they describe its stability as "at the whim of the underlying C++ API." **cimgui and Godot's
 `extension_api.json`** are the precedents for a generated C layer with a JSON sidecar that a dozen
@@ -382,7 +382,8 @@ Nobody here asked for a C ABI, and everyone here built the thing a C ABI would h
 1. **Two flat `extern "C"` headers**, valid C99 *and* C++, no C++ types, no macros required at
    the call site: `bwapi_c2.h` for BWAPI and `bwapi_c2_bwem.h` for BWEM, sharing
    `bwapi_c2_types.h` and every §4 convention.
-2. **Stable ABI**: append-only, versioned, symbol list under test — from 1.0 onward (§4).
+2. **Stable ABI**: semantically versioned, symbol list under test — from 1.0 onward (§4). A
+   breaking change is a new major shipped beside the old one; nothing is ever changed in place.
 3. **Zero C++ toolchain required for consumers** — a `.dll` + `.h` (+ `.lib`) is the whole
    delivery.
 4. **Cheap for binding generators**: `api.json` alongside the headers, so `ctypes`, P/Invoke,
@@ -639,30 +640,22 @@ order. A bot that iterates and takes the first match would be irreproducible thr
 its own. **The ABI sorts collection output ascending by ID** and documents it (§15). Sorting
 alone does not fix the closest/best queries, which return one unit — see §5.4.
 
-**Struct evolution: every POD that crosses the boundary begins with `int32_t size;`.** The
-append-only policy covers function signatures and says nothing about struct layout, but
-`bwapi_event`, `bwapi_bullet`, `bwapi_unit_command` and the §5.10 snapshots are layout
-contracts compiled into every consumer — and `ctypes` and P/Invoke consumers hardcode those
-layouts in script and never recompile.
-
-- The caller sets `size` on input structs. The callee validates it, reads only the prefix it
-  understands, and ignores the rest.
-- The callee sets `size` on output structs, writes the fields it knows, zero-fills the remainder
-  up to the caller's `size`, and never writes past it.
-- **For array-out functions the caller sets `size` on element zero, and that value is the
-  uniform stride for the whole array.** No separate `elem_size` parameter — one mechanism, no
-  redundancy.
-
-Applied uniformly, including to `bwapi_unit_command`. The per-call cost is setting one field on
-a struct most bots never touch (§5.3's ~40 convenience functions are the real command path), and
-uniformity is worth more than four bytes.
-
-`bwapi_c2_types.h` ships one capability macro, LibreOfficeKit's `LIBREOFFICEKIT_HAS_MEMBER`
-under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) +
-sizeof(field) <= size` — so a consumer compiled against a newer header can test whether the DLL
-it loaded filled a field before reading it. The size prefix makes that possible; the macro
-makes it one line. It tests the field's end rather than LibreOfficeKit's start: a field the
-DLL half-filled is not present, and with every field `int32_t`-aligned the two agree anyway.
+**Struct layout is fixed within a major, and a struct that must change is a new major.**
+`bwapi_event`, `bwapi_bullet`, `bwapi_unit_command`, the §5.8 table rows and the §5.10
+snapshots are layout contracts compiled into every consumer — and `ctypes` and P/Invoke
+consumers hardcode those layouts from `api.json` and never recompile. Revisions 4.0–4.5 put an
+`int32_t size` prefix on every one of them, LibreOfficeKit's `nSize`, so a struct could grow
+behind an unchanged signature and an older binary keep working. Revision 5 removes it, on two
+findings. The growth it insured against does not happen: the released BWAPI has not added or
+removed a field of any `*Data` struct since 4.2.0 in April 2017, and BWAPI 5 changes them as a
+redesign, not as drift (R12). And the versioning policy below no longer wants it: a struct that
+must change is a new major, which is a new header and DLL pair a bot author adopts when they
+choose, exactly as the tournaments already treat BWAPI's own versions. What remains is simpler.
+A struct array crosses as `(T* out, int32_t cap)` with the stride `sizeof(T)` as both sides
+compiled it; the raw layers assert `bwapi_abi_version()`'s major at load, so a header and a DLL
+from different majors fail at import rather than at the first misread field; and
+`BWAPI_HAS_FIELD` goes with the prefix. Booleans in snapshots stay as flag bits (§5.10), for
+density rather than for evolution.
 
 **Invalid handles.** Never dereference. Validate, then return a documented neutral value (`0` /
 `-1` / packed `Positions::None` / empty) and latch it in the ABI error channel. Rationale: a
@@ -740,25 +733,60 @@ will not find it on its own.
 void     bwapi_abi_version(int32_t* major, int32_t* minor, int32_t* patch);
 int32_t  bwapi_abi_version_string(char* buf, int32_t buf_len);   /* snprintf convention */
 int32_t  bwapi_client_version(void);   /* BWAPI::CLIENT_VERSION, 10003 today */
+int32_t  bwapi_bwapi_version_string(char* buf, int32_t buf_len);  /* the pinned release, "4.4.0" */
 int32_t  bwapi_revision(void);         /* SVN_REV from upstream's generator, §10.3 */
 int32_t  bwapi_is_debug(void);
 ```
 Three `int32_t` out-params rather than a packed `uint32_t`: it keeps §4's one-integer-width rule
-intact and needs no documented packing to compare.
+intact and needs no documented packing to compare. `bwapi_bwapi_version_string()` exists so a
+wrapper can say "this DLL speaks BWAPI 4.4.0" without a table from `CLIENT_VERSION` to release.
 
 **The ABI is `0.x` and explicitly unstable until the consumers phase completes.** Real bindings
-always shake out ergonomics, and promising append-only stability while also planning to revise
-on consumer feedback cannot both hold. **Append-only begins when `bwapi_abi_version()` returns
-1.0**, and reaching 1.0 is the exit criterion of phase 4 (§12). After that: new functions get
-new names; existing signatures never change meaning; a removal is a major bump.
+always shake out ergonomics, and promising stability while also planning to revise on consumer
+feedback cannot both hold. **1.0 is the first release under semantic versioning**, and reaching
+it is the exit criterion of phase 4 (§12). 1.0 speaks BWAPI 4.4.0.
+
+**Semantic versioning, with a major that bumps on either of two events.** The first is a C ABI
+change a consumer can see: a signature or a struct layout changes, a symbol or a constant is
+removed, a constant's value changes, or a documented semantic changes behind an unchanged
+signature. The second is a change of the pinned BWAPI's `CLIENT_VERSION`: a DLL that speaks to a
+different server cannot join any game the previous one could, whatever its header says. A minor
+adds symbols, constants, structs or flag bits and changes nothing that exists; a patch changes
+nothing a consumer can see. **The number encodes nothing about which BWAPI a build speaks to.**
+That is what `bwapi_client_version()`, `bwapi_bwapi_version_string()`, the release name and the
+compatibility table in the README are for, and it is why a `bwapi-c2` major is never promised to
+line up with a BWAPI release in advance: 2.0 may well be the build that speaks BWAPI 5.0, but
+that is an outcome of the rule, not a rule.
+
+**Why majors rather than append-only.** Revision 4 read goal 7, "purely additive", as
+append-only after 1.0: new functions get new names, nothing existing ever changes, a removal is
+unthinkable. Goal 7 is about not needing changes *upstream*, not about never changing this ABI,
+and append-only priced the wrong risk. The tournaments that run the bots this project is for
+(SSCAIT, BASIL) support every BWAPI version since 3.7.4 side by side and add to that list rather
+than retire from it, so a bot's BWAPI version is chosen by its author and changed when the
+author chooses. A `bwapi-c2` major is the same kind of object: a header and DLL pair a bot adopts
+on its own schedule and can keep forever, with the matching upstream binaries in the same zip
+(§10.4). Append-only would have bought stability for a consumer who upgrades the DLL under an
+old binary, a case the ecosystem does not have, at the price of never fixing a mistake. A
+breaking change under semver costs a released major that keeps working.
+
+**CI classifies every change to the generated outputs and refuses a version that does not
+match.** A `.def` or `api.json` diff that only adds needs at least a minor bump; one that
+removes or changes a signature, a struct layout or a constant's value needs a major; a move of
+`docs/pins.md` to a different `CLIENT_VERSION` needs a major. The inputs are the golden `.def`
+diff and an `api.json` diff, both already in CI, with a classifier in front of them (§9,
+implementation plan §6).
 
 **The bound on that promise is the one LLVM-C states for itself**: stability "limited by the
 abstractness of the interface and the stability of the C++ API that it wraps." Ours wraps two
-libraries that have not moved since 2018 and 2021, so the bound is loose — but it exists, and a
-**pin bump is the only event that can change semantics behind an unchanged signature.** That is
-why §10.3 attaches every check to that event and why §15 is a register rather than a promise.
-There is no runtime behaviour-version selection of the FoundationDB `fdb_select_api_version`
-kind; with a frozen dependency there is nothing for it to select between.
+libraries whose *released* APIs have not moved since 2019 and 2021. Upstream's development
+branch is a different library beneath headers that are 98% the same (R12), and the only motion
+it can ever deliver is a major, which the rule above already names. **Within a major, a pin bump
+is the only event that can change semantics behind an unchanged signature.** That is why §10.3
+attaches every check to that event and why §15 is a register rather than a promise; a pin bump
+across `CLIENT_VERSION` is a major and a phase, not a checklist run (§10.3). There is no runtime
+behaviour-version selection of the FoundationDB `fdb_select_api_version` kind; a bot picks a
+major by linking it.
 
 ---
 
@@ -1471,9 +1499,9 @@ grounds:
    boundary — the exact failure §4's caller-buffer rule exists to prevent.
 
 Typemaps *do* express packed positions, `int32_t` booleans and integer handles correctly, and
-that is worth conceding. They cannot express caller-provided buffers, sorted output,
-size-prefixed structs or the sticky latch, because those change a function's *arity* and a
-typemap only transforms values. Reaching them requires `%extend` — hand-written C++ per function
+that is worth conceding. They cannot express caller-provided buffers, sorted output, struct
+arrays or the sticky latch, because those change a function's *arity* and a typemap only
+transforms values. Reaching them requires `%extend` — hand-written C++ per function
 — at which point SWIG contributes name mangling and an experimental dependency, and nothing else.
 
 Survey result, so nobody re-runs it: CppSharp targets C#; cppbind Swift/Kotlin/Python; AutoWIG
@@ -1549,9 +1577,10 @@ which converts the call's result to the return kind (`docs/spec-format.md` §1.6
 
 What revision 3 had and this revision does not: per-entry declaration hashes, a JSON Schema
 with a `schema_version`, and a required `divergence:` field on every entry. All three guarded
-against motion in a dependency that has not moved meaningfully in years, and were over-priced.
-The coverage audit diffs signatures at pin bumps; two generated bindings consuming `api.json`
-in CI are its compatibility test; §15 is a table, not a per-entry field.
+against motion in a dependency whose released API has not moved in years (R12 measured it: no
+field or signature change on the release line since 2017), and were over-priced. The coverage
+audit diffs signatures at pin bumps; two generated bindings consuming `api.json` in CI are its
+compatibility test; §15 is a table, not a per-entry field.
 
 ### The coverage audit runs off the merge path
 
