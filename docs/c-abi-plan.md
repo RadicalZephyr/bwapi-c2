@@ -146,11 +146,20 @@ packages carry the same, declaring `LGPL-3.0-only` in their metadata.
 | `COPYING` (GPL-3.0) | LGPL §4(b) | Not in BWAPI's tree; fetch from gnu.org |
 | `COPYING.LESSER` (LGPL-3.0) | LGPL §4(b) | Copy of BWAPI's `LICENSE` |
 | `LICENSE.BWEM` (MIT/X11) | attribution | Verbatim copy retaining the Igor Dimitrijevic notice |
-| `NOTICE` | LGPL §4(a) | Names BWAPI (LGPL) and BWEM (MIT/X11); records our `ResetInstance` modification (§15.2) |
-| source pointer | GPL §6(d) | URL plus the pinned commits of **both** dependencies and our own tag. This line is doing legal work, not boilerplate — it is the Corresponding Source offer |
+| `NOTICE` | LGPL §4(a) | Names BWAPI (LGPL) and BWEM (MIT/X11); records our `ResetInstance` modification (§15.2) and the MD5 of each upstream binary below |
+| source pointer | GPL §6(d) | URL plus the pinned commits of **both** dependencies, upstream's release tag for the binaries below, and our own tag. This line is doing legal work, not boilerplate — it is the Corresponding Source offer |
+| `bwapi/BWAPI.dll`, `bwapi/BWAPI_PluginInjector.bwl` | LGPL §4, GPL §6 | Upstream's own release build of the pinned tag, byte-identical (§10.4). Conveying the Library itself, beside the Combined Work, under the same file table |
 
 The X11 no-advertising clause applies: describe BWEM's function in the README; do not use the
 copyright holder's name promotionally.
+
+**From revision 5 the release also conveys the Library itself**: upstream's `BWAPI.dll` and
+injector plugin, verbatim, so a bot author never matches a BWAPI version by hand (§10.4). That
+is ordinary conveyance of an LGPL binary, satisfied by the file table above with one more line
+in the source pointer — upstream's release tag, since that binary was built from the tag and
+not from our fork — and it is the reason the BWAPI pin is a release tag (§10.3).
+`vc_redist.x86.exe` is Microsoft's redistributable under Microsoft's terms, shipped exactly as
+upstream ships it.
 
 **4. Test data is synthetic by policy.** `GameData` carries no Blizzard static tables, so the
 only provenance exposure in a recorded buffer is *map terrain* — and JBWAPI's fifteen fixtures
@@ -1707,6 +1716,17 @@ commit" literally true at the cost of dirty working trees in every checkout and 
 had to run first. The fork is the cleaner mechanism and the one the tree now uses. Offering the
 changes upstream is a pull request from the fork, and gates on nothing.
 
+**The BWAPI pin is a release tag, not a commit on upstream's default branch.** Three things
+rest on it. The release zip redistributes upstream's own build of that tag (§10.4), and SSCAIT
+admits a submission's `BWAPI.dll` by an MD5 from a list of upstream's release builds, so the
+binary and the source it is built from must be the same tag. `bwapi_revision()` must report the
+number that binary reports, and the number is a function of the commit (below): 5016 for
+`v4.4.0`. And the Corresponding Source pointer (§0) then names one upstream commit, not two.
+Revision 4.4 pinned upstream `main` fourteen documentation commits past `v4.4.0`. That changed
+no file the closure compiles (R12) and was still wrong by this section's own rule, because
+`SVN_REV` came out 5030 against the 5016 the injected DLL reports. Revision 5 moves the pin to
+`v4.4.0`; `docs/pins.md` records the move.
+
 **Generate `svnrev.h` with upstream's algorithm when the pin moves, and commit it on the fork.**
 Upstream's `revisionUpdate.vbs` computes `2383 + git rev-list HEAD --count` and writes
 `include/svnrev.h`, which also `#include`s `starcraftver.h` (the definer of `BUILD_DEBUG`). Our
@@ -1719,9 +1739,11 @@ the same number. Our commits touch nothing the number describes, so counting the
 `bwapi_revision()` return a number that is not BWAPI's revision — worse than not exporting it at
 all.
 
-**There is no scheduled drift canary.** A nightly job against dependencies that do not move is
-noise. Moving a pin is a deliberate act, so the work attaches to that act. The fork moves first,
-this repository second; the operational checklist is `docs/pins.md`:
+**There is no scheduled drift canary.** A nightly job against dependencies whose releases do
+not move is noise; what moves is upstream's development branch, and a survey of it at each
+upstream release is the canary (R12 was the first). Moving a pin is a deliberate act, so the
+work attaches to that act. The fork moves first, this repository second; the operational
+checklist is `docs/pins.md`:
 
 1. In the fork, fast-forward the default branch to the new upstream commit and rebase
    `bwapi-c2-pin` onto it. A carried commit that no longer applies is the first finding.
@@ -1733,22 +1755,56 @@ this repository second; the operational checklist is `docs/pins.md`:
 4. Move the submodule (`third_party/bwapi` or `third_party/bwem`) to the new tip; record the tag
    and the commit in `docs/pins.md` and `NOTICE` in the same commit.
 5. Run `derive_closure` and the layout dumps; diff against the baselines.
-6. Run `check_coverage.py`; resolve every added, removed or changed declaration.
-7. Rebuild; run every suite in §11. Record the new revision and `CLIENT_VERSION` in `docs/pins.md`.
+6. Diff the public header listing against the previous pin, then run `check_coverage.py`. A
+   header upstream adds is invisible to the audit's explicit universe (§9) until it is listed,
+   so the listing is diffed first. Resolve every added, removed or changed declaration.
+7. Rebuild; run every suite in §11. Record the new release, revision and `CLIENT_VERSION` in
+   `docs/pins.md`. A changed `CLIENT_VERSION` is a major (§4).
+
+**A bump across `CLIENT_VERSION` is a major and a phase, not a run of this checklist.** R12
+surveyed what one looks like, against upstream's `develop` (BWAPI 5). The checklist's mechanisms
+detect it — every path in `cmake/closure.cmake` is a link error, the layout dump fails, two of
+the three carried commits have no target — and then have nothing useful to say, because each
+assumes the client architecture beneath the headers is fixed. The work is a closure derived
+again as R6 derived this one; a fixture substrate built again as R7 built this one; the layout
+dump deleted; five class renames and a handful of decisions in the spec; §6.2's dead-handle
+outcome redesigned against a `std::set` lookup; the re-entrancy table re-derived; and §15's #6
+and #17 amended (R12 §4 has the full list). Its trigger is an upstream release tag carrying a
+new `CLIENT_VERSION`. Nothing on `develop` is a trigger, and its version handshake is a stub.
 
 ### 10.4 Distribution
 
-`bwapi-c2` ships its own artifacts; it adds nothing to BWAPI's `Release_Binary/` or installer.
+`bwapi-c2` ships its own artifacts, and from revision 5 the matching upstream binaries beside
+them, so that a bot author never matches a BWAPI version by hand.
 
-- Per-platform release assets — `bwapi-c2-<ver>-win32.zip` and `-win64.zip` — containing `.dll`,
-  `.lib`, `.def`, the three headers, `api.json`, the §0 file table, and the Corresponding Source
-  pointer to the exact tagged commit and both pinned dependency commits.
-- Each release records the **pinned BWAPI revision** and `BWAPI::CLIENT_VERSION` (10003 today),
-  so a consumer can tell which server versions a given `bwapi_c2.dll` speaks to. The client
-  refuses to connect on mismatch (`Client.cpp:120`).
+- Per-platform release assets — `bwapi-c2-<ver>-win32.zip` and `-win64.zip` — containing
+  `bwapi_c2.dll`, `.lib`, `.def`, the three headers, `api.json`, the rendered reference for this
+  release (§16), the §0 file table and notices, and the Corresponding Source pointers: this
+  repository's tag, both fork pin tags, and upstream's release tag for the binaries below.
+- **Upstream's own release binaries, byte-identical**, under `bwapi/`: `BWAPI.dll`, the injected
+  server; `BWAPI_PluginInjector.bwl`, the Chaoslauncher plugin that injects it;
+  `vc_redist.x86.exe`; and a `bwapi.ini` of ours with `ai =` blank, because upstream's ships
+  pointing at `ExampleAIModule.dll` and a client bot needs the server to wait for it. **Never
+  rebuilt.** SSCAIT admits a submission's `BWAPI.dll` by MD5 against a list of upstream's release
+  builds, so the file must be the one upstream shipped. The release job downloads upstream's
+  `BWAPI.7z` for the pinned tag by pinned sha256 (`e6d1abef…` for 4.4.0), extracts those files,
+  and asserts each one's MD5 against `NOTICE` (`cf7a19fe79fad87f88177c6e327eaedc` for 4.4.0's
+  `BWAPI.dll`), so a re-uploaded asset or a rebuilt DLL fails the release rather than a
+  tournament submission. It also asserts that the pinned tag's `CLIENT_VERSION` is the one
+  `bwapi_c2.dll` was built with: the pairing rule, stated as a check. `BWAPId.dll` stays out;
+  tournaments run release only.
+- Each release records the **pinned BWAPI release, revision and `CLIENT_VERSION`** (4.4.0, 5016
+  and 10003 today), exported as `bwapi_bwapi_version_string()`, `bwapi_revision()` and
+  `bwapi_client_version()` (§4), and the README carries the table of `bwapi-c2` majors against
+  the BWAPI each speaks to. The server refuses a client whose `CLIENT_VERSION` differs
+  (`Client.cpp:120`).
+- A tournament submission is the bot plus the zip's `bwapi/` directory, and the author declares
+  the BWAPI version the zip names. Local play is Chaoslauncher with the injector plugin ticked,
+  then the bot.
 - `bindings/rust/bwapi-c2-sys` publishes to crates.io from this repo; the safe `bwapi-c2` crate,
   the PyPI `bwapi-c2` package and the NuGet `BwapiC2` package publish from their own repos (§7).
-  All declare `LGPL-3.0-only` and carry the notices.
+  All declare `LGPL-3.0-only`, carry the notices, and pin the `bwapi-c2` major they were
+  generated from (§4).
 
 ---
 
