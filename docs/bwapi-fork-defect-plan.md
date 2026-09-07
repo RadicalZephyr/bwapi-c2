@@ -1,6 +1,16 @@
 # Implementation plan: the eight defects in ADR 0001 §2
 
-> **Status: draft. The six decisions are made; two smaller ones are open.** This plan executes
+> **Status: draft. Stages A through H are implemented; the offsets smoke test is half done.**
+> Twenty-six commits on `RadicalZephyr/bwapi` `claude/bwapi-defect-fixes-gvul5m` close all eight
+> defects and both open questions in [§2.7](#27-still-open); [§6](#6-what-the-implementation-ran-into)
+> records the forks that came up on the way, including one the plan as written would have shipped
+> as a fault on every bot's first command. [§7](#7-the-offsets-smoke-test) is new: the retarget in
+> stage A cannot move a StarCraft address but could move a layout, so tier 1 pins what the compiler
+> believes and tier 2 checks what the linked DLL does against upstream's released v4.4.0. **Tier 1
+> is green; tier 2 is required before a release.** [§4](#4-ripples-into-bwapi-c2) is still deferred
+> and still accurate.
+
+> This plan executes
 > the defect table in [ADR 0001 §2](adr/0001-fork-and-invert.md) — the patch series the ADR says
 > a fork is, as distinct from the referee the ADR says a fork is *for*. **It does not design the
 > referee.** Where a fix needs a policy the referee would otherwise own, [§2](#2-the-decisions)
@@ -424,3 +434,99 @@ the gap in each case is exactly the referee.
 Defects 2, 5, 6 and 8 are fixed outright, and decision 6 closes the engine-randomness leak that
 sits beside 8. That is four of eight closed and four narrowed, which is a fair statement of what a
 fork of the server side buys before anything is inverted.
+
+---
+
+## 6. What the implementation ran into
+
+Twenty-six commits on `RadicalZephyr/bwapi` `claude/bwapi-defect-fixes-gvul5m`, off `main`
+(`d727fed`). The stages above are as executed; this section records the forks the plan did not
+anticipate and how each was resolved, because three of them were resolved *against* what the
+stage said and one of them was a defect the plan would have shipped.
+
+### Forks resolved during stage A
+
+| Fork | Resolution |
+|---|---|
+| **`storm.h` under `/Zp1`.** `Storm.vcxproj` compiled at one-byte packing; the current Windows SDK's headers carry `static_assert`s about their own sizes that one-byte packing breaks | Removed `<StructMemberAlignment>1Byte</StructMemberAlignment>` (`37026b9`). It protected nothing: every other consumer of `storm.h` in the tree already compiled it at default packing, so the stub was the odd one out and its packing was never part of any ABI |
+| **`std::experimental::filesystem` is gone** from MSVC 14.51 | `Util/Path.h`'s alias moved to `std::filesystem` (`8ea2627`). The retarget forced it; it is not optional and not scope creep |
+| **The series stripped CRLF from 45 files.** A Python `write_text()` normalised line endings on every file it touched, turning small diffs into whole-file rewrites | Fixed forward in `490d4fa`, whitespace-only, rather than by rewriting history. The recurrence is prevented mechanically: every subsequent edit went through a helper that reads bytes, matches patterns against the file's own line ending, and asserts the replacement happened |
+
+### A defect this plan would otherwise have shipped
+
+**Stage G as written would have faulted on every bot's first command.** The plan said the client
+gets a read-only view of `GameData` and writes commands to a second, writable plane. What it did
+not account for is `CommandTemp.h`: BWAPI's client-side latency compensation *predicts* the effect
+of a command by writing 274 unit fields and 36 player fields through `self` — pointers into the
+state plane — so that `Unit::isMoving()` answers correctly before the server has seen the order.
+Making that plane read-only turns every one of those writes into an access violation.
+
+Resolved in `a8044be` by giving the client its own copy: `unitMirror` and `playerMirror` inside
+`Client`, refreshed once per frame from the read-only plane, with `self` pointing at the copy.
+Latency compensation keeps working, and what it writes is now private to the client rather than
+being a write into memory the game trusts — which is closer to what defect 3 wanted than the plan
+was.
+
+**`0a2e395` is the second half of that.** `updateSharedMemory` set `data->unitCount` before the
+frame's handles had been issued, so a unit discovered this frame would be named by a
+`UnitDiscover` event and then fall outside the mirror copy. That fails silently — a wrong answer,
+not a crash — and it only became reachable once the mirror existed. `unitCount` is now published
+at the end of `updateSharedMemory`, after the handles it counts.
+
+### Two bugs the new tests found in the new code
+
+Recorded because they are the argument for stage A.2 having existed at all.
+
+- **`reserveSlot` left a hostile count in place** when the buffer was full: it refused the slot but
+  did not normalise the count it had just rejected, so the next caller saw the same out-of-range
+  value. Found by the fuzzer in `b8a0c9c`, not by review.
+- **`waitMillis(LLONG_MAX)` overflowed** in the rounding step before the clamp. Found by the unit
+  test for the clock, which passed a saturated deadline precisely because nothing else would.
+
+---
+
+## 7. The offsets smoke test
+
+Stage A retargeted the toolset off `v141_xp` and moved `_WIN32_WINNT` from `0x0501` to `0x0601`.
+Neither can move a StarCraft address — `BW/Offsets.h` binds every one of them with an integer
+literal through `IS_REF`, and no compiler rewrites `0x0057F0F0`. What either could move is the
+*layout* of the types mapped onto those addresses, and that failure is silent: the DLL builds,
+loads, and reads every field from the wrong bytes of a running game.
+
+Nothing in this repository can run StarCraft, so the test is in two tiers, and the tiers answer
+different questions.
+
+| Tier | Where | What it asks | Status |
+|---|---|---|---|
+| 1 | `bwapi/tests/bw_layout` | What does the *compiler* believe? `sizeof` and `alignof` for the 59 types mapped onto game memory, and the address each of the 66 `BWDATA` references is bound to, pinned to `baseline.txt` | **Done.** Green; the baseline is committed |
+| 2 | `bwapi/tests/shadow_bw` | What does the *linked binary* do? Which import slots it redirects and which bytes it writes into StarCraft's address range, compared against upstream's released v4.4.0 | **In progress.** Required before a release |
+
+**Tier 1 is complete and cheap, and it says something.** The sizes it measured are the documented
+StarCraft ones — `CUnit` 336, `CBullet` 112, a trigger 2400, a dialog 0x56, the replay header 633 —
+which matters because a self-consistent dump of the wrong thing would look exactly like a correct
+one. The SDK types the `_WIN32_WINNT` change would have reached first are in the baseline and
+unmoved: `POINT` 8/4, `PALETTEENTRY` 4/1, `RECT` 16/4.
+
+**Tier 2 exists because tier 1 structurally cannot see two things.** The `BW::BWFXN_*` patch sites
+are plain integer constants used only in `CodePatch.cpp` — no `BWDATA` reference is bound to them,
+so there is no address for the dump to take. And the import slots BWAPI redirects are decided by
+the loader from the *host process's* import table, which is not in a header at all.
+
+It works because BWAPI never checks it is inside StarCraft: `HackUtil::PatchImport` passes a null
+source module, so `GetModuleHandleA(nullptr)` gives it whatever process loaded the DLL, and
+`ApplyCodePatches` writes to StarCraft's addresses whatever is mapped there. A host executable that
+declares itself version 1.16.1.1, reserves `0x00400000`, and imports the eleven `storm.dll`
+ordinals and thirteen `kernel32`/`user32` names BWAPI detours is therefore enough to catch the
+whole patch pass in the act. `bwapi/tests/shadow_bw/README.md` has the design and its limits; the
+short version of the limit is that it does not call through the hooks, so what it proves is that
+the same slots are redirected to the same hook graph and the same bytes are written at the same
+addresses — not that the detour bodies behave.
+
+**The reference is upstream's released v4.4.0, pinned by SHA-256.** It is the only build of these
+offsets that predates the retarget and the only ground truth available without a copy of the game,
+which is also why it is downloaded in CI rather than vendored: a binary in the tree is a binary
+somebody could have edited, and a hash of a release asset is not.
+
+**Neither tier compares against anything in `bwapi-c2`.** They are fork-local, they run in the
+fork's Windows job, and they are the third leg of the verification §2 decision 4 left this series
+standing on — beside stage A's build and the Linux validator tests.
