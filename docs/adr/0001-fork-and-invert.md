@@ -54,15 +54,24 @@ which hands each of them the opponent's minerals and the full 1,700-entry unit t
 the library publishes in its own headers. What is wanted is enforceable boundedness, and
 noninterference is its name. It is also testable — §4.3.
 
-**G2. Bounded, attributed, comparable resources.** Every bot gets the same CPU-time, memory, disk
-quota and core count; no bot obtains compute the referee did not grant; and every charge is
-attributed to the party that incurred it. *(Replaces "all bots run locally" and "the same time
-budget for compute per-frame".)* Locality is a mechanism and the wrong one — two bots co-tenant on
-one host contend for L3 and memory bandwidth, so co-tenancy is itself a fairness bug, while a bot
-on a dedicated cpuset with a hard quota is more equal than two bots sharing a machine.
+**G2. A bounded, attributed, published resource envelope.** Every bot gets the same cores, memory,
+disk quota and device access; no bot obtains compute the referee did not grant; every charge is
+attributed to the party that incurred it; and **the envelope is published to the bot**, because a
+bot cannot structure itself against a budget it cannot read. *(Replaces "all bots run locally" and
+"the same time budget for compute per-frame".)* Locality is a mechanism and the wrong one — two
+bots co-tenant on one host contend for L3 and memory bandwidth, so co-tenancy is itself a fairness
+bug, while a bot on a dedicated cpuset is more equal than two bots sharing a machine.
+
+**How a bot spends its envelope is its own business.** Threads and subprocesses are a legitimate
+architecture — and for any interpreter with a GIL, a subprocess is the *only* way to use a second
+core. They carry coordination costs and are not a free win. **No rule restricts them, which is
+also what every current ruleset does** (§7). What is bounded is the envelope, and it is bounded
+structurally by `cpuset.cpus`, `memory.max`, `pids.max`, a device cgroup and an empty network
+namespace — not by a rule anyone has to police.
 
 **G3. Every match is a replayable, auditable artifact.** Seed, order streams, per-frame budget
-charges, and every referee decision, in a bundle that re-simulates bit-exactly without the bots.
+charges, every referee decision, and — recorded but not enforced (§5 decision 2a) — per-frame
+CPU-µs and retired instructions, in a bundle that re-simulates bit-exactly without the bots.
 *(New. Academia is the stated audience and fairness that cannot be demonstrated is worth little
 when a competitor disputes a result.)* Note the honest bound: this is *replay* reproducibility.
 *Re-run* reproducibility — same bots, same seed, same game — is not a goal (§5, decision 4).
@@ -134,7 +143,7 @@ defect in a permissively-licensed tree with no merge-conflict risk:
 | Client-supplied `commandCount` used as an unclamped loop bound over `commands[20000]` | `Server.cpp:757`, `GameData.h:136,155-156`; the only bound is an `assert` in the *untrusted* process, compiled out under `NDEBUG` (`BWAPIClient/Source/GameImpl.cpp:55`) | Clamp on the trusted side — the correct pattern is already present at `Server.cpp:839` for `unitIndex` |
 | The client maps the whole 33 MB state plane writable | `BWAPIClient/Source/Client.cpp:107` — `MapViewOfFile(..., FILE_MAP_WRITE \| FILE_MAP_READ, ...)` | `FILE_MAP_READ` on the state half |
 | Anti-cheat is a veto interface inside the bot's own address space | `GameInternals.cpp:273` (`tournamentCheck`), 13 `Tournament::ActionID` values | Move the enforcement point out of the process |
-| The meter is wall clock at ~15.6 ms granularity against a 55 ms threshold, and is set in exactly two places | `GameEvents.cpp:523` (module) and `Server.cpp:243` (client), both `GetTickCount()` deltas | OS-sampled process CPU, plus a second timestamp |
+| The meter's *clock* is `GetTickCount()` at ~10–16 ms granularity against a 55 ms threshold — a resolution of three to four ticks | `GameEvents.cpp:523` (module) and `Server.cpp:243` (client) | A monotonic sub-µs clock, and a second timestamp so a bot is not billed for the referee's IPC. **The unit stays wall clock** (§5 decision 2); only the clock is wrong |
 | A client bot cannot read its own charged time | `BWAPIClient/Source/GameImpl.cpp:947` returns `0` | Publish the meter |
 | Global unit-ID allocation is an information channel | Documented 2018; never banned | Per-bot handle namespaces (§4.2) |
 | The C runtime RNG is seeded from the wall clock | `GameInternals.cpp:296` — `srand(GetTickCount())` | Seed from the match record |
@@ -317,17 +326,37 @@ virtualisation alone:
 - **Shared-hardware side channels.** `cpuset` pinning and separate NUMA nodes get most of it. The
   remainder is scoped out explicitly rather than assumed away.
 
-### 4.4 What the budget closes for free
+### 4.4 Partition XOR meter
 
-**Today, work on a background thread is free budget.** Only the callback interval is timed; the
-whole tree sets it in exactly two places — `GameEvents.cpp:523` and `Server.cpp:243` — and no
-ruleset limits threads or cores. A
-bot that spawns eight workers and makes `onFrame` a 200 µs read of a shared result satisfies every
-rule as written and defeats the intent by a factor equal to the core count. **A cgroup CPU-time
-budget counts every thread in the cgroup**, so this closes as a side effect of §5 decision 2 —
-along with a spinning waiter paying for the core it burns, and a garbage collector being billed to
-the bot that chose the runtime. One unit change does what three prohibitions would have done
-badly.
+An earlier draft of this ADR called background-thread work a loophole and chose a CPU-time budget
+to close it, "along with a spinning waiter paying for the core it burns, and a garbage collector
+being billed to the bot that chose the runtime." **That was wrong in both halves, and the rule
+that replaces it is one line:**
+
+> **Partition the cores and meter wall clock, or share the cores and meter CPU-time. Never both.**
+
+**If a bot has N cores for T seconds, its compute is already bounded at N×T.** Charging CPU-seconds
+on top is a second, redundant constraint that taxes a bot 4× for using the four cores it was
+given, and rewards the single-threaded bot that leaves three idle. That is not fairness; it is a
+tax on using your own allocation, and it falls hardest on exactly the runtimes G5 exists to serve,
+since a GIL interpreter must spend a subprocess to use a second core at all.
+
+**All three "exploits" that argument closed were artifacts of the shared-core model.** On a
+dedicated cpuset, background threads are engineering rather than laundering; a spinning waiter
+burns its own core; a stop-the-world GC pause is wall time and is charged either way, while a
+*concurrent* collector on the bot's own core is not something to tax. CPU-time is a fair-share
+mechanism, and fair-share is what you need when cores are contended. Partitioning removes the
+contention instead of accounting around it, which is the better fix.
+
+**Two of the objections to wall clock dissolve with it.** R12's 4–8 ms preemption tail came from
+contention — its own conclusion is that "with a core available per process, spin: 0.25 µs and a
+bounded tail." And re-run reproducibility, the other objection, is already not a goal (§5,
+decision 4).
+
+**What remains genuinely enforceable is the envelope, not the schedule**: cores by `cpuset.cpus`,
+memory by `memory.max`, no GPU by a device cgroup, no second machine by an empty network
+namespace. Each of those is structural. None of them is a rule about how the bot arranges its own
+threads.
 
 ---
 
@@ -336,11 +365,12 @@ badly.
 | # | Question | Decision | What it costs |
 |---|---|---|---|
 | 1 | Greenfield rebuild, or fork? | **Fork and invert.** §2 | The rebuild's freedoms; the argument is deferred, not refuted |
-| 2 | Budget unit: wall clock, CPU-time, or deterministic? | **OS-sampled process CPU-time**, via cgroup `cpu.stat` `usage_usec`, with retired instructions recorded alongside for cross-machine comparability | **Named loser: a Python bot is charged for interpreter dispatch and a JVM bot for its collector — in a project whose reason to exist is Python and C#.** Paired with the narrowed non-goal: we charge you for what your runtime does |
+| 2 | Budget unit: wall clock, CPU-time, or deterministic? | **Wall clock, on a dedicated cpuset** — modelling what tournaments already enforce, and making it sound by removing the contention that undermines it. §4.4's partition-XOR-meter rule. *(Reversed: an earlier draft chose CPU-time to close a "background-thread loophole" that is not a loophole once cores are partitioned. Reverting also deletes the G5 penalty that draft had to name as its cost — wall clock does not charge a Python bot for interpreter dispatch any differently than it charges a C++ bot for its work.)* | Wall clock is not machine-independent and not reproducible. Both are accepted: §5 decision 4 already dropped re-run reproducibility, and G3's artifact carries the charges |
+| 2a | What is recorded, versus what is enforced? | **Meter everything, enforce one thing.** CPU-µs and retired instructions per frame go into G3's match artifact as *observations*. A season of records then answers empirically whether multi-threaded bots dominate in a way that tracks core usage — which is the evidence that would justify changing the unit, and it is cheaper than guessing now | Two numbers to carry that nothing currently consumes |
 | 3 | Deterministic (bytecode/instruction) budget? | **Foreclosed as a guarantee.** Battlecode's totality is bought by owning the JVM: an instrumenting classloader, `RobotMonitor.incrementBytecodes()`, and a hand-maintained cost table (`System.arraycopy` = 1/element, `NEWARRAY` = length) because bytecode counts are not proportional to real cost. A multi-language C ABI owns no runtime. Hardware instruction counting needs no cost table and is *not* strictly foreclosed, but it is microarchitecture-dependent and penalises JIT warmup, so it buys far less | The strongest available fairness guarantee |
 | 4 | Seeded re-run reproducibility? | **Not a goal.** `Game::getRandomSeed()` exists with no setter anywhere in BWAPI; academia lives without it today. G3's replay artifact carries the weight | "Same bots, same seed, same game" is never claimable without a caveat |
-| 5 | Budget shape | **Game-long chess clock plus a per-frame ceiling** that bounds the *referee's* latency rather than judging the bot. AIIDE's 55 ms × 320 cumulative overruns is already a chess clock in disguise, badly quantised | A game-long budget is harder to explain than a per-frame one |
-| 6 | Deadline expiry: drop-and-continue or forfeit? (**answers `proxy-protocol-design.md` §6.2**) | **Forfeit**, and the ecosystem agrees — AIIDE's module calls `Broodwar->leaveGame()`. With a game-long budget the "harsh on a transient stall" objection evaporates, because exhausting it is never transient. Drop-and-continue is an explicit non-tournament mode | A transient stall in the *per-frame ceiling* still needs its own, gentler rule |
+| 5 | Budget shape | **Reopened — see §6 fork 6.** The chess-clock argument in the previous draft was built on the CPU-time framing that decision 2 has now reversed, so it is withdrawn rather than carried forward unexamined | — |
+| 6 | Deadline expiry: drop-and-continue or forfeit? (**answers `proxy-protocol-design.md` §6.2**) | **Reopened — see §6 fork 6.** The previous draft chose forfeit on the strength of decision 5's chess clock. With that withdrawn, and with the referee's non-blocking read (§2, defect 1) making drop-and-continue nearly free, the question is live again | — |
 | 7 | Deadline shape | **Two numbers, not one.** Every system supervising untrusted bots uses an init deadline 10–150× the steady-state one: Halite II 60,000/2,000 ms; Sc2LadderServer 300,000/20,000 ms; CodinGame 1,000/100 ms; RLBot gates match start on the bot's own `InitComplete`. The ABI needs a ready signal distinct from "finished frame 0" | Two knobs to misconfigure |
 | 8 | The forfeit path | **Surrender on the bot's behalf**, so the game ends cleanly, the result is recorded and the replay is flushed — Sc2LadderServer's `ExitCase::BotStepTimeout`. Not merely "stop waiting" | — |
 | 9 | Substrate | **Retail 1.16.1 under a patched Wine on Linux**, engine a runtime seam. §3 | Wine is now a maintained component |
@@ -361,7 +391,9 @@ badly.
 | 2 | **Opponent identity.** Do bots learn who they are playing? | They do today, and per-opponent learning files are central to the meta. Fair in that everyone gets it; it interacts directly with the storage capability in §4.3 |
 | 3 | **Co-tenancy scope.** One bot per machine, per cpuset, or per NUMA node? | §4.3's last bullet. Decides how much of the side-channel surface is in scope and what a rack costs |
 | 4 | **Realtime rendering, and SSCAIT.** | SSCAIT exists because it is watchable: `LocalSpeed 20` with rendering on, and its first timeout tier raised from 55 ms to 85 ms *because* it renders. A headless non-realtime referee cannot serve it. Three competitions, roughly three operators — and the project's no-outreach constraint is currently a background condition rather than what it is: **the largest risk to a system whose entire purpose is adoption by three named people** |
-| 5 | **What a resumed bot sees.** | If a bot overruns the per-frame ceiling and its reply lands late, does it see frame *N* or *N+k*? Out-of-process, preemption is simply not waiting — but the question Battlecode answers with pause-and-resume still has to be answered here, and an earlier draft converted it into a foreclosure without answering it |
+| 5 | **What a resumed bot sees.** | If a bot's reply lands late, does it see frame *N* or *N+k*? Out-of-process, preemption is simply not waiting — but the question Battlecode answers with pause-and-resume still has to be answered here, and an earlier draft converted it into a foreclosure without answering it. Tightly coupled to fork 6 |
+| 6 | **Budget shape, and what happens on expiry.** Decisions 5 and 6 are withdrawn into this fork | Three mechanisms are in play and the previous draft conflated them: a **referee deadline** for liveness (bounded wait, substitute empty orders, never block); an **excess-time bank** for operator throughput (§7's note on why AIIDE's 55 ms tier exists); and **nothing for fairness**, because on dedicated cpusets with no realtime clock there is nothing to be fair about. Whether all three are needed, and whether expiry drops the frame or ends the game, differs per mechanism |
+| 7 | **Does each bot get a dedicated cpuset?** — *for the tournament operators* | Decision 2 rests on it, and **no current tournament does it**: AIIDE and SSCAIT give a VM per bot but run two VMs unpinned on one host, and BASIL bounds CFS *bandwidth* via Docker `nano_cpus` rather than pinning. It changes what a rack costs and how many games run in parallel. This is an operator question, not a design question, and it should be asked rather than assumed |
 
 ---
 
@@ -384,6 +416,24 @@ Marked, because two modelled numbers were load-bearing in earlier drafts of this
 | `GameData` partition | 33 MB, 82.9% one-shot, 12.5% per-frame, 4.6% upstream | **Verified** (R12 §1) |
 | Bots / games at stake | AIIDE 2017: 28 bots, 41,580 games, 14 VMs, two weeks. SSCAIT 2022/23: 57 bots, 3,192 games. BASIL: >1M games | **Likely** — papers and operator statements |
 
+**What the three AIIDE tiers are actually for, which is not one thing.** The 10000 ms × 1 and
+1000 ms × 10 tiers are anti-stall, and under a referee that never blocks they are subsumed by the
+deadline. The 55 ms × 320 tier is neither anti-stall nor fairness: AIIDE runs `localSpeed 0`, so
+there is no realtime clock to be late against and no opponent being made to wait. **It is operator
+throughput.** A bot averaging 50 ms/frame over 85,714 frames spends 71 minutes of pure bot compute
+per game, and AIIDE 2017 ran 41,580 games on 14 machines in two weeks. That is the constraint the
+tier protects, and naming it changes what should replace it.
+
+**And its currency is incidents, not time, which is the mis-quantisation.** A 56 ms frame and a
+999 ms frame each cost exactly one of 320. Against a `GetTickCount` clock resolving 55 ms to three
+or four ticks, a frame genuinely at 45 ms can be *measured* over the line. So a bot sitting near
+the threshold is charged full price for measurement noise, while a bot with rare large pauses is
+charged the same price for real overruns. **Hypothesis, testable against experiment 1: bots with
+unexplained cumulative-quota failures have frame-time distributions clustered just below 55 ms
+rather than long tails** — in which case the failure is in the meter, not the bot. A currency of
+*microseconds of excess over an allowance* prices both cases correctly and is ~12× more tolerant
+of marginal frames at the same nominal budget. This is what §6 fork 6 has to decide.
+
 ---
 
 ## 8. Experiments this ADR is blocked on
@@ -391,6 +441,11 @@ Marked, because two modelled numbers were load-bearing in earlier drafts of this
 Numbered as R13. Two need nothing but a download; one is source reading; none needs a
 running StarCraft to begin.
 
+0. **Ask three people.** One operator and two bot authors, in an afternoon, settle §6's forks 1
+   (action rate), 2 (opponent identity), 6 (budget shape) and 7 (dedicated cpusets). **This ADR has
+   now blocked on community judgement twice**, and the no-outreach constraint has stopped being an
+   adoption risk and started costing design decisions. It is cheaper than every experiment below
+   and it gates more of them. Do it first.
 1. **Parse BASIL's `frames.csv`.** Over a million games of per-frame times are public and the
    review cited the file's existence three times without opening it. Every budget number in §5 —
    tier heights, ceiling, bank size, whether 55 ms is generous, what p99.9 looks like — is
