@@ -26,7 +26,9 @@
  *   - Collections out fill a caller-provided buffer up to cap and return the total available,
  *     sorted ascending by id; when cap < total the elements are the first cap in id order.
  *     No allocation crosses the boundary, so nothing is ever freed through it.
- *   - Every POD that crosses the boundary begins with int32_t size (see BWAPI_HAS_FIELD).
+ *   - Every POD that crosses the boundary is laid out exactly as declared, with no prefix;
+ *     a struct array's stride is sizeof the struct. A layout is fixed within a major of
+ *     bwapi_abi_version(), and a struct that must change is a new major (plan section 4).
  *   - Handles are int32_t ids in disjoint spaces, with one exception: a BWEM neutral IS a
  *     BWAPI unit and is addressed by its unit id. BWAPI_NONE (-1) is the neutral id value.
  *   - A handle that could never have been valid (negative, out of range, wrong kind) returns
@@ -42,7 +44,6 @@
 #ifndef BWAPI_C2_TYPES_H
 #define BWAPI_C2_TYPES_H
 
-#include <stddef.h>
 #include <stdint.h>
 
 /* ---- linkage -------------------------------------------------------------------------- */
@@ -111,19 +112,6 @@ typedef int32_t bwapi_bwem_base_id; /* synthesised by the ABI, 0..N-1; BWEM has 
 /* The neutral value of every id space; BWAPI's own "none" for every unit-index field. */
 #define BWAPI_NONE (-1)
 
-/* ---- struct evolution ----------------------------------------------------------------- */
-
-/* Every POD crossing the boundary begins with int32_t size. The caller sets it on input
- * structs; the callee reads only the prefix it understands. The callee sets it on output
- * structs, zero-fills up to the caller's size and never writes past it. For array-out
- * functions the caller sets size on element zero and that is the stride for the whole array.
- *
- * BWAPI_HAS_FIELD(type, field, size) is true when a struct of the given size, as filled by the
- * DLL actually loaded, includes the field: a consumer compiled against a newer header tests
- * this before reading. */
-#define BWAPI_HAS_FIELD(type, field, size) \
-  (offsetof(type, field) + sizeof(((type*)0)->field) <= (size_t)(size))
-
 /* ---- the ABI's own error codes ----------------------------------------------------------- */
 
 /* Latched by the sticky first-error channel in bwapi_c2.h. These are the ABI's errors, about
@@ -155,9 +143,9 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
 
 /* ---- structs ------------------------------------------------------------------------------ */
 
-/* Every POD that crosses the boundary (plan section 4), size-prefixed. The table rows carry
- * the scalar accessors of one type class each, one row per id; bwapi_<class>_table() fills
- * them under the stride rule stated above. */
+/* Every POD that crosses the boundary (plan section 4), laid out exactly as declared. The
+ * table rows carry the scalar accessors of one type class each, one row per id;
+ * bwapi_<class>_table() fills the first cap of them at sizeof the row and returns the total. */
 @STRUCTS@
 
 /* Pure functions of a type id, needing no game (plan section 5.8): BWAPI's own UnitType,

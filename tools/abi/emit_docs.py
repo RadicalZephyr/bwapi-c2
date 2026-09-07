@@ -27,7 +27,7 @@ SECTION_TITLES = {
     "unit": ("Unit", "Everything about one unit: state, rules, commands."),
     "force_region": ("Force and Region", "Teams and BWAPI's own map regions."),
     "types": ("Static type data", "Pure functions of a type id, needing no game: UnitType, WeaponType, TechType and the rest."),
-    "bulk": ("Bulk type tables", "One size-prefixed table per type class, for a host that would rather pay one crossing than 185."),
+    "bulk": ("Bulk type tables", "One table per type class, for a host that would rather pay one crossing than 185."),
     "constants": ("Constants", "Every constant family: the type enumerations, the events, flags and keys, the error codes, the position sentinels."),
     "structs": ("Structs", "Every POD that crosses the boundary, with its fields, offsets and flag bits."),
 }

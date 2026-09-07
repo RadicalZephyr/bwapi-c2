@@ -42,7 +42,7 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_unittype_table(bwapi_unittype_row* out,
         row.space_provided = static_cast<int32_t>(t.spaceProvided());
         row.build_score = static_cast<int32_t>(t.buildScore());
         row.destroy_score = static_cast<int32_t>(t.destroyScore());
-        row.size_type = (t.size()).getID();
+        row.size = (t.size()).getID();
         row.tile_width = static_cast<int32_t>(t.tileWidth());
         row.tile_height = static_cast<int32_t>(t.tileHeight());
         row.dimension_left = static_cast<int32_t>(t.dimensionLeft());

@@ -102,7 +102,7 @@ def render(api):
     out.append("bwapi_log_callback = ctypes.CFUNCTYPE(None, ctypes.c_int32, ctypes.c_char_p, ctypes.c_void_p)")
     out.append("bwapi_error_callback = ctypes.CFUNCTYPE(None, ctypes.c_int32, ctypes.c_char_p, ctypes.c_void_p)")
     out.append("")
-    out.append("# ---- structs: every one begins with size (the caller's stride in, the bytes filled out) ----")
+    out.append("# ---- structs: laid out exactly as api.json lists the fields, fixed within a major ----")
     for s in api["structs"]:
         out.append("")
         out.append("")

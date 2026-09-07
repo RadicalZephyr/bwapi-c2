@@ -98,13 +98,15 @@ One entry per struct in `structs.yaml` (`docs/spec-format.md` §3), in spec orde
 | `name` | string | The spec name (`unittype_row`, `required_unit`, …) |
 | `c_type` | string | `bwapi_<name>`, the typedef a parameter's `c_type` points at |
 | `doc` | string | What the struct is, one paragraph |
-| `fields` | array | Every field in declaration order, **`size` first**: `{name, type, c_type, doc}`, plus `from` on a table row's fields. `type` is the spec type (`int32`, `bool32`, `double`, `int16`, `uint8`, `uint32`, `type:<Class>`, with an `[N]` suffix for a fixed array); `c_type` is its C spelling with the array suffix attached; `from` is the C++ accessor the field mirrors (`UnitType::maxHitPoints`) |
+| `fields` | array | Every field in declaration order: `{name, type, c_type, doc}`, plus `from` on a table row's fields. `type` is the spec type (`int32`, `bool32`, `double`, `int16`, `uint8`, `uint32`, `type:<Class>`, with an `[N]` suffix for a fixed array); `c_type` is its C spelling with the array suffix attached; `from` is the C++ accessor the field mirrors (`UnitType::maxHitPoints`) |
 | `flags` | array | The bits of a `uint32_t flags` field, `{name, bit, doc}`, when the struct has one; empty otherwise |
 | `table` | object | Present on a bulk table row only: `{class, c}`, the type class the rows enumerate and the function that fills them (`bwapi_unittype_table`) |
 
-A generator declares the struct with every field in order, `size` included, at the C types
-given; a consumer sets `size` on element zero before an array-out call (plan §4) and reads it
-back per row to learn what the DLL filled.
+A generator declares the struct with every field in order at the C types given, and nothing
+else: the layout is exactly the field list, fixed within a major (plan §4), so an array-out
+call takes `sizeof` the struct as its stride and a generator built from one major's `api.json`
+must refuse to load a DLL of another (the check is `bwapi_abi_version()`'s major against
+`abi_version` above).
 
 ## 5. What a generator should and should not do
 
