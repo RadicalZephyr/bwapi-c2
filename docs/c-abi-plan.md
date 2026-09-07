@@ -883,10 +883,9 @@ Mouse space — draws are development tooling and tournament bots undercount the
 
 `BWAPI::UnitCommand` holds raw `Unit` pointers. `BWAPIC::UnitCommand`
 (`bwapi/include/BWAPI/Client/UnitCommand.h`) is already the ID-based mirror used over the wire.
-Mirror *that*, with the §4 size prefix:
+Mirror *that*:
 ```c
 typedef struct bwapi_unit_command {
-  int32_t size;
   int32_t type; int32_t unit_id; int32_t target_id;
   int32_t x; int32_t y; int32_t extra;
 } bwapi_unit_command;
@@ -1019,7 +1018,6 @@ until the next one.**
 
 ```c
 typedef struct bwapi_event {
-  int32_t size;
   int32_t type;                    /* EventType::Enum */
   int32_t unit_id, player_id;
   int32_t x, y;                    /* NukeDetect target */
@@ -1072,7 +1070,7 @@ than a snapshot of them. The **848 constants** ship generated into `bwapi_c2_typ
 `Races::Enum`, `Errors::Enum`, `EventType::Enum`, `Flag::Enum`, `CoordinateType::Enum`,
 `Text::{Enum,Size::Enum}`, `MouseButton`, `Key`, `Latency::Enum`, `Colors`, and the position
 sentinels in both forms; names come from the enum identifiers, so they cannot drift. And **one
-size-prefixed bulk table per type class** ships as an optional §5.10-style fast path, so a host
+bulk table per type class** ships as an optional §5.10-style fast path, so a host
 that would rather pay one crossing at startup than 185 can have it. **The table carries scalar
 fields only.** The container-valued accessors — `requiredUnits()`, `abilities()`, `upgrades()`,
 `buildsWhat()`, `whatBuilds()` — stay function-only, with one exception: `requiredUnits` is on
@@ -1106,19 +1104,18 @@ int32_t bwapi_game_snapshot_players(bwapi_player_snapshot* out, int32_t cap);
 ```
 
 Same convention as every other collection (§4): fills up to `cap`, returns the total, sorted
-ascending by ID, **existing units only**, `cap == 0` with `NULL` is the size query, and element
-zero's `size` is the uniform stride. `UnitData` is already pointer-free, so this is a
-field-select copy loop, not new logic. (`last_command_frame` is the one field that comes from
+ascending by ID, **existing units only**, and `cap == 0` with `NULL` is the size query.
+`UnitData` is already pointer-free, so this is a field-select copy loop, not new logic. (`last_command_frame` is the one field that comes from
 the interface rather than `UnitData` — it is a client-side `UnitImpl` member.)
 
 **Booleans in the snapshot are bits in a `uint32_t flags`, not fields**: `exists`,
 `is_completed`, `is_constructing`, `is_idle`, `is_moving`, `is_attacking`, `is_cloaked`,
 `is_burrowed`, `is_stuck`, `is_under_attack`, `is_morphing`, `is_selected`, `is_powered`,
 `is_visible_to_self`. This is not the §4 scalar-bool rule — that governs parameters and returns
-— and a bit is also how a future boolean gets added without disturbing the layout, which pairs
-with the size prefix.
+— it is density: fourteen booleans in one word instead of fourteen. The unused bits are
+documented as zero, so a boolean added later is a new bit and a minor (§4), not a new layout.
 
-v1 unit fields: `size`, `id`, `player_id`, `type`, `x`, `y`, `hit_points`, `shields`, `energy`,
+v1 unit fields: `id`, `player_id`, `type`, `x`, `y`, `hit_points`, `shields`, `energy`,
 `resources`, `resource_group`, `order`, `order_target_id`, `secondary_order`, `target_id`,
 `build_type`, `remaining_build_time`, `remaining_train_time`, `training_queue_count`,
 `addon_id`, `transport_id`, `carrier_id`, `hatchery_id`, `ground_weapon_cooldown`,
@@ -1238,7 +1235,6 @@ this the hard way (a `calloc`'d SCV believed it was loaded inside unit 0 and ref
 No ID-keyed lookup exists. Snapshot instead, **existing bullets only, sorted by ID**:
 ```c
 typedef struct bwapi_bullet {
-  int32_t size;
   int32_t id, player_id, type, source_id, target_id;
   int32_t x, y, target_x, target_y, remove_timer;
   double  angle, velocity_x, velocity_y;
@@ -1929,7 +1925,6 @@ for (;;) {
         /* size to last frame's count plus slack; call once; grow only on overflow (§4) */
         if (cap == 0) cap = bwapi_game_unit_count() + 64;
         units = realloc(units, cap * sizeof *units);
-        units[0].size = sizeof *units;
         int32_t n = bwapi_game_snapshot_units(units, cap);
         if (n > cap) { cap = n + 64; continue; }        /* rare: re-run this frame's read */
 
