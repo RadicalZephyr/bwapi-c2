@@ -215,13 +215,59 @@ bot's, so it does not make a CPU-time budget deterministic and does not reopen �
 
 ## 4. What "invert" means
 
-### 4.1 One authoritative view, a referee outside the game
+### 4.1 A referee outside the game — defined by the boundary it owns, not by instance count
 
-Today AIIDE and SSCAIT run *two* StarCraft instances — one per bot, on separate VMs or containers
-— playing a LAN game over UDP, each maintaining its own copy of the lockstep simulation. Under
-this design the referee is the only process holding the authoritative view, and each bot is a
-separate process reached through a mediated channel. That halves the game-side CPU, removes
-desync as a failure mode, and makes per-bot filtering possible at all.
+**The referee is defined by one property: it is the process that mediates between an untrusted bot
+and the game, and the bot reaches the game through nothing else.** How many `StarCraft.exe`
+instances sit behind it is a separate, orthogonal question, and this ADR does not settle it.
+
+**v1 topology: one game instance per bot, which is what already runs.** AIIDE and SSCAIT run two
+StarCraft instances — one per bot, on separate VMs or containers — playing a LAN game over UDP,
+each maintaining its own copy of the lockstep simulation; sc-docker and BASIL do the same with
+containers on a bridge network. Every goal in §1 is reachable in this topology. The leak that G1
+addresses was never cross-instance — each bot already has its own machine and its own game — it is
+that the *local* instance hands its own bot more than it should. The referee fixes that locally,
+once per side.
+
+**Which forces a constraint that a single-instance framing would hide.** In this topology the
+referee is a *pair* of referee sides, and **no side holds a monopoly on truth**: each game instance
+already contains the full state for both players (§4.1.1). So noninterference is enforced
+independently on each side, and the coordination path between them — forfeit, adjudication, match
+end — is itself a potential channel and must carry only referee decisions, never game state, in
+one direction.
+
+#### 4.1.1 Single-instance is an open optimisation, not a claimed capability
+
+An earlier draft of this ADR asserted a single game instance serving both competitors, and with it
+halved game-side CPU and the elimination of desync. **That was a capability claim about retail
+Brood War stated as a settled consequence, and it is withdrawn.** It splits into a verified half
+and an open one.
+
+**The read half is feasible and verified.** BW's tile data carries fog for every player
+simultaneously as bitmasks; BWAPI narrows it to the local player and nothing else does:
+
+```cpp
+const u32 playerFlag = 1 << BroodwarImpl.BWAPIPlayer->getIndex();
+data->isVisible[x][y]   = !(tileData.bVisibilityFlags & playerFlag);
+data->isExplored[x][y]  = !(tileData.bExploredFlags  & playerFlag);
+```
+— `bwapi/BWAPI/Source/BWAPI/Map.cpp:79-86`
+
+So one instance already holds ground truth *and* both players' fog at tile granularity, and
+projecting two per-bot views from it is `playerFlag` with a different index. This is also why
+`GameData` carries a singular `isVisible[256][256]` (`GameData.h:99-100`): the narrowing is
+BWAPI's, not the engine's.
+
+**The write half is open.** Issuing orders on behalf of a non-local player. BWAPI's command path is
+bound to `BWAPIPlayer`, and in live lockstep play the opponent's turn arrives over the wire from
+another client. Replay playback proves the engine will *consume* a multi-player command stream,
+but that is a different code path, and nobody has traced whether a turn can be injected for a
+second player from one process. On OpenBW this is `execute_command(player, cmd)` and trivial;
+on retail it is R13.5 (§8).
+
+**What it would buy, and therefore how much it matters: throughput and the removal of desync.**
+Neither is a goal in §1. It is an optimisation to be decided on evidence, and the ADR's analysis
+does not rest on it.
 
 The referee is also the only place a supervisor can stand. This is the strongest structural
 argument in the design and it is confirmed by prior art: Sc2LadderServer can enforce anything only
@@ -342,7 +388,8 @@ Marked, because two modelled numbers were load-bearing in earlier drafts of this
 
 ## 8. Experiments this ADR is blocked on
 
-Numbered as R13; none needs StarCraft, and two need nothing but a download.
+Numbered as R13. Two need nothing but a download; one is source reading; none needs a
+running StarCraft to begin.
 
 1. **Parse BASIL's `frames.csv`.** Over a million games of per-frame times are public and the
    review cited the file's existence three times without opening it. Every budget number in §5 —
@@ -356,7 +403,11 @@ Numbered as R13; none needs StarCraft, and two need nothing but a download.
    Wine via `bwheadless` versus a user-supplied OpenBW `BWAPILauncher`; plus per-match startup
    cost for each. No public benchmark exists. R12 assumes "~1 ms frames" with no citation, and
    that number is load-bearing and unowned.
-4. **OpenBW as a differential oracle.** It reads real `.rep` files natively and ships
+4. **Can a turn be injected for a non-local player on retail 1.16.1?** (§4.1.1's open half.) Trace BWAPI's command path from `Server::processCommands` down to BW's turn queue
+   and establish whether the player index is a parameter or a premise. Decides single-instance,
+   and the read half is already verified, so this is the whole question. On OpenBW it is
+   `execute_command(player, cmd)`; the experiment is only about retail.
+5. **OpenBW as a differential oracle.** It reads real `.rep` files natively and ships
    `std::array<int,0x100> random_counts` — per-call-site RNG draw counters designed for
    frame-by-frame comparison. Run the SSCAIT/BASIL replay archive through both engines and diff.
    This converts "OpenBW is 99.x% accurate" from an adjective into a number at zero licensing
