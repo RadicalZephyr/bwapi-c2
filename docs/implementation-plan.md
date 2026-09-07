@@ -600,9 +600,10 @@ so that no struct is ever published with it (§7 row 18).
   `bwapi_client_version()` (§4), from a `BWAPI_C2_BWAPI_RELEASE` string set beside the project
   version in `CMakeLists.txt` and moved by pin-bump step 7; the release job asserts it names
   the tag whose `BWAPI.7z` it downloads (4.6).
-- Commits: *"Drop the struct size prefix from the emitters and the header"*, *"Fill struct
-  arrays at sizeof and drop the stride tests"*, *"Check the ABI major when a raw layer loads"*,
-  *"Export the pinned BWAPI release as bwapi_bwapi_version_string"*.
+- Commits: *"Drop the struct size prefix"* (the emitters, `write_rows` and the tests are one
+  change: a header without the field does not compile against a runtime that reads it), *"Check
+  the ABI major when a raw layer loads"*, *"Export the pinned BWAPI release as
+  bwapi_bwapi_version_string"*.
 
 ---
 

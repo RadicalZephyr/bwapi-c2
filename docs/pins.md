@@ -106,4 +106,8 @@ scheduled drift job. The work happens in the fork first and in this repository s
    removed or changed declaration, and rewrite the backlog (`--write-backlog`) once each is
    decided. Rerun `draft_spec.py --update-constants` and review the diff of
    `spec/constants.yaml`.
-7. Rebuild; run every suite in plan §11. Record the new revision and `CLIENT_VERSION` here.
+7. Rebuild; run every suite in plan §11. Record the new release, revision and `CLIENT_VERSION`
+   here, and move `BWAPI_C2_BWAPI_RELEASE` in `CMakeLists.txt` to the release the tag names:
+   `bwapi_bwapi_version_string()` returns it and the release job checks it against the
+   `BWAPI.7z` it downloads (plan §10.4). A changed `CLIENT_VERSION` is a `bwapi-c2` major
+   (plan §4).

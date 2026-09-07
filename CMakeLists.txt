@@ -4,6 +4,11 @@ cmake_minimum_required(VERSION 3.21)
 # the layout, section 10.1 the closure this file builds, section 11 the test suite.
 project(bwapi_c2 VERSION 0.0.0 LANGUAGES C CXX)
 
+# The BWAPI release the pin is built from and the release zip ships beside the DLL (plan
+# section 10.4). bwapi_bwapi_version_string() returns it; pin-bump step 7 (docs/pins.md) moves
+# it, and the release job asserts it names the tag whose BWAPI.7z it downloads.
+set(BWAPI_C2_BWAPI_RELEASE "4.4.0")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -76,7 +81,11 @@ target_include_directories(bwapi_c2_abi
 # PUBLIC: a test that links these objects on Windows must see the same dllexport declarations
 # the objects were compiled against, or MSVC looks for __imp_ symbols that do not exist.
 target_compile_definitions(bwapi_c2_abi
-  PUBLIC BWAPI_C2_BUILDING=1
+  PUBLIC
+    BWAPI_C2_BUILDING=1
+    # PUBLIC so the tests can check bwapi_bwapi_version_string() against it; the shared library
+    # links these objects PRIVATE, so no consumer sees either definition.
+    "BWAPI_C2_BWAPI_RELEASE=\"${BWAPI_C2_BWAPI_RELEASE}\""
   PRIVATE
     BWAPI_C2_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
     BWAPI_C2_VERSION_MINOR=${PROJECT_VERSION_MINOR}

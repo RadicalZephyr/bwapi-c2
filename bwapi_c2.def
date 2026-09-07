@@ -8,6 +8,7 @@ EXPORTS
     bwapi_abi_version_string
     bwapi_bullettype_get_name
     bwapi_bullettype_is_valid
+    bwapi_bwapi_version_string
     bwapi_clear_last_error
     bwapi_client_connect
     bwapi_client_disconnect
