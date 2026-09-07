@@ -39,7 +39,7 @@ from `api.json` by each binding's `gen.py` and are not committed.
 
 ## Layout
 
-- `docs/c-abi-plan.md` — the plan, currently **revision 4.5**. ~2,000 lines, numbered sections
+- `docs/c-abi-plan.md` — the plan, currently **revision 5**. ~2,100 lines, numbered sections
   (`§0` licensing through `§15` divergence register, plus Appendices A and B). It is the source
   of truth for every design decision. Cross-references throughout the repo use `§N` notation
   against this file.
@@ -50,7 +50,7 @@ from `api.json` by each binding's `gen.py` and are not committed.
   pin-bump checklist. Update it in the same commit that moves a submodule.
 - `docs/bwapi-c-abi-plan-revision-4-changes.md` — the directive set that produced revision 4.
   Historical; section numbers in it refer to revision 3.
-- `docs/research/rN-<topic>.md` — results of research round N (R1–R11; R11 has sub-rounds
+- `docs/research/rN-<topic>.md` — results of research round N (R1–R12; R11 has sub-rounds
   R11.1–R11.8 as `r11-K-<topic>.md`, with `r11-bwem-research-plan.md` as the plan for them).
 - `docs/research/rN/` — the scripts, fixtures and probe sources behind round N's results. Each
   runnable script has its usage line in its header comment.
@@ -126,7 +126,9 @@ sibling checkouts that are **not** in this repo:
 - `N00byEdge/BWEM-community` — passed as the second argument to the R11 scripts.
 
 R11.9's `docs/research/r11/run-bwem-teardown.sh` is the first to build from the submodules
-directly and takes no arguments.
+directly and takes no arguments. R12's scripts under `docs/research/r12/` take a checkout of
+upstream's `develop` branch as their argument; `audit-diff.py` needs that checkout under a
+directory named `third_party` and the libclang bindings, as its header says.
 
 They need `clang++` and `g++` on Linux, build into a `mktemp -d` scratch directory, and clean
 up after themselves. Examples:
