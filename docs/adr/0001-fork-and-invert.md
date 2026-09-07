@@ -379,6 +379,8 @@ threads.
 | 12 | Read API shape | **Bulk snapshots and batched capability queries.** SC2 collapses the whole `canXxx` problem into one `RequestQuery` carrying repeated pathing, ability and placement questions, with the rules staying inside the game. The one-shot/per-frame partition is *forced*, not chosen — 33 MB whole-state is arithmetically impossible per frame, and SC2, RLBot and BWAPI's `GameData` (82.9% one-shot, R12 §1) converged on it independently. Make it a documented ABI rule so future additions land on the correct side | — |
 | 13 | Error channels | **Two, not one.** SC2 returns `ActionResult` synchronously from `RequestAction` *and* `action_errors` on the next observation. "The game rejected the order you issued last frame" is a different thing with different timing from an ABI error code | A second surface to drain |
 | 14 | End conditions | **Never conflated.** Game-over, bot-disconnected, left-game and supervisor-forfeit must be distinguishable at the ABI. Gymnasium's most consequential API change was splitting `done` into `terminated` and `truncated` after shipping a magic `info['TimeLimit.truncated']` workaround | — |
+| 16 | Action rate: is unbounded APM within G1? | **A tuned knob, defaulting to unbounded** (§5.2). Unbounded is a valid setting; a human-achievable cap is a valid setting and a difficulty slider for bot-vs-human; the interesting middle is a cap that changes the question from *how much micro can I do* to *what are the highest-value commands to spend a scarce budget on* | The default is **forced by G6**: existing bots are tuned for unbounded APM, so the differential test is only meaningful at that setting |
+| 17 | Opponent identity: do bots learn who they are playing? | **A tuned knob, defaulting to the name being visible** (§5.2), with **three settings, not two**: named, stable-pseudonymous, and blind. Named mirrors pro-level scouting and preparation; blind forces the uniquely bot-shaped problem of recognising a build programmatically rather than keying it to a name | Results are only comparable within a setting, so the setting belongs in G3's artifact |
 | 15 | Divergence policy | **libmelee's rule.** Fix the game's *inconsistencies*; refuse to abstract away load-bearing *weirdness*, and state the failure case that proves it. Turns §15 from a register into a policy | — |
 
 ### 5.1 Three mechanisms, three jobs
@@ -395,7 +397,7 @@ once, which is why it keeps producing rules that punish a runtime for being one.
 **The third row is the point.** With cores partitioned and no realtime clock to be late against,
 fairness needs no budget at all — it needs an allocation that is impossible to exceed. That is the
 same structural-versus-policed distinction G1 rests on, applied to compute. It also means **§6 fork
-7 is load-bearing**: if operators will not pin cores, fairness loses its mechanism and the argument
+5 is load-bearing**: if operators will not pin cores, fairness loses its mechanism and the argument
 for wall clock (§5 decision 2) goes with it.
 
 **What this buys the runtimes G5 serves.** A GC pause costs a bot a few frames of micro rather than
@@ -411,19 +413,73 @@ A bot getting a decision every third frame is also at a permanent 3× action-rat
 top of BW's existing 2–3 frame order latency. **This is better-shaped punishment, not the absence
 of punishment**, and it should not be sold as the latter.
 
+### 5.2 Two knobs the tournament owns
+
+Decisions 16 and 17 are not defaults dressed as choices. They are settings an operator picks per
+tournament, and they share three properties: **symmetric** — both bots in a match always get the
+same setting; **recorded** — the setting is part of G3's artifact, because results are only
+comparable within it; and **defaulting to today's behaviour**, which is forced rather than
+conservative, since G6's differential test is only meaningful at the setting existing bots were
+built for.
+
+#### Action rate
+
+**The mechanism is a token bucket on *actions*, held by the referee, with overflow rejected as a
+readable error** — not throttled observations. The distinction matters and the prior art makes it
+concrete: DeepMind's `step_mul` throttles *observations* (20 ≈ 50 APM, 5 ≈ 200 APM) because PySC2
+wanted human-like **reaction time** as well as human-like rate. Capping actions alone forces
+**choice** while leaving reactivity intact, and choice is the property that makes the knob
+interesting. A bucket with burst capacity also matches how humans actually play — bursting in a
+fight — and it is the same allowance-plus-bank shape as §5.1's middle row. The bucket refills on
+**game frames, not on bot replies**, or a bot that misses frames under §5.1 is punished twice.
+
+**The ripple: an action-rate cap promotes grouped commands from a documented gap to a blocker.** A
+human moves twelve units with one action — select, then click. A client-mode bot must issue twelve
+individual commands, because BWAPI's server does not implement grouped commands for client bots
+(`GameImpl::issueCommand(const Unitset&, ·)` is annotated `//FIX FIX FIX naive implementation`; the
+seventeen `canXxxGrouped` declarations are suppressed for this reason). Calibrate a cap against a
+human baseline and measure it per command, and every client bot pays a ~12× penalty for a
+limitation that is an implementation gap rather than a game rule. **So the knob is not meaningful
+until the referee owns the command path and can represent a grouped command as one action.**
+
+**One correction to the argument for the knob.** Capping APM does not, by itself, make expressive
+languages more viable. It *removes* a pure-throughput advantage, which is a real reduction in the
+edge a fast language has. But it also raises the value of deliberation per action, and deeper
+deliberation rewards whoever computes more per action — which cuts the other way. What actually
+helps a Python or C# bot is the **pair**: a capped action rate together with §5.1's treatment of a
+slow frame as lost micro rather than a resignation. Neither knob does it alone.
+
+#### Opponent identity
+
+**Three settings, because the middle one is the research-interesting case.** *Named* is today's
+behaviour and mirrors pro-level preparation. *Blind* forces programmatic build recognition. But
+*stable-pseudonymous* — a per-opponent identifier that is consistent across a season and carries no
+information about who the opponent is — lets a bot adapt online while making it impossible to ship
+hardcoded counters against a named rival. That is a different experiment from either neighbour and
+probably the sharpest one.
+
+**Identity leaks through channels the knob does not close**, and one of them is load-bearing. Race
+is visible and many bots are single-race; starting position and map leak weakly; and the build
+order is observable, which is the entire point. **The coupling that matters is persistent
+storage** (§4.3): a bot in blind mode can fingerprint an opponent from observed play and key its
+own `write/` directory on that fingerprint, rebuilding per-opponent learning from scratch over a
+season. In blind mode that is precisely the intended research problem. But it means the knob is
+under-specified until storage semantics are decided — under *stable-pseudonymous* the referee
+supplies the key, under *blind* the bot must derive it, and under *named* it is free. §6 fork 7.
+
 ---
 
 ## 6. Open forks
 
 | # | Fork | Why it is open |
 |---|---|---|
-| 1 | **Action rate.** Is unbounded APM within G1? | PySC2 states the problem directly: *"With the BWAPI they control units individually and routinely go over 5000 APM accomplishing things that are clearly impossible for humans and considered unfair or even broken."* DeepMind's remedy was throttling the *observation* rate, not compute — `step_mul` 20 ≈ 50 APM, 5 ≈ 200 APM. Under G1 as written, unbounded APM is fair: everyone has it. But it makes compute stop being the binding constraint on strength, and the sport drifts. **A choice, not a default** |
-| 2 | **Opponent identity.** Do bots learn who they are playing? | They do today, and per-opponent learning files are central to the meta. Fair in that everyone gets it; it interacts directly with the storage capability in §4.3 |
-| 3 | **Co-tenancy scope.** One bot per machine, per cpuset, or per NUMA node? | §4.3's last bullet. Decides how much of the side-channel surface is in scope and what a rack costs |
-| 4 | **Realtime rendering, and SSCAIT.** | SSCAIT exists because it is watchable: `LocalSpeed 20` with rendering on, and its first timeout tier raised from 55 ms to 85 ms *because* it renders. A headless non-realtime referee cannot serve it. Three competitions, roughly three operators — and the project's no-outreach constraint is currently a background condition rather than what it is: **the largest risk to a system whose entire purpose is adoption by three named people** |
-| 5 | **What a late bot sees when it comes back.** | Choosing drop-and-continue (§5.1) makes this live rather than hypothetical: after missing *k* frames, does the bot resume at *N* and fall progressively further behind, or skip to the latest state? Skip-to-latest is almost certainly right — it makes each bot observe the game at whatever rate it can sustain — but it has to be stated, because "never block" without it degrades unboundedly rather than gracefully. Battlecode answers the same question with pause-and-resume; out-of-process we answer it with a staleness rule |
-| 6 | **Is the excess-time bank needed at all?** — *for the tournament operators* | §5.1's middle row is the one held loosely. It is the only thing standing between a season and a bot that takes 500 ms per frame forever, never stalls and never trips the deadline. But **BASIL has run without any per-frame limit for over a million games**, which is real evidence against it, and it needed only a discretionary anti-gaming rule to cope. An operator settles this in one message |
-| 7 | **Does each bot get a dedicated cpuset?** — *for the tournament operators* | Decision 2 rests on it and §5.1 makes it fairness's whole mechanism, and **no current tournament does it**: AIIDE and SSCAIT give a VM per bot but run two VMs unpinned on one host, and BASIL bounds CFS *bandwidth* via Docker `nano_cpus` rather than pinning. It changes what a rack costs and how many games run in parallel. This is an operator question, not a design question, and it should be asked rather than assumed |
+| 1 | **Co-tenancy scope.** One bot per machine, per cpuset, or per NUMA node? | §4.3's last bullet. Decides how much of the side-channel surface is in scope and what a rack costs |
+| 2 | **Realtime rendering, and SSCAIT.** | SSCAIT exists because it is watchable: `LocalSpeed 20` with rendering on, and its first timeout tier raised from 55 ms to 85 ms *because* it renders. A headless non-realtime referee cannot serve it. Three competitions, roughly three operators — and the project's no-outreach constraint is currently a background condition rather than what it is: **the largest risk to a system whose entire purpose is adoption by three named people** |
+| 3 | **What a late bot sees when it comes back.** | Choosing drop-and-continue (§5.1) makes this live rather than hypothetical: after missing *k* frames, does the bot resume at *N* and fall progressively further behind, or skip to the latest state? Skip-to-latest is almost certainly right — it makes each bot observe the game at whatever rate it can sustain — but it has to be stated, because "never block" without it degrades unboundedly rather than gracefully. Battlecode answers the same question with pause-and-resume; out-of-process we answer it with a staleness rule |
+| 4 | **Is the excess-time bank needed at all?** — *for the tournament operators* | §5.1's middle row is the one held loosely. It is the only thing standing between a season and a bot that takes 500 ms per frame forever, never stalls and never trips the deadline. But **BASIL has run without any per-frame limit for over a million games**, which is real evidence against it, and it needed only a discretionary anti-gaming rule to cope. An operator settles this in one message |
+| 5 | **Does each bot get a dedicated cpuset?** — *for the tournament operators* | Decision 2 rests on it and §5.1 makes it fairness's whole mechanism, and **no current tournament does it**: AIIDE and SSCAIT give a VM per bot but run two VMs unpinned on one host, and BASIL bounds CFS *bandwidth* via Docker `nano_cpus` rather than pinning. It changes what a rack costs and how many games run in parallel. This is an operator question, not a design question, and it should be asked rather than assumed |
+| 6 | **What counts as one action, and what is the cap's number?** — *for bot authors* | Decision 16's knob has no unit yet. BW pros run roughly 200–400 raw APM, but Brood War is a spam-heavy game and effective APM is far lower, so "twice a pro" is ambiguous by about 2× before anyone argues about the multiplier. And "one action" needs defining against redundant re-issues and against grouped commands (§5.2) |
+| 7 | **Persistent storage semantics under blind play.** | Decision 17's blind and stable-pseudonymous settings are under-specified until §4.3's storage capability is: whether `read/`/`write/` is keyed per opponent by the referee, derived by the bot from a self-computed fingerprint, or global. Blind play without an answer here is a half-measure |
 
 ---
 
@@ -481,10 +537,10 @@ misreports.
 Numbered as R13. Two need nothing but a download; one is source reading; none needs a
 running StarCraft to begin.
 
-0. **Ask three people.** One operator and two bot authors, in an afternoon, settle §6's forks 1
-   (action rate), 2 (opponent identity), 6 (whether the excess-time bank is needed) and 7
-   (dedicated cpusets — which §5.1 makes load-bearing for fairness). **This ADR has now blocked on
-   community judgement three times**, and the no-outreach constraint has stopped being an adoption
+0. **Ask three people.** One operator and two bot authors, in an afternoon, settle §6's forks 4
+   (whether the excess-time bank is needed), 5 (dedicated cpusets — which §5.1 makes load-bearing
+   for fairness), 6 (the action-rate cap's unit and value) and 7 (storage under blind play). **Forks 1 and 2 came back settled the moment one
+   was asked**, which is the argument: this ADR has blocked on community judgement four times, and the no-outreach constraint has stopped being an adoption
    risk and started costing design decisions. It is cheaper than every experiment below and it
    gates more of them. Do it first.
 
@@ -554,6 +610,11 @@ test substrate (R7, R11.6), which is now the only substrate that needs neither B
 nor Wine, nor an unlicensed engine, nor a redistributed game image — **promoted from a testing
 convenience to a stated goal under G7.**
 
-**What it contradicts.** §1.3's identity-is-the-ID handle model (§4.2). And §2's non-goal 3, which
+**What it contradicts.** §1.3's identity-is-the-ID handle model (§4.2). §2's non-goal 3, which
 makes Windows the v1 target on market grounds — the ground is now also that 1.16.1 under Wine on
-Linux is where the volume, the cgroups and the legal safety are.
+Linux is where the volume, the cgroups and the legal safety are. And **§15 #17's status**: the
+plan records grouped commands as a documented gap to revisit with module mode, and decision 16's
+action-rate knob promotes it to a blocker, because a per-command cap calibrated against a human
+baseline charges a client bot twelve actions for what a human does in one (§5.2). That is a second
+reason the referee must own the server-side command path, independent of the one in
+`proxy-protocol-design.md` §1.1.
