@@ -6,9 +6,10 @@
 > records the forks that came up on the way, including one the plan as written would have shipped
 > as a fault on every bot's first command. [§7](#7-the-offsets-smoke-test) is new: the retarget in
 > stage A cannot move a StarCraft address but could move a layout, so tier 1 pins what the compiler
-> believes and tier 2 checks what the linked DLL does against upstream's released v4.4.0. **Tier 1
-> is green; tier 2 is required before a release.** [§4](#4-ripples-into-bwapi-c2) is still deferred
-> and still accurate.
+> believes and tier 2 checks what the linked DLL does against upstream's released v4.4.0. **Both
+> tiers are green, and tier 2 found a defect on its first working run** — stage B's permission table
+> was denying BWAPI its own match reset, which §6 records. The retarget itself moved nothing.
+> [§4](#4-ripples-into-bwapi-c2) is still deferred and still accurate.
 
 > This plan executes
 > the defect table in [ADR 0001 §2](adr/0001-fork-and-invert.md) — the patch series the ADR says
@@ -473,6 +474,44 @@ frame's handles had been issued, so a unit discovered this frame would be named 
 not a crash — and it only became reachable once the mirror existed. `unitCount` is now published
 at the end of `updateSharedMemory`, after the handles it counts.
 
+### The defect tier 2 found
+
+**Stage B enforced the permission table in the wrong place, and the default table therefore denied
+BWAPI its own match reset.** The shadow harness's first working run produced a report identical to
+upstream v4.4.0's on every line but one:
+
+```
+v4.4.0       write 0x005124D4 60  01 00 00 00 A7 00 00 00 6F 00 00 00 ...
+this build   write 0x005124D8 56              A7 00 00 00 6F 00 00 00 ...
+```
+
+`0x005124D4` is `FrameSkip` and `0x005124D8` is `GameSpeedModifiers`; they are adjacent, so the two
+writes coalesce into one run when both happen. v4.4.0 resets the frame skip to 1 at every match
+start and this build did not.
+
+The cause was that stage B put `permissionCheck` inside the `GameImpl` method rather than at the
+call that asks for it. Those methods are also how BWAPI does its own housekeeping —
+`initializeData()` resets the frame skip and the GUI flag at every match start — and the default
+table, which reproduces `ExampleTournamentModule`, denies `SetFrameSkip` and `SetGUI`. So BWAPI was
+denying itself. Frame skip persists across matches within one process, so a match inherited whatever
+the previous one left: a reproducibility defect introduced by the fix for a different one.
+
+Resolved by asking the table where a request *arrives* rather than where it lands:
+`Server::processCommands` for the client's twelve gated commands, which after stage B is the only
+path from a bot into any of this, and `parseText` for the five console commands typed into the
+game's chat box. No `GameImpl` method asks on its own behalf any more. Three latent faults went with
+it — `setGUI` calling the gated `setFrameSkip` and half-applying under a table that allowed one and
+not the other; the drawing code changing text size several times a frame through a gated setter that
+a bot could never reach anyway, since the client's `setTextSize` never leaves the client; and stage
+H's match-seed announcement going out through `sendText`, which a table denying `SendText` would
+have suppressed, defeating the point of a seed that is *recorded*.
+
+**This is the argument for tier 2 in one paragraph.** It was built to answer a question about the
+toolchain retarget, it answered it (nothing moved), and the defect it actually caught was one this
+series introduced in a stage that has nothing to do with offsets. Neither the compiler, the Linux
+tests, nor review found it; it is only visible as a byte that a running BWAPI writes and ours did
+not.
+
 ### Two bugs the new tests found in the new code
 
 Recorded because they are the argument for stage A.2 having existed at all.
@@ -499,7 +538,7 @@ different questions.
 | Tier | Where | What it asks | Status |
 |---|---|---|---|
 | 1 | `bwapi/tests/bw_layout` | What does the *compiler* believe? `sizeof` and `alignof` for the 59 types mapped onto game memory, and the address each of the 66 `BWDATA` references is bound to, pinned to `baseline.txt` | **Done.** Green; the baseline is committed |
-| 2 | `bwapi/tests/shadow_bw` | What does the *linked binary* do? Which import slots it redirects and which bytes it writes into StarCraft's address range, compared against upstream's released v4.4.0 | **In progress.** Required before a release |
+| 2 | `bwapi/tests/shadow_bw` | What does the *linked binary* do? Which import slots it redirects and which bytes it writes into StarCraft's address range, compared against upstream's released v4.4.0 | **Done.** Green; it found a defect on its first working run ([§6](#the-defect-tier-2-found)) |
 
 **Tier 1 is complete and cheap, and it says something.** The sizes it measured are the documented
 StarCraft ones — `CUnit` 336, `CBullet` 112, a trigger 2400, a dialog 0x56, the replay header 633 —
@@ -526,6 +565,19 @@ addresses — not that the detour bodies behave.
 offsets that predates the retarget and the only ground truth available without a copy of the game,
 which is also why it is downloaded in CI rather than vendored: a binary in the tree is a binary
 somebody could have edited, and a hash of a release asset is not.
+
+**The answer on the retarget is: it moved nothing.** Tier 2's report — 24 import slots redirected,
+27 writes into the game image, 41 distinct hook targets — is byte-identical between upstream's
+v4.4.0 binary and this build, in the same order with the same hook-graph numbering. Every address
+BWAPI patches, every byte it writes there, and every import it redirects survived the toolset and
+`_WIN32_WINNT` change unchanged. That also settles the question of whether to keep a `v141_xp`
+reference build around for comparison: it would answer a narrower version of what this answers.
+
+Two of tier 2's numbers cross-check tier 1 rather than repeating it, which is worth recording
+because they were not designed to. The speed table written at `0x005124D8` holds StarCraft's real
+frame durations (167, 111, 83, 67, 56, 42 …), and the persistent-patch thread's two screen-layer
+hooks land at `0x006CEF88` and `0x006CEFC4` — exactly `ScreenLayers[2]` and `[5]` given the
+`sizeof(BW::layer) == 20` that tier 1's baseline pins. A wrong layout would have put them elsewhere.
 
 **Neither tier compares against anything in `bwapi-c2`.** They are fork-local, they run in the
 fork's Windows job, and they are the third leg of the verification §2 decision 4 left this series
