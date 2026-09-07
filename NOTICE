@@ -9,9 +9,9 @@ bwapi_c2.dll contains object code compiled from two third-party libraries:
 1. BWAPI — the Brood War Application Programming Interface
    https://github.com/bwapi/bwapi
    License: LGPL-3.0 (COPYING.LESSER)
-   Upstream commit: d727fed68558c506163048ea889131d8cbb33915
-   Pinned as: https://github.com/RadicalZephyr/bwapi, tag bwapi-c2-pin-20260905, commit
-     621ef61e0d423b5ed48f75f0126cd1dfb7efb47a
+   Upstream commit: 7687da8abc4726f8366401f11ab648d421385793 (release tag v4.4.0)
+   Pinned as: https://github.com/RadicalZephyr/bwapi, tag bwapi-c2-pin-20260906, commit
+     3eba9b349b77ddffa3a4c3358f94b737dfb7839a
    Modifications carried by bwapi-c2 (the commits between the two):
      BWAPIClient/Source/Convenience.h, `va_list &ap` changed to `va_list ap`, so the
      client closure compiles with non-MSVC compilers; a POSIX revisionUpdate.sh; and the
