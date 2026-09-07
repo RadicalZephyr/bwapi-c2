@@ -11,9 +11,10 @@
   source: src/abi.cpp
   doc: >-
     The ABI's own version, written to the three out-params; any of them may be NULL and is then
-    skipped. 0.x is explicitly unstable; append-only begins at 1.0, the exit of the consumers
-    phase. Three int32_t out-params rather than a packed word, so there is nothing to document
-    about packing.
+    skipped. 0.x is explicitly unstable; semantic versioning begins at 1.0, the exit of the
+    consumers phase, and a struct's layout is fixed within a major, so a raw layer checks the
+    major here before it uses anything else. Three int32_t out-params rather than a packed word,
+    so there is nothing to document about packing.
 
 - c: bwapi_abi_version_string
   self: none
@@ -29,6 +30,16 @@
   doc: >-
     BWAPI::CLIENT_VERSION of the pinned BWAPI (10003 today). The server refuses a client whose
     version differs from its own, so a host can check compatibility before connecting.
+
+- c: bwapi_bwapi_version_string
+  self: none
+  returns: string_out
+  source: src/abi.cpp
+  doc: >-
+    The BWAPI release this library was built from and ships beside, as upstream names it: "4.4.0"
+    today. bwapi_client_version() is the protocol number the server checks; this is the name a
+    bot author declares to a tournament, and the BWAPI.dll in the release zip is upstream's build
+    of it.
 
 - c: bwapi_revision
   self: none

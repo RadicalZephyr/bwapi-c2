@@ -17,6 +17,9 @@
 #ifndef BWAPI_C2_VERSION_MAJOR
 #  error "BWAPI_C2_VERSION_* come from CMake's project(VERSION); build through CMakeLists.txt"
 #endif
+#ifndef BWAPI_C2_BWAPI_RELEASE
+#  error "BWAPI_C2_BWAPI_RELEASE is set in CMakeLists.txt beside the project version"
+#endif
 
 namespace bwapi_c2 {
 
@@ -146,8 +149,9 @@ extern "C" {
 // ---- versions ----------------------------------------------------------------------------------
 
 // Three int32_t out-params rather than a packed word (section 4): one integer width for every
-// scalar in the ABI, and nothing to document about packing. 0.x means unstable; append-only
-// begins at 1.0, the exit of phase 4 (section 12).
+// scalar in the ABI, and nothing to document about packing. 0.x means unstable; semantic
+// versioning begins at 1.0, the exit of phase 4 (section 12), and the major is what a raw layer
+// checks at load.
 BWAPI_C2_API void BWAPI_C2_CALL bwapi_abi_version(int32_t* major, int32_t* minor,
                                                   int32_t* patch) BWAPI_C2_NOEXCEPT {
   if (major) *major = BWAPI_C2_VERSION_MAJOR;
@@ -168,6 +172,15 @@ BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_abi_version_string(char* buf, int32_t b
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_client_version(void) BWAPI_C2_NOEXCEPT {
   return BWAPI::CLIENT_VERSION;
+}
+
+// The release name a bot author declares to a tournament, as distinct from the protocol number
+// the server checks (section 10.4). A string, since upstream's releases are named that way and
+// the number encodes nothing a consumer could compute from it.
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_bwapi_version_string(char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT {
+  if (!check_string_buffer(buf, buf_len)) return 0;
+  static const char release[] = BWAPI_C2_BWAPI_RELEASE;
+  return write_string(buf, buf_len, release, sizeof release - 1);
 }
 
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_revision(void) BWAPI_C2_NOEXCEPT {

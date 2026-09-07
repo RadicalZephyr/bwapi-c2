@@ -97,9 +97,7 @@ def structs_json(spec):
     out = []
     for s in spec.structs:
         item = {"name": s["name"], "c_type": f"bwapi_{s['name']}", "doc": " ".join(s["doc"].split()),
-                "fields": [{"name": "size", "type": "int32", "c_type": "int32_t",
-                            "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"}]
-                          + [field_json(f) for f in s["fields"]],
+                "fields": [field_json(f) for f in s["fields"]],
                 "flags": s.get("flags") or []}
         if "table" in s:
             item["table"] = {"class": s["table"]["class"], "c": s["table"]["c"]}

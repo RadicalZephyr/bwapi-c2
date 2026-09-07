@@ -74,6 +74,10 @@ TEST_CASE("the channel starts clear and reports the versions") {
 
   CHECK(bwapi_client_version() == BWAPI::CLIENT_VERSION);
   CHECK(bwapi_revision() == SVN_REV);
+  char release[16];
+  CHECK(bwapi_bwapi_version_string(release, sizeof release) == static_cast<int32_t>(std::strlen(BWAPI_C2_BWAPI_RELEASE)));
+  CHECK(std::string(release) == BWAPI_C2_BWAPI_RELEASE);
+  CHECK(bwapi_bwapi_version_string(nullptr, 0) == static_cast<int32_t>(std::strlen(BWAPI_C2_BWAPI_RELEASE)));
   CHECK((bwapi_is_debug() == 0 || bwapi_is_debug() == 1));
   CHECK(bwapi_last_error() == BWAPI_ERR_NONE);
 }

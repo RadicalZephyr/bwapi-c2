@@ -26,7 +26,9 @@
  *   - Collections out fill a caller-provided buffer up to cap and return the total available,
  *     sorted ascending by id; when cap < total the elements are the first cap in id order.
  *     No allocation crosses the boundary, so nothing is ever freed through it.
- *   - Every POD that crosses the boundary begins with int32_t size (see BWAPI_HAS_FIELD).
+ *   - Every POD that crosses the boundary is laid out exactly as declared, with no prefix;
+ *     a struct array's stride is sizeof the struct. A layout is fixed within a major of
+ *     bwapi_abi_version(), and a struct that must change is a new major (plan section 4).
  *   - Handles are int32_t ids in disjoint spaces, with one exception: a BWEM neutral IS a
  *     BWAPI unit and is addressed by its unit id. BWAPI_NONE (-1) is the neutral id value.
  *   - A handle that could never have been valid (negative, out of range, wrong kind) returns
@@ -42,7 +44,6 @@
 #ifndef BWAPI_C2_TYPES_H
 #define BWAPI_C2_TYPES_H
 
-#include <stddef.h>
 #include <stdint.h>
 
 /* ---- linkage -------------------------------------------------------------------------- */
@@ -146,19 +147,6 @@ typedef int32_t bwapi_bwem_base_id; /* synthesised by the ABI, 0..N-1; BWEM has 
 
 /* The neutral value of every id space; BWAPI's own "none" for every unit-index field. */
 #define BWAPI_NONE (-1)
-
-/* ---- struct evolution ----------------------------------------------------------------- */
-
-/* Every POD crossing the boundary begins with int32_t size. The caller sets it on input
- * structs; the callee reads only the prefix it understands. The callee sets it on output
- * structs, zero-fills up to the caller's size and never writes past it. For array-out
- * functions the caller sets size on element zero and that is the stride for the whole array.
- *
- * BWAPI_HAS_FIELD(type, field, size) is true when a struct of the given size, as filled by the
- * DLL actually loaded, includes the field: a consumer compiled against a newer header tests
- * this before reading. */
-#define BWAPI_HAS_FIELD(type, field, size) \
-  (offsetof(type, field) + sizeof(((type*)0)->field) <= (size_t)(size))
 
 /* ---- the ABI's own error codes ----------------------------------------------------------- */
 
@@ -1348,13 +1336,12 @@ typedef void (BWAPI_C2_CALL *bwapi_error_callback)(int32_t code, const char* msg
 
 /* ---- structs ------------------------------------------------------------------------------ */
 
-/* Every POD that crosses the boundary (plan section 4), size-prefixed. The table rows carry
- * the scalar accessors of one type class each, one row per id; bwapi_<class>_table() fills
- * them under the stride rule stated above. */
+/* Every POD that crosses the boundary (plan section 4), laid out exactly as declared. The
+ * table rows carry the scalar accessors of one type class each, one row per id;
+ * bwapi_<class>_table() fills the first cap of them at sizeof the row and returns the total. */
 /* One row of the UnitType table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_unittype_table(). */
 typedef struct bwapi_unittype_row {
-  int32_t size;                    /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t id;                      /* the type id, which is also the row's index */
   int32_t get_race;                /* UnitType::getRace() */
   int32_t required_tech;           /* UnitType::requiredTech() */
@@ -1373,7 +1360,7 @@ typedef struct bwapi_unittype_row {
   int32_t space_provided;          /* UnitType::spaceProvided() */
   int32_t build_score;             /* UnitType::buildScore() */
   int32_t destroy_score;           /* UnitType::destroyScore() */
-  int32_t size_type;               /* UnitType::size() */
+  int32_t size;                    /* UnitType::size() */
   int32_t tile_width;              /* UnitType::tileWidth() */
   int32_t tile_height;             /* UnitType::tileHeight() */
   int32_t dimension_left;          /* UnitType::dimensionLeft() */
@@ -1433,7 +1420,6 @@ typedef struct bwapi_unittype_row {
 /* One row of the WeaponType table: every scalar accessor of the class for one id, in one
  * crossing. Filled by bwapi_weapontype_table(). */
 typedef struct bwapi_weapontype_row {
-  int32_t size;                 /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t id;                   /* the type id, which is also the row's index */
   int32_t get_tech;             /* WeaponType::getTech() */
   int32_t what_uses;            /* WeaponType::whatUses() */
@@ -1463,7 +1449,6 @@ typedef struct bwapi_weapontype_row {
 /* One row of the TechType table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_techtype_table(). */
 typedef struct bwapi_techtype_row {
-  int32_t size;             /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t id;               /* the type id, which is also the row's index */
   int32_t get_race;         /* TechType::getRace() */
   int32_t mineral_price;    /* TechType::mineralPrice() */
@@ -1481,7 +1466,6 @@ typedef struct bwapi_techtype_row {
 /* One row of the UpgradeType table: every scalar accessor of the class for one id, in one
  * crossing. Filled by bwapi_upgradetype_table(). */
 typedef struct bwapi_upgradetype_row {
-  int32_t size;                 /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t id;                   /* the type id, which is also the row's index */
   int32_t get_race;             /* UpgradeType::getRace() */
   int32_t mineral_price_factor; /* UpgradeType::mineralPriceFactor() */
@@ -1494,7 +1478,6 @@ typedef struct bwapi_upgradetype_row {
 /* One row of the Race table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_race_table(). */
 typedef struct bwapi_race_row {
-  int32_t size;                /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t id;                  /* the type id, which is also the row's index */
   int32_t get_worker;          /* Race::getWorker() */
   int32_t get_resource_depot;  /* Race::getResourceDepot() */
@@ -1506,7 +1489,6 @@ typedef struct bwapi_race_row {
 /* One row of the PlayerType table: every scalar accessor of the class for one id, in one
  * crossing. Filled by bwapi_playertype_table(). */
 typedef struct bwapi_playertype_row {
-  int32_t size;          /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t id;            /* the type id, which is also the row's index */
   int32_t is_lobby_type; /* PlayerType::isLobbyType() */
   int32_t is_game_type;  /* PlayerType::isGameType() */
@@ -1515,7 +1497,6 @@ typedef struct bwapi_playertype_row {
 /* One row of the Color table: every scalar accessor of the class for one id, in one crossing.
  * Filled by bwapi_color_table(). */
 typedef struct bwapi_color_row {
-  int32_t size;  /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t id;    /* the type id, which is also the row's index */
   int32_t red;   /* Color::red() */
   int32_t green; /* Color::green() */
@@ -1525,7 +1506,6 @@ typedef struct bwapi_color_row {
 /* One requirement of one unit type, for the flat requiredUnits table: the type, the type it
  * requires, and how many of it. */
 typedef struct bwapi_required_unit {
-  int32_t size;          /* the struct-evolution prefix: the caller's stride in, the bytes filled out */
   int32_t type;          /* the unit type that has the requirement */
   int32_t required_type; /* the unit type it requires */
   int32_t count;         /* how many of the required type */

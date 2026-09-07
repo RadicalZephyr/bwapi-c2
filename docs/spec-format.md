@@ -101,7 +101,7 @@ declaration with every parameter explicit; the per-language wrapper re-adds the 
 | `string_in` | `const char*` | Passed through, no transcoding (plan §4) |
 | `int32_out`, `double_out`, `position_out` | `int32_t*`, `double*`, `bwapi_position*` | One value written. NULL is allowed and skips the write |
 | `int32_array_out`, `int16_array_out`, `uint8_array_out`, `position_array_out` | `int32_t*`, `int16_t*`, `uint8_t*`, `bwapi_position*` | An array the body fills; the `cap` that sizes it is a separate `int32` parameter the entry names |
-| `struct_in:<name>`, `struct_out:<name>`, `struct_array_out:<name>` | `const bwapi_<name>*`, `bwapi_<name>*` | Size-prefixed PODs from `structs.yaml` (plan §4) |
+| `struct_in:<name>`, `struct_out:<name>`, `struct_array_out:<name>` | `const bwapi_<name>*`, `bwapi_<name>*` | PODs from `structs.yaml`, laid out as declared and fixed within a major (plan §4) |
 | `callback:<typedef>` | the typedef | `bwapi_log_callback`, `bwapi_error_callback` |
 | `void_ptr` | `void*` | The `user` beside a callback, and nothing else |
 
@@ -125,7 +125,7 @@ kind, and the emitter writes it into every wrapper and every reference page.
 | `string_out` | `int32_t` | an empty string (one NUL, when `buf_len > 0`) and `0` | `write_string(buf, buf_len, std::string)` |
 | `id_array` | `int32_t` | nothing written, `0` | fills `out` with the ids of a set of interfaces sorted ascending, up to `cap`; returns the total |
 | `position_array` | `int32_t` | nothing written, `0` | fills `out` with packed positions **in upstream's order** (a chokepoint's geometry is a polyline; sorting it would destroy it), up to `cap`; returns the total |
-| `struct_array:<name>` | `int32_t` | nothing written, `0` | `body:` or `source:` only; the caller's `size` on element zero is the stride |
+| `struct_array:<name>` | `int32_t` | nothing written, `0` | `body:` or `source:` only; the stride is `sizeof` the row, as both sides compiled it |
 | `void` | `void` | nothing | none |
 
 The three position kinds share one C type and one rule for the neutral value: the packed
@@ -266,8 +266,10 @@ of plan §5.8 and the flat `requiredUnits` row; from phase 2 `bwapi_event`, `bwa
 the snapshots. A struct is `{name, doc, fields: [{name, type, doc}], flags: [{name, bit, doc}]}`,
 where `type` is one of `int32`, `bool32`, `double`, `int16`, `uint8`, `uint32`, `type:<Class>`
 (an `int32_t` holding a type id), any of those with an `int32[3]`-style fixed-array suffix;
-`size` is always the first field and never listed; and `flags` names the bits of a
-`uint32_t flags` field when the struct has one. The C type is `bwapi_<name>`.
+and `flags` names the bits of a `uint32_t flags` field when the struct has one, whose unused
+bits are zero so that a bit added later is a minor (plan §4). The C type is `bwapi_<name>`,
+laid out exactly as the fields are listed, with no prefix: a struct's layout is fixed within a
+major, and a struct that must change is a new major (plan §4, decision 25).
 
 A struct that is one row of a bulk table also carries a `table: {class, c, doc}` block, and
 each field after `id` a `from:` naming the accessor it mirrors:
@@ -287,8 +289,8 @@ each field after `id` a `from:` naming the accessor it mirrors:
 The `table:` block declares a function the loader adds to the `bulk` section as a `body:` entry
 (`bwapi_race_table(bwapi_race_row* out, int32_t cap)`, `self: none`, `returns:
 struct_array:race_row`): one row per id of the class, `0` to `Unknown` inclusive, each field
-filled by the accessor its `from:` names and converted by the field's type, through the stride
-rule of plan §4. `from:` is meaningful only under a `table:`, and a table row's first field is
+filled by the accessor its `from:` names and converted by the field's type, one row per
+`sizeof` stride. `from:` is meaningful only under a `table:`, and a table row's first field is
 always `id`. The one table a `from:` cannot express, the flat `requiredUnits` table, is a
 hand-written `source:` entry in `bulk.yaml` over a plain struct.
 

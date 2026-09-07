@@ -25,8 +25,16 @@ together, and a release's source pointer names the tag.
 
 | Dependency | Path | Fork tag | Pinned commit | Upstream base | What it is |
 |---|---|---|---|---|---|
-| [`RadicalZephyr/bwapi`](https://github.com/RadicalZephyr/bwapi), fork of `bwapi/bwapi` | `third_party/bwapi` | `bwapi-c2-pin-20260905` | `621ef61e0d423b5ed48f75f0126cd1dfb7efb47a` | `d727fed68558c506163048ea889131d8cbb33915` | upstream `master` at 2026-05-08, after the `v4.4.0` tag; `CLIENT_VERSION` 10003; `SVN_REV` 5030 |
+| [`RadicalZephyr/bwapi`](https://github.com/RadicalZephyr/bwapi), fork of `bwapi/bwapi` | `third_party/bwapi` | `bwapi-c2-pin-20260906` | `3eba9b349b77ddffa3a4c3358f94b737dfb7839a` | `7687da8abc4726f8366401f11ab648d421385793` | upstream's `v4.4.0` tag, 2019-03-07; release 4.4.0; `CLIENT_VERSION` 10003; `SVN_REV` 5016 |
 | [`RadicalZephyr/BWEM-community`](https://github.com/RadicalZephyr/BWEM-community), fork of `N00byEdge/BWEM-community` | `third_party/bwem` | `bwapi-c2-pin-20260905` | `70d7b34a2ae2043e1bf42e024461ef26dca6967c` | `9a63141f301f7830e9e09a2bae95c304fcc03cc5` | `master` at 2021-06-01, the community fork's last commit; MIT/X11 |
+
+**The BWAPI pin is a release tag, not a commit on upstream's default branch.** The release zip
+redistributes upstream's own build of `v4.4.0` byte-identical and SSCAIT admits a submission's
+`BWAPI.dll` by MD5, so the binary and the source pinned here must be the same tag; `SVN_REV` is
+a function of the commit, so a pin past the tag reports a revision no shipped DLL has (plan
+§10.3, §10.4). Revision 4.4 pinned upstream `main` fourteen documentation commits past the tag
+at `SVN_REV` 5030; R12 showed those commits change no non-comment line of any public header,
+and the diff between the two pinned trees is comment text plus `svnrev.h` itself.
 
 **Both repositories nest their sources one level down.** BWAPI's tree root is
 `third_party/bwapi/bwapi/` (so the include root is `third_party/bwapi/bwapi/include` and the
@@ -41,9 +49,9 @@ and `external/openbw` (the unlicensed engine) are test-only; `.gitmodules` sets
 
 ## Coverage audit at the current pins
 
-`tools/abi/audit.sh` (plan §9; implementation plan 1.6), run at the pins above on 2026-09-06,
-after phase 1's spec files: **959 public declarations** in the 30 audited headers
-(`tools/abi/audited-headers.txt`); **222 accounted** by a spec entry or a rule-bearing `skip:`;
+`tools/abi/audit.sh` (plan §9; implementation plan 1.6), run after phase 1's spec files on
+2026-09-06 and rerun with the same result at the `v4.4.0` pin: **959 public declarations** in
+the 30 audited headers (`tools/abi/audited-headers.txt`); **222 accounted** by a spec entry or a rule-bearing `skip:`;
 **737 on the recorded backlog** (`tools/abi/backlog.txt`), none new and none stale. The backlog
 is what phases 2 and 3 burn down, by interface:
 
@@ -69,9 +77,9 @@ what it changes and why, and names the upstream issue once one is filed.
 
 | Fork | Commit | Change | Plan |
 |---|---|---|---|
-| `bwapi` | `4b77d6e` | `bwapi/revisionUpdate.sh`: a POSIX port of upstream's `revisionUpdate.vbs` (`2383 + git rev-list HEAD --count` into `include/svnrev.h`) | §10.3 |
-| `bwapi` | `1b54de4` | `bwapi/include/svnrev.h` committed, generated against the upstream base (`SVN_REV = 5030`). Upstream gitignores it; it is force-added | §10.3 |
-| `bwapi` | `621ef61` | `BWAPIClient/Source/Convenience.h:33`, `va_list &ap` → `va_list ap` | §15.2 |
+| `bwapi` | `ee0e36a` | `bwapi/revisionUpdate.sh`: a POSIX port of upstream's `revisionUpdate.vbs` (`2383 + git rev-list HEAD --count` into `include/svnrev.h`) | §10.3 |
+| `bwapi` | `8e3a2b8` | `bwapi/include/svnrev.h` committed, generated against the upstream base (`SVN_REV = 5016`). Upstream gitignores it; it is force-added | §10.3 |
+| `bwapi` | `3eba9b3` | `BWAPIClient/Source/Convenience.h:33`, `va_list &ap` → `va_list ap` | §15.2 |
 | `bwem` | `70d7b34` | adds `static void Map::ResetInstance()` to `include/map.h` and `src/map.cpp` | §15.2 |
 
 `svnrev.h` living in the fork means there is no `vendor/svnrev.h` in this tree and no Windows
@@ -99,7 +107,15 @@ scheduled drift job. The work happens in the fork first and in this repository s
 4. In this repository, `git -C third_party/<dep> checkout <new tip>`, and update the tables
    above, tag included, and `NOTICE` in the same commit.
 5. Run the layout dump and the derived-closure test; diff both against the checked-in baselines.
-6. Run `tools/abi/audit.sh`; resolve every added, removed or changed declaration, and rewrite
-   the backlog (`--write-backlog`) once each is decided. Rerun `draft_spec.py
-   --update-constants` and review the diff of `spec/constants.yaml`.
-7. Rebuild; run every suite in plan §11. Record the new revision and `CLIENT_VERSION` here.
+6. Diff the public header listing against the previous pin (`git diff --stat <old> <new> --
+   bwapi/include` on the submodule, watching for added and deleted files): a header upstream
+   adds is invisible to the audit until it is on `tools/abi/audited-headers.txt`, and a header
+   it deletes leaves a stale `exclude` line. Then run `tools/abi/audit.sh`; resolve every added,
+   removed or changed declaration, and rewrite the backlog (`--write-backlog`) once each is
+   decided. Rerun `draft_spec.py --update-constants` and review the diff of
+   `spec/constants.yaml`.
+7. Rebuild; run every suite in plan §11. Record the new release, revision and `CLIENT_VERSION`
+   here, and move `BWAPI_C2_BWAPI_RELEASE` in `CMakeLists.txt` to the release the tag names:
+   `bwapi_bwapi_version_string()` returns it and the release job checks it against the
+   `BWAPI.7z` it downloads (plan §10.4). A changed `CLIENT_VERSION` is a `bwapi-c2` major
+   (plan §4).

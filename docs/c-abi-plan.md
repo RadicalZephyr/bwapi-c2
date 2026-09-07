@@ -97,6 +97,29 @@ This is a design/roadmap document. No production code is included.
 > count (§5.8), the `body:` `static_assert` is an existence check with the body's own
 > compilation as the type check (§9), and `getID` is skipped on every interface because the
 > id is the handle (§6.2, decision 23).
+>
+> **Revision 5** changes the stability promise and what a release is, on the survey in
+> [R12](research/r12-develop-branch-survey.md) and the discussion it opened; the §4 conventions
+> are otherwise unchanged, and the plan is logged as it was through 4.x: this note, §13's
+> decisions 24–28, and the sections they name.
+>
+> - **Append-only after 1.0 becomes semantic versioning with majors** (§4, goal 2): a major on
+>   any visible C ABI change or on a change of the pinned `CLIENT_VERSION`, the number encoding
+>   nothing about which BWAPI a build speaks to, and a CI classifier that refuses a bump
+>   smaller than the diff. Revision 4 had read goal 7's "purely additive" as a promise about
+>   this ABI; it is a statement about needing nothing upstream.
+> - **The struct size prefix and `BWAPI_HAS_FIELD` go with append-only** (§4, §5.3, §5.6, §5.8,
+>   §5.10, §6.3, §14). The growth they insured against has not happened on the release line
+>   since 2017, and a struct that must change is now a major.
+> - **The release carries upstream's own `BWAPI.dll` and injector, byte-identical and
+>   MD5-checked** (§0, §10.4), which is why **the BWAPI pin moves from upstream `main` to the
+>   `v4.4.0` tag** (§10.3): `SVN_REV` is 5016 there, the number the injected DLL reports.
+> - **The reference is versioned, one tree per major, served from the release assets and
+>   shipped in every zip** (§16).
+> - §10.3 names a bump across `CLIENT_VERSION` as a major and a phase, diffs the header listing
+>   before the audit, and, with §4 and §9, stops saying the dependencies do not move: their
+>   releases do not, and their development branch is a different library beneath the same
+>   headers (Appendix B notes what that does to the transport).
 
 ---
 
@@ -146,11 +169,20 @@ packages carry the same, declaring `LGPL-3.0-only` in their metadata.
 | `COPYING` (GPL-3.0) | LGPL §4(b) | Not in BWAPI's tree; fetch from gnu.org |
 | `COPYING.LESSER` (LGPL-3.0) | LGPL §4(b) | Copy of BWAPI's `LICENSE` |
 | `LICENSE.BWEM` (MIT/X11) | attribution | Verbatim copy retaining the Igor Dimitrijevic notice |
-| `NOTICE` | LGPL §4(a) | Names BWAPI (LGPL) and BWEM (MIT/X11); records our `ResetInstance` modification (§15.2) |
-| source pointer | GPL §6(d) | URL plus the pinned commits of **both** dependencies and our own tag. This line is doing legal work, not boilerplate — it is the Corresponding Source offer |
+| `NOTICE` | LGPL §4(a) | Names BWAPI (LGPL) and BWEM (MIT/X11); records our `ResetInstance` modification (§15.2) and the MD5 of each upstream binary below |
+| source pointer | GPL §6(d) | URL plus the pinned commits of **both** dependencies, upstream's release tag for the binaries below, and our own tag. This line is doing legal work, not boilerplate — it is the Corresponding Source offer |
+| `bwapi/BWAPI.dll`, `bwapi/BWAPI_PluginInjector.bwl` | LGPL §4, GPL §6 | Upstream's own release build of the pinned tag, byte-identical (§10.4). Conveying the Library itself, beside the Combined Work, under the same file table |
 
 The X11 no-advertising clause applies: describe BWEM's function in the README; do not use the
 copyright holder's name promotionally.
+
+**From revision 5 the release also conveys the Library itself**: upstream's `BWAPI.dll` and
+injector plugin, verbatim, so a bot author never matches a BWAPI version by hand (§10.4). That
+is ordinary conveyance of an LGPL binary, satisfied by the file table above with one more line
+in the source pointer — upstream's release tag, since that binary was built from the tag and
+not from our fork — and it is the reason the BWAPI pin is a release tag (§10.3).
+`vc_redist.x86.exe` is Microsoft's redistributable under Microsoft's terms, shipped exactly as
+upstream ships it.
 
 **4. Test data is synthetic by policy.** `GameData` carries no Blizzard static tables, so the
 only provenance exposure in a recorded buffer is *map terrain* — and JBWAPI's fifteen fixtures
@@ -293,8 +325,8 @@ design document states the premise in one sentence: **only the plain C API is bi
 across releases**, because C++ "presents extreme technical difficulties to doing so." Every §4
 convention has a production precedent in that field — integer handles are what SkiaSharp's
 three-regime pointer model is the cost of not having; caller buffers with a true-count return
-are ICU's convention since the 1990s; the size prefix is LibreOfficeKit's `nSize`; neutral values
-on bad input are HarfBuzz's inert singletons. **SkiaSharp is the near neighbour and the caution**:
+are ICU's convention since the 1990s; neutral values on bad input are HarfBuzz's inert
+singletons. **SkiaSharp is the near neighbour and the caution**:
 Google removed Skia's C API for lack of interest, the C# binding's maintainers carry it in a fork,
 and they describe its stability as "at the whim of the underlying C++ API." **cimgui and Godot's
 `extension_api.json`** are the precedents for a generated C layer with a JSON sidecar that a dozen
@@ -382,7 +414,8 @@ Nobody here asked for a C ABI, and everyone here built the thing a C ABI would h
 1. **Two flat `extern "C"` headers**, valid C99 *and* C++, no C++ types, no macros required at
    the call site: `bwapi_c2.h` for BWAPI and `bwapi_c2_bwem.h` for BWEM, sharing
    `bwapi_c2_types.h` and every §4 convention.
-2. **Stable ABI**: append-only, versioned, symbol list under test — from 1.0 onward (§4).
+2. **Stable ABI**: semantically versioned, symbol list under test — from 1.0 onward (§4). A
+   breaking change is a new major shipped beside the old one; nothing is ever changed in place.
 3. **Zero C++ toolchain required for consumers** — a `.dll` + `.h` (+ `.lib`) is the whole
    delivery.
 4. **Cheap for binding generators**: `api.json` alongside the headers, so `ctypes`, P/Invoke,
@@ -639,30 +672,22 @@ order. A bot that iterates and takes the first match would be irreproducible thr
 its own. **The ABI sorts collection output ascending by ID** and documents it (§15). Sorting
 alone does not fix the closest/best queries, which return one unit — see §5.4.
 
-**Struct evolution: every POD that crosses the boundary begins with `int32_t size;`.** The
-append-only policy covers function signatures and says nothing about struct layout, but
-`bwapi_event`, `bwapi_bullet`, `bwapi_unit_command` and the §5.10 snapshots are layout
-contracts compiled into every consumer — and `ctypes` and P/Invoke consumers hardcode those
-layouts in script and never recompile.
-
-- The caller sets `size` on input structs. The callee validates it, reads only the prefix it
-  understands, and ignores the rest.
-- The callee sets `size` on output structs, writes the fields it knows, zero-fills the remainder
-  up to the caller's `size`, and never writes past it.
-- **For array-out functions the caller sets `size` on element zero, and that value is the
-  uniform stride for the whole array.** No separate `elem_size` parameter — one mechanism, no
-  redundancy.
-
-Applied uniformly, including to `bwapi_unit_command`. The per-call cost is setting one field on
-a struct most bots never touch (§5.3's ~40 convenience functions are the real command path), and
-uniformity is worth more than four bytes.
-
-`bwapi_c2_types.h` ships one capability macro, LibreOfficeKit's `LIBREOFFICEKIT_HAS_MEMBER`
-under our name — `BWAPI_HAS_FIELD(type, field, size)`, true when `offsetof(type, field) +
-sizeof(field) <= size` — so a consumer compiled against a newer header can test whether the DLL
-it loaded filled a field before reading it. The size prefix makes that possible; the macro
-makes it one line. It tests the field's end rather than LibreOfficeKit's start: a field the
-DLL half-filled is not present, and with every field `int32_t`-aligned the two agree anyway.
+**Struct layout is fixed within a major, and a struct that must change is a new major.**
+`bwapi_event`, `bwapi_bullet`, `bwapi_unit_command`, the §5.8 table rows and the §5.10
+snapshots are layout contracts compiled into every consumer — and `ctypes` and P/Invoke
+consumers hardcode those layouts from `api.json` and never recompile. Revisions 4.0–4.5 put an
+`int32_t size` prefix on every one of them, LibreOfficeKit's `nSize`, so a struct could grow
+behind an unchanged signature and an older binary keep working. Revision 5 removes it, on two
+findings. The growth it insured against does not happen: the released BWAPI has not added or
+removed a field of any `*Data` struct since 4.2.0 in April 2017, and BWAPI 5 changes them as a
+redesign, not as drift (R12). And the versioning policy below no longer wants it: a struct that
+must change is a new major, which is a new header and DLL pair a bot author adopts when they
+choose, exactly as the tournaments already treat BWAPI's own versions. What remains is simpler.
+A struct array crosses as `(T* out, int32_t cap)` with the stride `sizeof(T)` as both sides
+compiled it; the raw layers assert `bwapi_abi_version()`'s major at load, so a header and a DLL
+from different majors fail at import rather than at the first misread field; and
+`BWAPI_HAS_FIELD` goes with the prefix. Booleans in snapshots stay as flag bits (§5.10), for
+density rather than for evolution.
 
 **Invalid handles.** Never dereference. Validate, then return a documented neutral value (`0` /
 `-1` / packed `Positions::None` / empty) and latch it in the ABI error channel. Rationale: a
@@ -740,25 +765,60 @@ will not find it on its own.
 void     bwapi_abi_version(int32_t* major, int32_t* minor, int32_t* patch);
 int32_t  bwapi_abi_version_string(char* buf, int32_t buf_len);   /* snprintf convention */
 int32_t  bwapi_client_version(void);   /* BWAPI::CLIENT_VERSION, 10003 today */
+int32_t  bwapi_bwapi_version_string(char* buf, int32_t buf_len);  /* the pinned release, "4.4.0" */
 int32_t  bwapi_revision(void);         /* SVN_REV from upstream's generator, §10.3 */
 int32_t  bwapi_is_debug(void);
 ```
 Three `int32_t` out-params rather than a packed `uint32_t`: it keeps §4's one-integer-width rule
-intact and needs no documented packing to compare.
+intact and needs no documented packing to compare. `bwapi_bwapi_version_string()` exists so a
+wrapper can say "this DLL speaks BWAPI 4.4.0" without a table from `CLIENT_VERSION` to release.
 
 **The ABI is `0.x` and explicitly unstable until the consumers phase completes.** Real bindings
-always shake out ergonomics, and promising append-only stability while also planning to revise
-on consumer feedback cannot both hold. **Append-only begins when `bwapi_abi_version()` returns
-1.0**, and reaching 1.0 is the exit criterion of phase 4 (§12). After that: new functions get
-new names; existing signatures never change meaning; a removal is a major bump.
+always shake out ergonomics, and promising stability while also planning to revise on consumer
+feedback cannot both hold. **1.0 is the first release under semantic versioning**, and reaching
+it is the exit criterion of phase 4 (§12). 1.0 speaks BWAPI 4.4.0.
+
+**Semantic versioning, with a major that bumps on either of two events.** The first is a C ABI
+change a consumer can see: a signature or a struct layout changes, a symbol or a constant is
+removed, a constant's value changes, or a documented semantic changes behind an unchanged
+signature. The second is a change of the pinned BWAPI's `CLIENT_VERSION`: a DLL that speaks to a
+different server cannot join any game the previous one could, whatever its header says. A minor
+adds symbols, constants, structs or flag bits and changes nothing that exists; a patch changes
+nothing a consumer can see. **The number encodes nothing about which BWAPI a build speaks to.**
+That is what `bwapi_client_version()`, `bwapi_bwapi_version_string()`, the release name and the
+compatibility table in the README are for, and it is why a `bwapi-c2` major is never promised to
+line up with a BWAPI release in advance: 2.0 may well be the build that speaks BWAPI 5.0, but
+that is an outcome of the rule, not a rule.
+
+**Why majors rather than append-only.** Revision 4 read goal 7, "purely additive", as
+append-only after 1.0: new functions get new names, nothing existing ever changes, a removal is
+unthinkable. Goal 7 is about not needing changes *upstream*, not about never changing this ABI,
+and append-only priced the wrong risk. The tournaments that run the bots this project is for
+(SSCAIT, BASIL) support every BWAPI version since 3.7.4 side by side and add to that list rather
+than retire from it, so a bot's BWAPI version is chosen by its author and changed when the
+author chooses. A `bwapi-c2` major is the same kind of object: a header and DLL pair a bot adopts
+on its own schedule and can keep forever, with the matching upstream binaries in the same zip
+(§10.4). Append-only would have bought stability for a consumer who upgrades the DLL under an
+old binary, a case the ecosystem does not have, at the price of never fixing a mistake. A
+breaking change under semver costs a released major that keeps working.
+
+**CI classifies every change to the generated outputs and refuses a version that does not
+match.** A `.def` or `api.json` diff that only adds needs at least a minor bump; one that
+removes or changes a signature, a struct layout or a constant's value needs a major; a move of
+`docs/pins.md` to a different `CLIENT_VERSION` needs a major. The inputs are the golden `.def`
+diff and an `api.json` diff, both already in CI, with a classifier in front of them (§9,
+implementation plan §6).
 
 **The bound on that promise is the one LLVM-C states for itself**: stability "limited by the
 abstractness of the interface and the stability of the C++ API that it wraps." Ours wraps two
-libraries that have not moved since 2018 and 2021, so the bound is loose — but it exists, and a
-**pin bump is the only event that can change semantics behind an unchanged signature.** That is
-why §10.3 attaches every check to that event and why §15 is a register rather than a promise.
-There is no runtime behaviour-version selection of the FoundationDB `fdb_select_api_version`
-kind; with a frozen dependency there is nothing for it to select between.
+libraries whose *released* APIs have not moved since 2019 and 2021. Upstream's development
+branch is a different library beneath headers that are 98% the same (R12), and the only motion
+it can ever deliver is a major, which the rule above already names. **Within a major, a pin bump
+is the only event that can change semantics behind an unchanged signature.** That is why §10.3
+attaches every check to that event and why §15 is a register rather than a promise; a pin bump
+across `CLIENT_VERSION` is a major and a phase, not a checklist run (§10.3). There is no runtime
+behaviour-version selection of the FoundationDB `fdb_select_api_version` kind; a bot picks a
+major by linking it.
 
 ---
 
@@ -855,10 +915,9 @@ Mouse space — draws are development tooling and tournament bots undercount the
 
 `BWAPI::UnitCommand` holds raw `Unit` pointers. `BWAPIC::UnitCommand`
 (`bwapi/include/BWAPI/Client/UnitCommand.h`) is already the ID-based mirror used over the wire.
-Mirror *that*, with the §4 size prefix:
+Mirror *that*:
 ```c
 typedef struct bwapi_unit_command {
-  int32_t size;
   int32_t type; int32_t unit_id; int32_t target_id;
   int32_t x; int32_t y; int32_t extra;
 } bwapi_unit_command;
@@ -991,7 +1050,6 @@ until the next one.**
 
 ```c
 typedef struct bwapi_event {
-  int32_t size;
   int32_t type;                    /* EventType::Enum */
   int32_t unit_id, player_id;
   int32_t x, y;                    /* NukeDetect target */
@@ -1044,7 +1102,7 @@ than a snapshot of them. The **848 constants** ship generated into `bwapi_c2_typ
 `Races::Enum`, `Errors::Enum`, `EventType::Enum`, `Flag::Enum`, `CoordinateType::Enum`,
 `Text::{Enum,Size::Enum}`, `MouseButton`, `Key`, `Latency::Enum`, `Colors`, and the position
 sentinels in both forms; names come from the enum identifiers, so they cannot drift. And **one
-size-prefixed bulk table per type class** ships as an optional §5.10-style fast path, so a host
+bulk table per type class** ships as an optional §5.10-style fast path, so a host
 that would rather pay one crossing at startup than 185 can have it. **The table carries scalar
 fields only.** The container-valued accessors — `requiredUnits()`, `abilities()`, `upgrades()`,
 `buildsWhat()`, `whatBuilds()` — stay function-only, with one exception: `requiredUnits` is on
@@ -1078,19 +1136,18 @@ int32_t bwapi_game_snapshot_players(bwapi_player_snapshot* out, int32_t cap);
 ```
 
 Same convention as every other collection (§4): fills up to `cap`, returns the total, sorted
-ascending by ID, **existing units only**, `cap == 0` with `NULL` is the size query, and element
-zero's `size` is the uniform stride. `UnitData` is already pointer-free, so this is a
-field-select copy loop, not new logic. (`last_command_frame` is the one field that comes from
+ascending by ID, **existing units only**, and `cap == 0` with `NULL` is the size query.
+`UnitData` is already pointer-free, so this is a field-select copy loop, not new logic. (`last_command_frame` is the one field that comes from
 the interface rather than `UnitData` — it is a client-side `UnitImpl` member.)
 
 **Booleans in the snapshot are bits in a `uint32_t flags`, not fields**: `exists`,
 `is_completed`, `is_constructing`, `is_idle`, `is_moving`, `is_attacking`, `is_cloaked`,
 `is_burrowed`, `is_stuck`, `is_under_attack`, `is_morphing`, `is_selected`, `is_powered`,
 `is_visible_to_self`. This is not the §4 scalar-bool rule — that governs parameters and returns
-— and a bit is also how a future boolean gets added without disturbing the layout, which pairs
-with the size prefix.
+— it is density: fourteen booleans in one word instead of fourteen. The unused bits are
+documented as zero, so a boolean added later is a new bit and a minor (§4), not a new layout.
 
-v1 unit fields: `size`, `id`, `player_id`, `type`, `x`, `y`, `hit_points`, `shields`, `energy`,
+v1 unit fields: `id`, `player_id`, `type`, `x`, `y`, `hit_points`, `shields`, `energy`,
 `resources`, `resource_group`, `order`, `order_target_id`, `secondary_order`, `target_id`,
 `build_type`, `remaining_build_time`, `remaining_train_time`, `training_queue_count`,
 `addon_id`, `transport_id`, `carrier_id`, `hatchery_id`, `ground_weapon_cooldown`,
@@ -1210,7 +1267,6 @@ this the hard way (a `calloc`'d SCV believed it was loaded inside unit 0 and ref
 No ID-keyed lookup exists. Snapshot instead, **existing bullets only, sorted by ID**:
 ```c
 typedef struct bwapi_bullet {
-  int32_t size;
   int32_t id, player_id, type, source_id, target_id;
   int32_t x, y, target_x, target_y, remove_timer;
   double  angle, velocity_x, velocity_y;
@@ -1471,9 +1527,9 @@ grounds:
    boundary — the exact failure §4's caller-buffer rule exists to prevent.
 
 Typemaps *do* express packed positions, `int32_t` booleans and integer handles correctly, and
-that is worth conceding. They cannot express caller-provided buffers, sorted output,
-size-prefixed structs or the sticky latch, because those change a function's *arity* and a
-typemap only transforms values. Reaching them requires `%extend` — hand-written C++ per function
+that is worth conceding. They cannot express caller-provided buffers, sorted output, struct
+arrays or the sticky latch, because those change a function's *arity* and a typemap only
+transforms values. Reaching them requires `%extend` — hand-written C++ per function
 — at which point SWIG contributes name mangling and an experimental dependency, and nothing else.
 
 Survey result, so nobody re-runs it: CppSharp targets C#; cppbind Swift/Kotlin/Python; AutoWIG
@@ -1549,9 +1605,10 @@ which converts the call's result to the return kind (`docs/spec-format.md` §1.6
 
 What revision 3 had and this revision does not: per-entry declaration hashes, a JSON Schema
 with a `schema_version`, and a required `divergence:` field on every entry. All three guarded
-against motion in a dependency that has not moved meaningfully in years, and were over-priced.
-The coverage audit diffs signatures at pin bumps; two generated bindings consuming `api.json`
-in CI are its compatibility test; §15 is a table, not a per-entry field.
+against motion in a dependency whose released API has not moved in years (R12 measured it: no
+field or signature change on the release line since 2017), and were over-priced. The coverage
+audit diffs signatures at pin bumps; two generated bindings consuming `api.json` in CI are its
+compatibility test; §15 is a table, not a per-entry field.
 
 ### The coverage audit runs off the merge path
 
@@ -1682,6 +1739,17 @@ commit" literally true at the cost of dirty working trees in every checkout and 
 had to run first. The fork is the cleaner mechanism and the one the tree now uses. Offering the
 changes upstream is a pull request from the fork, and gates on nothing.
 
+**The BWAPI pin is a release tag, not a commit on upstream's default branch.** Three things
+rest on it. The release zip redistributes upstream's own build of that tag (§10.4), and SSCAIT
+admits a submission's `BWAPI.dll` by an MD5 from a list of upstream's release builds, so the
+binary and the source it is built from must be the same tag. `bwapi_revision()` must report the
+number that binary reports, and the number is a function of the commit (below): 5016 for
+`v4.4.0`. And the Corresponding Source pointer (§0) then names one upstream commit, not two.
+Revision 4.4 pinned upstream `main` fourteen documentation commits past `v4.4.0`. That changed
+no file the closure compiles (R12) and was still wrong by this section's own rule, because
+`SVN_REV` came out 5030 against the 5016 the injected DLL reports. Revision 5 moves the pin to
+`v4.4.0`; `docs/pins.md` records the move.
+
 **Generate `svnrev.h` with upstream's algorithm when the pin moves, and commit it on the fork.**
 Upstream's `revisionUpdate.vbs` computes `2383 + git rev-list HEAD --count` and writes
 `include/svnrev.h`, which also `#include`s `starcraftver.h` (the definer of `BUILD_DEBUG`). Our
@@ -1694,9 +1762,11 @@ the same number. Our commits touch nothing the number describes, so counting the
 `bwapi_revision()` return a number that is not BWAPI's revision — worse than not exporting it at
 all.
 
-**There is no scheduled drift canary.** A nightly job against dependencies that do not move is
-noise. Moving a pin is a deliberate act, so the work attaches to that act. The fork moves first,
-this repository second; the operational checklist is `docs/pins.md`:
+**There is no scheduled drift canary.** A nightly job against dependencies whose releases do
+not move is noise; what moves is upstream's development branch, and a survey of it at each
+upstream release is the canary (R12 was the first). Moving a pin is a deliberate act, so the
+work attaches to that act. The fork moves first, this repository second; the operational
+checklist is `docs/pins.md`:
 
 1. In the fork, fast-forward the default branch to the new upstream commit and rebase
    `bwapi-c2-pin` onto it. A carried commit that no longer applies is the first finding.
@@ -1708,22 +1778,56 @@ this repository second; the operational checklist is `docs/pins.md`:
 4. Move the submodule (`third_party/bwapi` or `third_party/bwem`) to the new tip; record the tag
    and the commit in `docs/pins.md` and `NOTICE` in the same commit.
 5. Run `derive_closure` and the layout dumps; diff against the baselines.
-6. Run `check_coverage.py`; resolve every added, removed or changed declaration.
-7. Rebuild; run every suite in §11. Record the new revision and `CLIENT_VERSION` in `docs/pins.md`.
+6. Diff the public header listing against the previous pin, then run `check_coverage.py`. A
+   header upstream adds is invisible to the audit's explicit universe (§9) until it is listed,
+   so the listing is diffed first. Resolve every added, removed or changed declaration.
+7. Rebuild; run every suite in §11. Record the new release, revision and `CLIENT_VERSION` in
+   `docs/pins.md`. A changed `CLIENT_VERSION` is a major (§4).
+
+**A bump across `CLIENT_VERSION` is a major and a phase, not a run of this checklist.** R12
+surveyed what one looks like, against upstream's `develop` (BWAPI 5). The checklist's mechanisms
+detect it — every path in `cmake/closure.cmake` is a link error, the layout dump fails, two of
+the three carried commits have no target — and then have nothing useful to say, because each
+assumes the client architecture beneath the headers is fixed. The work is a closure derived
+again as R6 derived this one; a fixture substrate built again as R7 built this one; the layout
+dump deleted; five class renames and a handful of decisions in the spec; §6.2's dead-handle
+outcome redesigned against a `std::set` lookup; the re-entrancy table re-derived; and §15's #6
+and #17 amended (R12 §4 has the full list). Its trigger is an upstream release tag carrying a
+new `CLIENT_VERSION`. Nothing on `develop` is a trigger, and its version handshake is a stub.
 
 ### 10.4 Distribution
 
-`bwapi-c2` ships its own artifacts; it adds nothing to BWAPI's `Release_Binary/` or installer.
+`bwapi-c2` ships its own artifacts, and from revision 5 the matching upstream binaries beside
+them, so that a bot author never matches a BWAPI version by hand.
 
-- Per-platform release assets — `bwapi-c2-<ver>-win32.zip` and `-win64.zip` — containing `.dll`,
-  `.lib`, `.def`, the three headers, `api.json`, the §0 file table, and the Corresponding Source
-  pointer to the exact tagged commit and both pinned dependency commits.
-- Each release records the **pinned BWAPI revision** and `BWAPI::CLIENT_VERSION` (10003 today),
-  so a consumer can tell which server versions a given `bwapi_c2.dll` speaks to. The client
-  refuses to connect on mismatch (`Client.cpp:120`).
+- Per-platform release assets — `bwapi-c2-<ver>-win32.zip` and `-win64.zip` — containing
+  `bwapi_c2.dll`, `.lib`, `.def`, the three headers, `api.json`, the rendered reference for this
+  release (§16), the §0 file table and notices, and the Corresponding Source pointers: this
+  repository's tag, both fork pin tags, and upstream's release tag for the binaries below.
+- **Upstream's own release binaries, byte-identical**, under `bwapi/`: `BWAPI.dll`, the injected
+  server; `BWAPI_PluginInjector.bwl`, the Chaoslauncher plugin that injects it;
+  `vc_redist.x86.exe`; and a `bwapi.ini` of ours with `ai =` blank, because upstream's ships
+  pointing at `ExampleAIModule.dll` and a client bot needs the server to wait for it. **Never
+  rebuilt.** SSCAIT admits a submission's `BWAPI.dll` by MD5 against a list of upstream's release
+  builds, so the file must be the one upstream shipped. The release job downloads upstream's
+  `BWAPI.7z` for the pinned tag by pinned sha256 (`e6d1abef…` for 4.4.0), extracts those files,
+  and asserts each one's MD5 against `NOTICE` (`cf7a19fe79fad87f88177c6e327eaedc` for 4.4.0's
+  `BWAPI.dll`), so a re-uploaded asset or a rebuilt DLL fails the release rather than a
+  tournament submission. It also asserts that the pinned tag's `CLIENT_VERSION` is the one
+  `bwapi_c2.dll` was built with: the pairing rule, stated as a check. `BWAPId.dll` stays out;
+  tournaments run release only.
+- Each release records the **pinned BWAPI release, revision and `CLIENT_VERSION`** (4.4.0, 5016
+  and 10003 today), exported as `bwapi_bwapi_version_string()`, `bwapi_revision()` and
+  `bwapi_client_version()` (§4), and the README carries the table of `bwapi-c2` majors against
+  the BWAPI each speaks to. The server refuses a client whose `CLIENT_VERSION` differs
+  (`Client.cpp:120`).
+- A tournament submission is the bot plus the zip's `bwapi/` directory, and the author declares
+  the BWAPI version the zip names. Local play is Chaoslauncher with the injector plugin ticked,
+  then the bot.
 - `bindings/rust/bwapi-c2-sys` publishes to crates.io from this repo; the safe `bwapi-c2` crate,
   the PyPI `bwapi-c2` package and the NuGet `BwapiC2` package publish from their own repos (§7).
-  All declare `LGPL-3.0-only` and carry the notices.
+  All declare `LGPL-3.0-only`, carry the notices, and pin the `bwapi-c2` major they were
+  generated from (§4).
 
 ---
 
@@ -1803,7 +1907,7 @@ rather than by work.
 | **1. Generator and static types** | `draft_spec.py`, the emitters, `check_coverage.py`, `api.json`, the golden `.def`; `bwapi_c2_types.h` with 848 constants, 185 accessors and the bulk tables; `Player` fully generated as the interface proving ground | ~500 type assertions green with no game; `Player` round-trips spec → header → `.def` → `api.json` → a compiling Python `ctypes` and C# P/Invoke layer; the coverage audit reports **zero unaccounted declarations across the audited-headers list** (§9) — every one has an entry or a rule-bearing `skip:`, and every excluded header names its rule |
 | **2. Read surface** | `Game`, `Unit`, `Force`, `Region` getters; the 88 `can_*`; events; bulk grids; snapshots; boundary-side closest queries | Every read entry point exercised against a synthetic fixture; boundary fuzz green |
 | **3. Write surface and BWEM** | Commands and broadcasts; `bwapi_c2_bwem.h` — 98 functions, the three hand-written hooks, reset and teardown | **A C99 example bot builds against the headers alone, with no C++ toolchain, and against real StarCraft reads game state, moves units, and finds its natural expansion through BWEM** |
-| **4. Consumers → 1.0** | Python and C# raw layers from `api.json`; the Rust proof-of-concept; Python and C# example bots; idiomatic wrappers spun out to their own repos | Both example bots play a game; **`bwapi_abi_version()` returns 1.0 and the append-only promise takes effect** |
+| **4. Consumers → 1.0** | Python and C# raw layers from `api.json`; the Rust proof-of-concept; Python and C# example bots; idiomatic wrappers spun out to their own repos; the release bundle with upstream's binaries (§10.4) and the versioned reference (§16) | Both example bots play a game from the release zip alone; **`bwapi_abi_version()` returns 1.0.0, speaking BWAPI 4.4.0, and semantic versioning takes effect (§4)** |
 
 The step-by-step sequence for executing each phase — commit-sized steps, per-step checks, and
 the judgment calls the table above leaves open — is [implementation-plan.md](implementation-plan.md).
@@ -1828,7 +1932,8 @@ access, callback predicates. Deferred to v2: module mode (Appendix A). Parked: L
 | **We carry patches on two dormant dependencies** (§15.2) | Recorded, re-applied at every bump, offered upstream. If a patch stops applying, that is the pin bump's first finding, not a surprise |
 | **`unordered_set` pointer hashing makes bots irreproducible** | Sort collections by ID; compute closest-unit at the boundary with a lowest-ID tie-break (§5.4). Both in §15 |
 | **BWEM throws from release-build assertions** | Every export is a `noexcept` boundary; the destruction hooks are filtered and driven internally (§8) |
-| **Struct layout freezes the ABI prematurely** | Size-prefixed PODs (§4), flag bits rather than boolean fields (§5.10), and 0.x until phase 4 |
+| **A struct or a signature turns out wrong after 1.0** | Semantic versioning (§4): a new major beside the old one, which bot authors and tournaments already handle for BWAPI's own versions; flag bits with reserved zeros so a boolean is a minor (§5.10); 0.x until phase 4 so the first major is shaped by consumers |
+| **A bot author pairs the wrong `BWAPI.dll` with the DLL** | The release zip carries upstream's binaries for the pinned tag, byte-identical and MD5-checked in CI (§10.4); the author declares the version the zip names |
 | **Per-call FFI cost makes the ABI look slow in Python** | Snapshots (§5.10), bulk grids cropped to the live map (§5.5), the bulk type tables (§5.8), sticky errors that avoid a second crossing (§4) |
 | **Grouped commands are impossible in client mode** | Not a binding limitation — no client bot in any language has them. Documented in the README; the motivation for module mode in v2 (Appendix A) |
 | **A foreign callback unwinds into BWAPI's stack** | Callbacks are a conditional follow-on; if they land, `catch(...)` at every site, the `reentrant: forbidden` guard, and warn-level logging on rejection |
@@ -1877,6 +1982,16 @@ From the research round (R1–R11) and the fork decisions of 2026-09-05
 | 21 | Carry the §15.2 modifications as patch files or as forks? | **Forks.** Each submodule pins a `bwapi-c2-pin` branch on our fork of the dependency: the upstream commit plus the carried commits (§7, §10.3, §15.2). Clean working trees, no configure-time script, and `svnrev.h` committed on the BWAPI fork by a POSIX port of upstream's script, which removes the Windows step from a pin bump |
 | 22 | One neutral position for every scale, or the scale's own? | **The scale's own.** `Positions::None` from a pixel-scale function, `TilePositions::None` from a tile-scale one, `WalkPositions::None` from a walk-scale one (§4). Revision 4.4's single sentinel gave a tile-scale caller a pixel-scale value it would never test for; the emitter knows the kind, so this is one rule too, and a cheaper one before 1.0 than after |
 | 23 | Export `getID` on the interfaces? | **No; a rule-bearing `skip:` on every interface.** The id is the handle, so the export carries no information, and its `int32` neutral of `0` is a valid id, so a caller that used it as a validity probe would be misled without reading the latch (§6.2). `bwapi_unit_exists()` and the latch are the probes |
+
+From revision 5, on [R12](research/r12-develop-branch-survey.md) and the discussion it opened:
+
+| # | Question | Decision |
+|---|---|---|
+| 24 | Append-only after 1.0, or semantic versioning with majors? | **Semver** (§4, goal 2). A major on any visible C ABI change or on a change of the pinned `CLIENT_VERSION`; a minor adds; the number encodes nothing about which BWAPI a build speaks to, so 2.0 is never promised to be "the BWAPI 5.0 build" in advance. Goal 7's "purely additive" is about needing no changes upstream, not about never changing this ABI, and the tournaments keep every BWAPI version side by side, so a major is an object bot authors already know how to hold |
+| 25 | Keep the struct size prefix? | **No** (§4). The released BWAPI has not changed a `*Data` field since 4.2.0 in 2017 and BWAPI 5 changes them as a redesign (R12), so the growth it insured against does not occur; under majors a changed struct is a new major; `sizeof` is the stride; the raw layers assert the major at load; `BWAPI_HAS_FIELD` goes |
+| 26 | Ship upstream's `BWAPI.dll` in the release? | **Yes, byte-identical** (§0, §10.4), with the injector plugin, `vc_redist.x86.exe` and a client-mode `bwapi.ini`. SSCAIT admits a submission's `BWAPI.dll` by MD5 against upstream's release builds; the MD5 lives in `NOTICE` and CI asserts it |
+| 27 | Pin BWAPI at upstream `main` or at the release tag? | **The tag** (§10.3). The bundle is the tag's build, SSCAIT hashes it, and `SVN_REV` is a function of the commit: 5016 at `v4.4.0`, against the 5030 revision 4.4's pin reported. R12 showed the fourteen commits between them touch nothing the closure compiles |
+| 28 | Reference documentation for superseded majors? | **One tree per major, served from the release assets, and the reference inside every zip** (§16). A released `bwapi-c2` is valid for as long as a tournament runs a bot on it. readthedocs was checked and would host the Zola output with a version flyout, so the generator stays either way; declined for the second host, its ads, and the publishing toolchain leaving CI |
 ---
 
 ## 14. What a consumer sees
@@ -1900,7 +2015,6 @@ for (;;) {
         /* size to last frame's count plus slack; call once; grow only on overflow (§4) */
         if (cap == 0) cap = bwapi_game_unit_count() + 64;
         units = realloc(units, cap * sizeof *units);
-        units[0].size = sizeof *units;
         int32_t n = bwapi_game_snapshot_units(units, cap);
         if (n > cap) { cap = n + 64; continue; }        /* rare: re-run this frame's read */
 
@@ -2034,10 +2148,20 @@ value, when it latches. Guidance does not go in it — a how-to sentence in a sp
 duplicated across 770 pages — so an entry may carry `guides:` links and the prose lives in the
 guides. Layout is the templates' job; the emitter never formats anything.
 
-**Append-only means one reference, not versioned copies.** After 1.0 every entry carries `since`
-and the page renders it as a badge. A reader on 1.2 sees everything; a reader on 1.0 filters by
-badge. Versioned documentation trees exist for APIs whose functions change meaning, and §4 says
-these do not. Before 1.0 the site says *unstable*, once, at the top of the reference.
+**One reference tree per major, and the reference in every zip.** A released `bwapi-c2` is
+valid for as long as a tournament will run a bot built on it, which is indefinitely, so its
+reference must be too. Within a major every entry carries `since` and the page renders it as a
+badge: a reader on 1.2 sees everything, a reader on 1.0 filters by badge, and a badge is all a
+minor can add (§4). Across majors the trees are separate, `/reference/` for the current major
+and `/reference/<major>/` for each earlier one, and **the site does not render them; it serves
+what the release shipped.** The release job renders the reference once, from that release's
+`api.json`, into the zip (§10.4); the docs job copies each major's latest release asset into
+place. An old `api.json` is never re-rendered with newer templates, so a published reference is
+immutable by construction and reproducible from its zip with no build at all. Before 1.0 the
+site says *unstable*, once, at the top of the reference. readthedocs was checked for this and
+declined: it hosts arbitrary HTML with a version flyout, so the generator would stay Zola
+either way, and what it adds — the flyout, pull-request previews — does not pay for a second
+host, its advertising, and the publishing toolchain leaving CI (implementation plan §7 row 14).
 
 **`api.json` is published**, at `/api.json`, because the third-party binding author it exists for
 (§7) needs a URL, not a repository path. `docs/api-json.md` becomes the reference page for its
@@ -2083,14 +2207,19 @@ closure: copy `api.json` into the site's static directory (this is also how `/ap
 served); run `emit_docs.py`; `zola check` for internal links and anchors; `zola build`;
 `actions/upload-pages-artifact` and `actions/deploy-pages` on pushes to the default branch. Pull
 requests build and check without deploying. Zola's version is pinned in the workflow like every
-other tool. **External links are checked on a schedule, not on the merge path** — a dead upstream
+other tool. For the reference (16.1) the job renders the current tree from the checked-in
+`api.json` and, for every major that has a release, fetches that major's latest release
+reference asset into `/reference/<major>/`; a version switcher of a few lines reads the list the
+job writes. Nothing is re-rendered for an old major, and a major with no release yet has no
+tree. **External links are checked on a schedule, not on the merge path** — a dead upstream
 link must not block a deploy.
 
 There is no separate `gh-pages` branch: Pages is configured to deploy from Actions, so the
 published site is always the output of one commit of `main` and nothing is committed to publish.
 
-**Not done, and why:** no Doxygen, no versioned trees, no rendered design record (all above); no
-API-reference PDF or man pages (no measured demand); no localisation.
+**Not done, and why:** no Doxygen, no rendered design record (both above); no per-minor trees,
+since a minor is a `since` badge inside its major's tree (16.1); no API-reference PDF or man
+pages (no measured demand); no localisation.
 
 ---
 
@@ -2168,7 +2297,10 @@ transport*, and that is upstream code.
    handshake unchanged. Already written line-for-line on
    `basil-ladder/bwapi@linux-client-support` — ~344 lines, 8 files, unmerged since 2020, needs
    one `#include <string>` on GCC 11. It becomes a §15.2-style patch on the pinned upstream
-   BWAPI: LGPL on LGPL.
+   BWAPI: LGPL on LGPL. On upstream's `develop` the transport is already SFML sockets with a
+   Unix backend and UDP-broadcast discovery (R12), so a BWAPI 5 release would deliver this item
+   outright: a Linux client would reach a Windows StarCraft over the LAN with no OpenBW
+   involved, and only the engine half of this appendix would stay parked.
 2. **The version gate.** OpenBW's fork is `CLIENT_VERSION` 10002; upstream is 10003; `Client.cpp:120`
    refuses to connect on mismatch. Relax the check, make the constant configurable, or accept
    that OpenBW users run a fork. One decision.

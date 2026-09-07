@@ -11,7 +11,7 @@
   table:
     class: UnitType
     c: bwapi_unittype_table
-    doc: "Fills one bwapi_unittype_row per UnitType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+    doc: "Fills one bwapi_unittype_row per UnitType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
   fields:
     - {name: id, type: int32, doc: "the type id, which is also the row's index"}
     - {name: get_race, type: "type:Race", from: "UnitType::getRace"}
@@ -31,7 +31,7 @@
     - {name: space_provided, type: int32, from: "UnitType::spaceProvided"}
     - {name: build_score, type: int32, from: "UnitType::buildScore"}
     - {name: destroy_score, type: int32, from: "UnitType::destroyScore"}
-    - {name: size_type, type: "type:UnitSizeType", from: "UnitType::size"}
+    - {name: size, type: "type:UnitSizeType", from: "UnitType::size"}
     - {name: tile_width, type: int32, from: "UnitType::tileWidth"}
     - {name: tile_height, type: int32, from: "UnitType::tileHeight"}
     - {name: dimension_left, type: int32, from: "UnitType::dimensionLeft"}
@@ -92,7 +92,7 @@
   table:
     class: WeaponType
     c: bwapi_weapontype_table
-    doc: "Fills one bwapi_weapontype_row per WeaponType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+    doc: "Fills one bwapi_weapontype_row per WeaponType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
   fields:
     - {name: id, type: int32, doc: "the type id, which is also the row's index"}
     - {name: get_tech, type: "type:TechType", from: "WeaponType::getTech"}
@@ -124,7 +124,7 @@
   table:
     class: TechType
     c: bwapi_techtype_table
-    doc: "Fills one bwapi_techtype_row per TechType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+    doc: "Fills one bwapi_techtype_row per TechType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
   fields:
     - {name: id, type: int32, doc: "the type id, which is also the row's index"}
     - {name: get_race, type: "type:Race", from: "TechType::getRace"}
@@ -144,7 +144,7 @@
   table:
     class: UpgradeType
     c: bwapi_upgradetype_table
-    doc: "Fills one bwapi_upgradetype_row per UpgradeType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+    doc: "Fills one bwapi_upgradetype_row per UpgradeType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
   fields:
     - {name: id, type: int32, doc: "the type id, which is also the row's index"}
     - {name: get_race, type: "type:Race", from: "UpgradeType::getRace"}
@@ -159,7 +159,7 @@
   table:
     class: Race
     c: bwapi_race_table
-    doc: "Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+    doc: "Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
   fields:
     - {name: id, type: int32, doc: "the type id, which is also the row's index"}
     - {name: get_worker, type: "type:UnitType", from: "Race::getWorker"}
@@ -173,7 +173,7 @@
   table:
     class: PlayerType
     c: bwapi_playertype_table
-    doc: "Fills one bwapi_playertype_row per PlayerType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+    doc: "Fills one bwapi_playertype_row per PlayerType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
   fields:
     - {name: id, type: int32, doc: "the type id, which is also the row's index"}
     - {name: is_lobby_type, type: bool32, from: "PlayerType::isLobbyType"}
@@ -184,7 +184,7 @@
   table:
     class: Color
     c: bwapi_color_table
-    doc: "Fills one bwapi_color_row per Color id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+    doc: "Fills one bwapi_color_row per Color id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
   fields:
     - {name: id, type: int32, doc: "the type id, which is also the row's index"}
     - {name: red, type: int32, from: "Color::red"}

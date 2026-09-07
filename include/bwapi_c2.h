@@ -45,6 +45,9 @@ BWAPI_C2_API void BWAPI_C2_CALL bwapi_abi_version(int32_t* major, int32_t* minor
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_abi_version_string(char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
 /* BWAPI::CLIENT_VERSION of the pinned BWAPI (10003 today). */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_client_version(void) BWAPI_C2_NOEXCEPT;
+/* The BWAPI release this library was built from and ships beside, as upstream names it: "4.4.0"
+ * today. */
+BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_bwapi_version_string(char* buf, int32_t buf_len) BWAPI_C2_NOEXCEPT;
 /* SVN_REV of the pinned BWAPI, from upstream's own revision generator (plan section 10.3). */
 BWAPI_C2_API int32_t BWAPI_C2_CALL bwapi_revision(void) BWAPI_C2_NOEXCEPT;
 /* 1 when the pinned BWAPI was built with BUILD_DEBUG, 0 otherwise. */

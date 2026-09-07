@@ -201,8 +201,6 @@ def validate_struct(s, where):
     for i, fld in enumerate(s["fields"]):
         if set(fld) - {"name", "type", "doc", "from"} or "name" not in fld or "type" not in fld:
             raise SpecError(f"{where}: fields[{i}] must be {{name, type, doc?, from?}}")
-        if fld["name"] == "size":
-            raise SpecError(f"{where}: size is implied, never listed")
         base = re.sub(r"\[\d+\]$", "", fld["type"])
         if base not in FIELD_TYPES and not base.startswith("type:"):
             raise SpecError(f"{where}: fields[{i}] type {fld['type']!r} is not a struct field type")
@@ -328,8 +326,8 @@ def field_conversion(kind, expr):
 
 def table_entry(struct):
     """The function entry a table: struct declares (spec-format.md section 3): one row per id of
-    the class, 0 to Unknown inclusive, each field filled from the accessor its from: names,
-    through the stride rule of section 4 (the caller's size on element zero)."""
+    the class, 0 to Unknown inclusive, each field filled from the accessor its from: names, at
+    sizeof the row (section 4: a struct's layout is fixed within a major)."""
     t = struct["table"]
     cls = t["class"]
     lines = [f"const int32_t total = id_count<BWAPI::{cls}>();",

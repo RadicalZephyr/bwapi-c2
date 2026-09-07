@@ -28,7 +28,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Every unit type requirement in the game as a flat table of (type, required_type, count) rows, ascending by type and then by required type, up to cap; returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. The rows for one type are exactly what bwapi_unittype_required_units() returns for it."
+      "doc": "Every unit type requirement in the game as a flat table of (type, required_type, count) rows, ascending by type and then by required type, up to cap; returns the total number of rows. A cap of 0 with NULL queries the count. The rows for one type are exactly what bwapi_unittype_required_units() returns for it."
     },
     {
       "c": "bwapi_abi_version",
@@ -61,7 +61,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "The ABI's own version, written to the three out-params; any of them may be NULL and is then skipped. 0.x is explicitly unstable; append-only begins at 1.0, the exit of the consumers phase. Three int32_t out-params rather than a packed word, so there is nothing to document about packing."
+      "doc": "The ABI's own version, written to the three out-params; any of them may be NULL and is then skipped. 0.x is explicitly unstable; semantic versioning begins at 1.0, the exit of the consumers phase, and a struct's layout is fixed within a major, so a raw layer checks the major here before it uses anything else. Three int32_t out-params rather than a packed word, so there is nothing to document about packing."
     },
     {
       "c": "bwapi_abi_version_string",
@@ -107,6 +107,34 @@
       "legit_none": false,
       "generated": false,
       "doc": "BWAPI::CLIENT_VERSION of the pinned BWAPI (10003 today). The server refuses a client whose version differs from its own, so a host can check compatibility before connecting."
+    },
+    {
+      "c": "bwapi_bwapi_version_string",
+      "section": "client",
+      "signature": "int32_t bwapi_bwapi_version_string(char* buf, int32_t buf_len)",
+      "cpp": null,
+      "self": "none",
+      "params": [
+        {
+          "name": "buf",
+          "type": "string_buf",
+          "c_type": "char*"
+        },
+        {
+          "name": "buf_len",
+          "type": "int32",
+          "c_type": "int32_t"
+        }
+      ],
+      "returns": {
+        "kind": "string_out",
+        "c_type": "int32_t",
+        "neutral": "an empty string, and 0"
+      },
+      "reentrant": "allowed",
+      "legit_none": false,
+      "generated": false,
+      "doc": "The BWAPI release this library was built from and ships beside, as upstream names it: \"4.4.0\" today. bwapi_client_version() is the protocol number the server checks; this is the name a bot author declares to a tournament, and the BWAPI.dll in the release zip is upstream's build of it."
     },
     {
       "c": "bwapi_revision",
@@ -1734,7 +1762,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills one bwapi_unittype_row per UnitType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+      "doc": "Fills one bwapi_unittype_row per UnitType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
     },
     {
       "c": "bwapi_weapontype_table",
@@ -1762,7 +1790,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills one bwapi_weapontype_row per WeaponType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+      "doc": "Fills one bwapi_weapontype_row per WeaponType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
     },
     {
       "c": "bwapi_techtype_table",
@@ -1790,7 +1818,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills one bwapi_techtype_row per TechType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+      "doc": "Fills one bwapi_techtype_row per TechType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
     },
     {
       "c": "bwapi_upgradetype_table",
@@ -1818,7 +1846,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills one bwapi_upgradetype_row per UpgradeType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+      "doc": "Fills one bwapi_upgradetype_row per UpgradeType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
     },
     {
       "c": "bwapi_race_table",
@@ -1846,7 +1874,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+      "doc": "Fills one bwapi_race_row per Race id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
     },
     {
       "c": "bwapi_playertype_table",
@@ -1874,7 +1902,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills one bwapi_playertype_row per PlayerType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+      "doc": "Fills one bwapi_playertype_row per PlayerType id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
     },
     {
       "c": "bwapi_color_table",
@@ -1902,7 +1930,7 @@
       "reentrant": "allowed",
       "legit_none": false,
       "generated": false,
-      "doc": "Fills one bwapi_color_row per Color id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. The caller sets size on element zero to its row size and that is the stride; each row comes back with size set to the bytes filled. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
+      "doc": "Fills one bwapi_color_row per Color id, 0 to Unknown inclusive, up to cap, and returns the total number of rows. A cap of 0 with NULL queries the count. Every field equals the accessor of the same name for that id."
     },
     {
       "c": "bwapi_unittype_get_name",
@@ -13198,12 +13226,6 @@
       "doc": "One row of the UnitType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only.",
       "fields": [
         {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
-        {
           "name": "id",
           "type": "int32",
           "c_type": "int32_t",
@@ -13329,7 +13351,7 @@
           "from": "UnitType::destroyScore"
         },
         {
-          "name": "size_type",
+          "name": "size",
           "type": "type:UnitSizeType",
           "c_type": "int32_t",
           "doc": "",
@@ -13726,12 +13748,6 @@
       "doc": "One row of the WeaponType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only.",
       "fields": [
         {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
-        {
           "name": "id",
           "type": "int32",
           "c_type": "int32_t",
@@ -13911,12 +13927,6 @@
       "doc": "One row of the TechType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only.",
       "fields": [
         {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
-        {
           "name": "id",
           "type": "int32",
           "c_type": "int32_t",
@@ -14012,12 +14022,6 @@
       "doc": "One row of the UpgradeType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only.",
       "fields": [
         {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
-        {
           "name": "id",
           "type": "int32",
           "c_type": "int32_t",
@@ -14078,12 +14082,6 @@
       "doc": "One row of the Race table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only.",
       "fields": [
         {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
-        {
           "name": "id",
           "type": "int32",
           "c_type": "int32_t",
@@ -14137,12 +14135,6 @@
       "doc": "One row of the PlayerType table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only.",
       "fields": [
         {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
-        {
           "name": "id",
           "type": "int32",
           "c_type": "int32_t",
@@ -14174,12 +14166,6 @@
       "c_type": "bwapi_color_row",
       "doc": "One row of the Color table: every scalar accessor of the class for one id, in one crossing. The container-valued and string accessors stay function-only.",
       "fields": [
-        {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
         {
           "name": "id",
           "type": "int32",
@@ -14219,12 +14205,6 @@
       "c_type": "bwapi_required_unit",
       "doc": "One requirement of one unit type, for the flat requiredUnits table: the type, the type it requires, and how many of it.",
       "fields": [
-        {
-          "name": "size",
-          "type": "int32",
-          "c_type": "int32_t",
-          "doc": "the struct-evolution prefix: the caller's stride in, the bytes filled out"
-        },
         {
           "name": "type",
           "type": "type:UnitType",
