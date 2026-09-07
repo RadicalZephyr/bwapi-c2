@@ -1,0 +1,407 @@
+# ADR 0001. Fork and invert BWAPI, not a greenfield rebuild
+
+> **Status: Draft.** Nothing here is scheduled and nothing supersedes
+> [the implementation plan](../implementation-plan.md); phases 2–4 proceed on client mode
+> unchanged. This ADR records the goals of a tournament-grade successor to BWAPI and the
+> architecture chosen for it, so that the question is not re-opened from scratch. Five open forks
+> (§6) and four experiments (§8) block a final decision. Supersedes nothing; extends
+> [`possible-alternatives.md`](../possible-alternatives.md) and
+> [`proxy-protocol-design.md`](../proxy-protocol-design.md), whose §6.2 this ADR answers.
+
+## Context
+
+The opening question was the maximal one: throw out BWAPI and rebuild from the StarCraft
+memory-injection hacks up, keeping a stable C ABI, aimed at automated fair tournaments, with
+unlimited time and budget. Four primary goals were proposed — tournament-runner robustness
+against malicious or buggy bots, fairness within a match, minimum latency, and any host language.
+
+A fifteen-agent review measured the premises against BWAPI's source, the three live competitions'
+rule sets and code, seven comparable game-AI competition APIs, and the relevant case law. **Three
+of the four proposed goals turned out to be mechanisms rather than properties, the latency goal
+optimised a quantity the enforcing clock cannot resolve, and the rebuild's stated motivation —
+version fragility in the injection layer — inverts on inspection.** What survived is a smaller
+project with a sharper property.
+
+The material conclusions are recorded here. The measurements are in
+[R12](../research/r12-proxy-transport.md) and in §7 below; the numbers that are *modelled* rather
+than measured are marked as such, because two of them were load-bearing in earlier drafts of this
+argument and should not be again.
+
+---
+
+## Decision
+
+> **Fork BWAPI, invert the trust boundary, and put a referee outside the game. Leave
+> `BW/Offsets.h` alone.**
+>
+> The bot never shares an address space with the game. A referee process owns the only
+> authoritative view, publishes a per-bot projection over a per-bot handle namespace, meters
+> CPU-time via cgroups, enforces deadlines, adjudicates, and emits a replayable match record. The
+> game stays retail Brood War 1.16.1 under a patched Wine on Linux. The engine, the injection
+> layer and the reverse-engineered memory model are inherited, not rewritten.
+
+---
+
+## 1. The goals
+
+Seven, each stated so that it can be checked rather than felt. Where a goal replaces one of the
+four originally proposed, the original is named.
+
+**G1. Noninterference.** Nothing observable by bot A may depend on anything A is not entitled to
+see. *(Replaces "all bots have the same capabilities available to them".)* Symmetry is the wrong
+predicate: the most symmetric arrangement available is to give both bots in-process module mode,
+which hands each of them the opponent's minerals and the full 1,700-entry unit table at addresses
+the library publishes in its own headers. What is wanted is enforceable boundedness, and
+noninterference is its name. It is also testable — §4.3.
+
+**G2. Bounded, attributed, comparable resources.** Every bot gets the same CPU-time, memory, disk
+quota and core count; no bot obtains compute the referee did not grant; and every charge is
+attributed to the party that incurred it. *(Replaces "all bots run locally" and "the same time
+budget for compute per-frame".)* Locality is a mechanism and the wrong one — two bots co-tenant on
+one host contend for L3 and memory bandwidth, so co-tenancy is itself a fairness bug, while a bot
+on a dedicated cpuset with a hard quota is more equal than two bots sharing a machine.
+
+**G3. Every match is a replayable, auditable artifact.** Seed, order streams, per-frame budget
+charges, and every referee decision, in a bundle that re-simulates bit-exactly without the bots.
+*(New. Academia is the stated audience and fairness that cannot be demonstrated is worth little
+when a competitor disputes a result.)* Note the honest bound: this is *replay* reproducibility.
+*Re-run* reproducibility — same bots, same seed, same game — is not a goal (§5, decision 4).
+
+**G4. The runner never blocks on, and never trusts, bot-controlled data.** Every input validated
+on the trusted side; every unbounded resource behind a deadline the runner enforces and can
+attribute; a hang distinguishable from a crash; and an adjudication rule that names a cause.
+*(Sharpens "a malicious or buggy bot must not be able to bring down the tournament runner or its
+opponent's bot" — "must not bring down" is the symptom, not the property.)*
+
+**G5. Any host language, without gratuitous penalty.** Bulk snapshot reads, batched capability
+queries, a schema published as a first-class artifact, and a budget shape that does not punish a
+managed runtime for being one. *(Keeps goal 4 as written and narrows its non-goal — see below.)*
+
+**G6. Migration comparability, stated falsifiably.** A tournament can run a full round with N of
+the current top 20 bots either unmodified or mechanically ported, and a differential run — same
+bots, same maps, both stacks — produces outcome distributions that are statistically
+indistinguishable. *(New.)* Without that test the new stack may have silently changed the game,
+and every fairness property is then being asserted about a different sport.
+
+**G7. Bounded maintained surface, and survivable knowledge.** Everything derivable is generated —
+type data from `units.dat`/`weapons.dat` rather than hand-transcribed constants, offsets from
+signature scanning rather than absolute addresses, bindings from the schema — and there exists a
+written, *executed* procedure for re-deriving the memory model from the game binary. *(New.)*
+BWAPI has had one functional commit since 2019-03-07 and one effective maintainer. The system
+specified here is strictly larger than BWAPI. Unlimited budget is a premise about year one; year
+six is one part-time maintainer, and that is how projects of this shape actually die.
+
+### The non-goal, narrowed
+
+**Equalising the fundamental suitability of a language to meet a deadline is not a goal.** It
+remains correct as originally stated, and it is narrowed here because as written it excuses too
+much: it must not license a design choice that *gratuitously* punishes a language whose
+fundamental suitability is fine. A hard per-frame wall-clock deadline and a per-field read API are
+both cases where the design, not the language, is the deciding factor.
+
+### And what latency is now
+
+Not a goal. A constraint inside G2 and G5, **anchored to the shortest supported frame and to
+games-per-hour, not to 42 ms.** The supported frame set is {0 unthrottled, ~1 ms headless, 20 ms
+SSCAIT, 42 ms Fastest}. At 42 ms a 28 µs handoff is 0.07% and invisible to a `GetTickCount` clock
+whose granularity is ~15.6 ms. At ~1 ms headless — the regime BASIL uses to play a million games,
+and the regime self-play training needs — the same handoff is 6% and library overhead is the
+throughput determinant. An earlier draft of this argument deleted the goal by dividing by 42 ms
+every time. That was wrong.
+
+---
+
+## 2. Why not a greenfield rebuild
+
+**The stated motivation inverts.** The reason to go down to the injection layer is its fragility:
+101 hardcoded absolute addresses in `BW/Offsets.h`, four more embedded in `__declspec(naked)`
+inline assembly under a comment reading *"PLEASE LOOK AWAY. THIS IS SO BAD AND GROSS AND
+DISGUSTING AND SHAMEFUL"* (`bwapi/BWAPI/Source/Assembly.cpp:6-7`), sixteen version-gated code
+patches, eight `storm.dll` detours bound by *ordinal* rather than name
+(`CodePatch.cpp:61-68`), and a `DllMain` that performs ~19 `VirtualProtect`+`memcpy` patches under
+the loader lock. All true, and all inert: **1.16.1 is a frozen artifact.** SC:R shipped as a
+separate 1.18+ line that BWAPI has never targeted, and every organised competition mandates
+1.16.1 — SSCAIT by rule, sc-docker by baked image, AIIDE by install. The risk that the address
+table becomes wrong cannot materialise. The rebuild would rewrite the one layer that provably
+never has to change, and the reason that layer is ugly is that it is finished.
+
+**What the review actually indicted is a patch series.** Every defect found is an implementation
+defect in a permissively-licensed tree with no merge-conflict risk:
+
+| Defect | Location | Fix |
+|---|---|---|
+| The server blocks on the client with no deadline — a hung bot wedges the game forever | `Server.cpp:737-754` (`callOnFrame`; `PIPE_TIMEOUT=3000` governs `WaitNamedPipe`, not this read) | A deadline, and an adjudication rule |
+| Client-supplied `commandCount` used as an unclamped loop bound over `commands[20000]` | `Server.cpp:757`, `GameData.h:136,155-156`; the only bound is an `assert` in the *untrusted* process, compiled out under `NDEBUG` (`BWAPIClient/Source/GameImpl.cpp:55`) | Clamp on the trusted side — the correct pattern is already present at `Server.cpp:839` for `unitIndex` |
+| The client maps the whole 33 MB state plane writable | `BWAPIClient/Source/Client.cpp:107` — `MapViewOfFile(..., FILE_MAP_WRITE \| FILE_MAP_READ, ...)` | `FILE_MAP_READ` on the state half |
+| Anti-cheat is a veto interface inside the bot's own address space | `GameInternals.cpp:273` (`tournamentCheck`), 13 `Tournament::ActionID` values | Move the enforcement point out of the process |
+| The meter is wall clock at ~15.6 ms granularity against a 55 ms threshold, and is set in exactly two places | `GameEvents.cpp:523` (module) and `Server.cpp:243` (client), both `GetTickCount()` deltas | OS-sampled process CPU, plus a second timestamp |
+| A client bot cannot read its own charged time | `BWAPIClient/Source/GameImpl.cpp:947` returns `0` | Publish the meter |
+| Global unit-ID allocation is an information channel | Documented 2018; never banned | Per-bot handle namespaces (§4.2) |
+| The C runtime RNG is seeded from the wall clock | `GameInternals.cpp:296` — `srand(GetTickCount())` | Seed from the match record |
+
+Two goals a fork genuinely cannot reach — an OS privilege boundary between bot and game, and a
+read-only state plane — are changes to the *server side of the client protocol*: a fork of
+`Server.cpp` plus a new client. Still not a rebuild from the injection layer up.
+
+**And the legal asymmetry runs the wrong way for a rebuild.** *MDY Industries v. Blizzard*, 629
+F.3d 928 (9th Cir. 2010), held that botting a Blizzard game is breach of contract rather than
+copyright infringement, with the DMCA §1201 hook attaching only to circumventing the Warden
+anti-cheat. 1.16.1 has no anti-cheat, so injecting into a user-supplied copy has no circumvention
+leg. *Davidson & Associates v. Jung*, 422 F.3d 630 (8th Cir. 2005) — the bnetd case — held
+Blizzard's EULA enforceable and that agreeing to it waives the DMCA §1201(f) interoperability
+exception for reverse engineering; bnetd was shut down. **Reimplementing a Blizzard engine is the
+one leg with adverse precedent, and porting injection forward to SC:R would move the project from
+the first category into the second.** (Secondary sources; the opinions were not read directly.
+This is the decision that should buy an hour of actual counsel before it buys a line of code.)
+
+### The concession
+
+A rebuild is not refuted, it is deferred, and the argument that defers it is an argument about
+evidence. Fork-and-invert delivers G1–G5 and G7 against the ecosystem that exists, with the
+results record intact. If it ships and the operators adopt it, the case for going lower is then
+made with data rather than with a critique of `Assembly.cpp`'s comments.
+
+---
+
+## 3. Why not our own engine, and why OpenBW is not a substrate
+
+**OpenBW is foreclosed as a shipped dependency and remains available as a runtime target.** The
+engine has no `LICENSE`, no statement in `README.md`, zero copyright headers, and GitHub reports
+`license = NONE`. Issue #17, "Add a LICENSE.md", has been open since 2018-02-26; four people have
+asked; the author has not replied and publishes only a GitHub-anonymised address.
+[R9](../research/r9-licensing.md) already ruled this a blocker and named outreach as the
+precondition. **Outreach is now judged to have been attempted by others and to have failed**, so
+the blocker stands. Note the distinction that R9 did not draw: *"we do not distribute OpenBW"* and
+*"we refuse to run against OpenBW"* are different promises, and only the first is required. A user
+who supplies their own engine process gets one; we ship nothing unlicensed.
+
+**Reimplementing it is worse on every axis.** The silence is probably not apathy — the same author
+released `bwheadless` under CC0-1.0, so the habit exists. The likelier reason is that OpenBW is not
+clean-room: it reproduces Brood War's exact LCG (`lcg_rand_state * 22695477 + 1`) and carries a
+named state field `consider_collision_with_unit_bug` beside a literal `// This is an original bug.
+Don't fix`. If OpenBW is a derivative work of `StarCraft.exe`, its author has nothing to grant —
+and a reimplementation inherits the problem rather than escaping it, into the *Davidson* category.
+
+Three further costs, each independently sufficient:
+
+- **Fidelity.** OpenBW is the state of the art — nine years, by the person who reverse-engineered
+  the binary, deliberately reproducing original engine bugs — and still carries four open
+  replay-desync issues (#22 2018, #27 2019, #28 2019, #32 2025). No competition has adopted it in
+  nine years. A greenfield engine starts at zero on that axis and has to climb past OpenBW to be
+  *usable*. **This is in direct conflict with G6**: an engine that is not bit-accurate invalidates
+  every existing bot's tuning.
+- **Contamination.** A clean-room defence requires showing that expression was not copied. R6 and
+  R7 audited OpenBW's source. Choosing to reimplement would require a specification team who may
+  read it and an implementation team who may not — and would *revoke* R9's "read-only reference"
+  position rather than preserve it.
+- **The MPQs.** OpenBW hardcodes `Patch_rt.mpq`, `BrooDat.mpq` and `StarDat.mpq` and reads eleven
+  tables out of them. A reimplementation needs the same data. **A redistributable turnkey stack is
+  unreachable on every substrate**, which removes one of the main things a rebuild would buy.
+
+**What the engine would have bought, and what replaces it.** Seed control, whole-state
+snapshot/restore, and no Wine. Seed control is dropped with re-run reproducibility (§5, decision
+4). Snapshot/restore is a genuine capability — OpenBW's `copy_state` proves it well-defined — but
+it is an ML-research goal that is not on this list, and it is left as a capability-namespaced
+extension the ABI must not be shaped to forbid. **And Wine is not a liability but the answer**:
+production already runs 1.16.1 under Wine on Linux, and Wine is open source. A patched Wine or
+winelib host gives, by construction, a virtualised game clock (`GetTickCount`,
+`QueryPerformanceCounter`, `timeBeginPeriod`), syscall interception without seccomp,
+page-protection control over the game's address space, clean teardown without `DllMain` under the
+loader lock, and separate UIDs for bot and game. **The injection layer's replacement is Wine, not
+a new engine.** One caution against over-claiming: Wine gives us the *game's* clock, not the
+bot's, so it does not make a CPU-time budget deterministic and does not reopen §5 decision 2.
+
+---
+
+## 4. What "invert" means
+
+### 4.1 One authoritative view, a referee outside the game
+
+Today AIIDE and SSCAIT run *two* StarCraft instances — one per bot, on separate VMs or containers
+— playing a LAN game over UDP, each maintaining its own copy of the lockstep simulation. Under
+this design the referee is the only process holding the authoritative view, and each bot is a
+separate process reached through a mediated channel. That halves the game-side CPU, removes
+desync as a failure mode, and makes per-bot filtering possible at all.
+
+The referee is also the only place a supervisor can stand. This is the strongest structural
+argument in the design and it is confirmed by prior art: Sc2LadderServer can enforce anything only
+because SC2's transport is a socket it can interpose on. BWAPI client mode is a mapped 33 MB view
+plus a named pipe, which is far harder to interpose. **The referee is not a faster transport; it
+is the supervision point.**
+
+### 4.2 Per-bot projections over per-bot handle namespaces
+
+**Handles are capabilities, not identities.** This directly contradicts §1.3 of
+[the plan](../c-abi-plan.md), which is correct for a wrapper and wrong for a referee. The unit-ID
+exploit — subtract two of your own consecutive unit IDs to learn how many units the opponent
+produced in between, recognising a 4-pool without scouting — exists because BWAPI hands bots the
+engine's global IDs, and the *gaps* are the channel. Dense per-bot allocation makes it structurally
+impossible. A `(slot, generation)` pair leaks identically if generations are global. **Unit IDs are
+one instance of a class**: bullets, sprites, images and orders leak the same way, and the plan's
+§6.3 already exposes bullets.
+
+### 4.3 Noninterference is testable, and that is the point
+
+For every value in A's view, ask whether it could differ between two world-states that are
+equivalent from A's perspective. Mechanically: construct two states differing only in what A
+cannot see, run the referee, diff A's view. Any difference is a leak. That is a fuzzing harness
+and a regression test for every future ABI addition, which is what matters — leaks are added one
+convenience function at a time.
+
+The residual surface it has to cover, none of which is closed by out-of-process plus handle
+virtualisation alone:
+
+- **Derived quantities.** A path query answered against ground truth reveals whether an unscouted
+  building blocks it. SC2 hit this: `RequestQueryPathing` and `RequestQueryBuildingPlacement` must
+  be evaluated against the asking player's knowledge. BWAPI's 68-predicate `canXxx` family is full
+  of it.
+- **Fog of war.** Vision radius, detection for cloaked and burrowed units, building snapshots that
+  persist after vision is lost, terrain-height blocking, spider mines. Too permissive leaks; too
+  strict breaks bots. BWAPI implements this today so it is a known quantity, but the referee now
+  owns it, and it is the largest correctness surface behind G1.
+- **Engine randomness.** No bot access. OpenBW instruments `random_counts` per call site precisely
+  because draw counts correlate with events.
+- **Response timing.** Lockstep — advance only when both have submitted, release both views
+  together. The referee must expose nothing derived from the opponent's timing, including a
+  remaining-latency or frame-skip signal.
+- **Persistent storage as a mediated capability, not a directory.** ~100 MB, path-fenced,
+  `read/` repopulated from last round's `write/`. If the bot has a filesystem, G1 has a hole the
+  size of the filesystem.
+- **A network namespace with no interfaces**, or "no external compute" is unenforced.
+- **Shared-hardware side channels.** `cpuset` pinning and separate NUMA nodes get most of it. The
+  remainder is scoped out explicitly rather than assumed away.
+
+### 4.4 What the budget closes for free
+
+**Today, work on a background thread is free budget.** Only the callback interval is timed; the
+whole tree sets it in exactly two places — `GameEvents.cpp:523` and `Server.cpp:243` — and no
+ruleset limits threads or cores. A
+bot that spawns eight workers and makes `onFrame` a 200 µs read of a shared result satisfies every
+rule as written and defeats the intent by a factor equal to the core count. **A cgroup CPU-time
+budget counts every thread in the cgroup**, so this closes as a side effect of §5 decision 2 —
+along with a spinning waiter paying for the core it burns, and a garbage collector being billed to
+the bot that chose the runtime. One unit change does what three prohibitions would have done
+badly.
+
+---
+
+## 5. Decisions closed
+
+| # | Question | Decision | What it costs |
+|---|---|---|---|
+| 1 | Greenfield rebuild, or fork? | **Fork and invert.** §2 | The rebuild's freedoms; the argument is deferred, not refuted |
+| 2 | Budget unit: wall clock, CPU-time, or deterministic? | **OS-sampled process CPU-time**, via cgroup `cpu.stat` `usage_usec`, with retired instructions recorded alongside for cross-machine comparability | **Named loser: a Python bot is charged for interpreter dispatch and a JVM bot for its collector — in a project whose reason to exist is Python and C#.** Paired with the narrowed non-goal: we charge you for what your runtime does |
+| 3 | Deterministic (bytecode/instruction) budget? | **Foreclosed as a guarantee.** Battlecode's totality is bought by owning the JVM: an instrumenting classloader, `RobotMonitor.incrementBytecodes()`, and a hand-maintained cost table (`System.arraycopy` = 1/element, `NEWARRAY` = length) because bytecode counts are not proportional to real cost. A multi-language C ABI owns no runtime. Hardware instruction counting needs no cost table and is *not* strictly foreclosed, but it is microarchitecture-dependent and penalises JIT warmup, so it buys far less | The strongest available fairness guarantee |
+| 4 | Seeded re-run reproducibility? | **Not a goal.** `Game::getRandomSeed()` exists with no setter anywhere in BWAPI; academia lives without it today. G3's replay artifact carries the weight | "Same bots, same seed, same game" is never claimable without a caveat |
+| 5 | Budget shape | **Game-long chess clock plus a per-frame ceiling** that bounds the *referee's* latency rather than judging the bot. AIIDE's 55 ms × 320 cumulative overruns is already a chess clock in disguise, badly quantised | A game-long budget is harder to explain than a per-frame one |
+| 6 | Deadline expiry: drop-and-continue or forfeit? (**answers `proxy-protocol-design.md` §6.2**) | **Forfeit**, and the ecosystem agrees — AIIDE's module calls `Broodwar->leaveGame()`. With a game-long budget the "harsh on a transient stall" objection evaporates, because exhausting it is never transient. Drop-and-continue is an explicit non-tournament mode | A transient stall in the *per-frame ceiling* still needs its own, gentler rule |
+| 7 | Deadline shape | **Two numbers, not one.** Every system supervising untrusted bots uses an init deadline 10–150× the steady-state one: Halite II 60,000/2,000 ms; Sc2LadderServer 300,000/20,000 ms; CodinGame 1,000/100 ms; RLBot gates match start on the bot's own `InitComplete`. The ABI needs a ready signal distinct from "finished frame 0" | Two knobs to misconfigure |
+| 8 | The forfeit path | **Surrender on the bot's behalf**, so the game ends cleanly, the result is recorded and the replay is flushed — Sc2LadderServer's `ExitCase::BotStepTimeout`. Not merely "stop waiting" | — |
+| 9 | Substrate | **Retail 1.16.1 under a patched Wine on Linux**, engine a runtime seam. §3 | Wine is now a maintained component |
+| 10 | Own engine / OpenBW as a shipped dependency? | **No.** §3. OpenBW stays supportable as a user-supplied runtime target, and is valuable as a differential *oracle* (§8) | Snapshot/restore deferred to a capability namespace |
+| 11 | Transport | **Not the lever, and settled three times independently.** RLBot had shared memory under DLL injection and deliberately replaced it with sockets + FlatBuffers, citing language bindings; Blizzard never considered shared memory and shipped protobuf over a WebSocket; R12 measures a socket round trip at 0.05–0.08% of a 42 ms frame. Choose for supervisability, not speed. If a framed protocol ships, **a 32-bit length prefix** — RLBot's 16-bit prefix caps a message at 65,535 B, and 1,700 units is 571 KB | The last microseconds |
+| 12 | Read API shape | **Bulk snapshots and batched capability queries.** SC2 collapses the whole `canXxx` problem into one `RequestQuery` carrying repeated pathing, ability and placement questions, with the rules staying inside the game. The one-shot/per-frame partition is *forced*, not chosen — 33 MB whole-state is arithmetically impossible per frame, and SC2, RLBot and BWAPI's `GameData` (82.9% one-shot, R12 §1) converged on it independently. Make it a documented ABI rule so future additions land on the correct side | — |
+| 13 | Error channels | **Two, not one.** SC2 returns `ActionResult` synchronously from `RequestAction` *and* `action_errors` on the next observation. "The game rejected the order you issued last frame" is a different thing with different timing from an ABI error code | A second surface to drain |
+| 14 | End conditions | **Never conflated.** Game-over, bot-disconnected, left-game and supervisor-forfeit must be distinguishable at the ABI. Gymnasium's most consequential API change was splitting `done` into `terminated` and `truncated` after shipping a magic `info['TimeLimit.truncated']` workaround | — |
+| 15 | Divergence policy | **libmelee's rule.** Fix the game's *inconsistencies*; refuse to abstract away load-bearing *weirdness*, and state the failure case that proves it. Turns §15 from a register into a policy | — |
+
+---
+
+## 6. Open forks
+
+| # | Fork | Why it is open |
+|---|---|---|
+| 1 | **Action rate.** Is unbounded APM within G1? | PySC2 states the problem directly: *"With the BWAPI they control units individually and routinely go over 5000 APM accomplishing things that are clearly impossible for humans and considered unfair or even broken."* DeepMind's remedy was throttling the *observation* rate, not compute — `step_mul` 20 ≈ 50 APM, 5 ≈ 200 APM. Under G1 as written, unbounded APM is fair: everyone has it. But it makes compute stop being the binding constraint on strength, and the sport drifts. **A choice, not a default** |
+| 2 | **Opponent identity.** Do bots learn who they are playing? | They do today, and per-opponent learning files are central to the meta. Fair in that everyone gets it; it interacts directly with the storage capability in §4.3 |
+| 3 | **Co-tenancy scope.** One bot per machine, per cpuset, or per NUMA node? | §4.3's last bullet. Decides how much of the side-channel surface is in scope and what a rack costs |
+| 4 | **Realtime rendering, and SSCAIT.** | SSCAIT exists because it is watchable: `LocalSpeed 20` with rendering on, and its first timeout tier raised from 55 ms to 85 ms *because* it renders. A headless non-realtime referee cannot serve it. Three competitions, roughly three operators — and the project's no-outreach constraint is currently a background condition rather than what it is: **the largest risk to a system whose entire purpose is adoption by three named people** |
+| 5 | **What a resumed bot sees.** | If a bot overruns the per-frame ceiling and its reply lands late, does it see frame *N* or *N+k*? Out-of-process, preemption is simply not waiting — but the question Battlecode answers with pause-and-resume still has to be answered here, and an earlier draft converted it into a foreclosure without answering it |
+
+---
+
+## 7. The numbers this rests on
+
+Marked, because two modelled numbers were load-bearing in earlier drafts of this argument.
+
+| Quantity | Value | Status |
+|---|---|---|
+| AIIDE per-frame tiers | 55 ms × 320, 1000 ms × 10, 10000 ms × 1; cumulative over the game; frames 0–9 exempt; breach calls `leaveGame()` | **Verified** — tournament module source |
+| Game length cap | 85,714 frames (AIIDE/CoG), 86,400 (SSCAIT); winner at cap by kills + buildings + razings + gathered minerals + gas | **Verified** |
+| The enforcing clock | `GetTickCount()`, ~10–16 ms granularity, against a 55 ms threshold | Mechanism **verified**; the granularity figure is **recalled**. Whether `StarCraft.exe` or Wine calls `timeBeginPeriod(1)` is **untested**, and if either does the clock is 1 ms |
+| AIIDE game speed | `localSpeed 0`, `frameSkip 256` — as fast as the machine allows. **The 55 ms is an absolute compute budget, not a keep-up-with-realtime deadline** | **Verified** |
+| BASIL limits | 1.2 CPUs, 2 GB memory per container; 1800 s realtime timeout; **no per-frame limit at all**, "due to technical limitations" | **Verified** for the container limits; the rules text via search snippet |
+| Crash detection | `gameState.txt` written every 360 frames; the Java client declares a crash at 60,000 ms of staleness. Timeouts above 60,000 ms are therefore inert | **Verified** |
+| Client-mode frame handoff | 0.25–28 µs | **Verified** (R12 §2), Linux, 4-core VM |
+| One bulk snapshot, 400 units | 2.8–2.9 µs | **Verified** (R12 §2) |
+| Per-field FFI reads, 400 units × 20 fields, ctypes | 2.70–3.49 ms | **Modelled.** The read pattern is invented and ctypes is the pessimistic binding. The ~1000× *ratio* survives any workload; the "6–8% of a frame" share does not, and it was promoted to a fairness property on that basis |
+| Scheduler preemption tail under contention | 4–8 ms | **Verified** (R12 §3) but **disclaimed by its own author** as a scheduler property that may not carry to Windows, on a VM with a ±25% noise floor |
+| `GameData` partition | 33 MB, 82.9% one-shot, 12.5% per-frame, 4.6% upstream | **Verified** (R12 §1) |
+| Bots / games at stake | AIIDE 2017: 28 bots, 41,580 games, 14 VMs, two weeks. SSCAIT 2022/23: 57 bots, 3,192 games. BASIL: >1M games | **Likely** — papers and operator statements |
+
+---
+
+## 8. Experiments this ADR is blocked on
+
+Numbered as R13; none needs StarCraft, and two need nothing but a download.
+
+1. **Parse BASIL's `frames.csv`.** Over a million games of per-frame times are public and the
+   review cited the file's existence three times without opening it. Every budget number in §5 —
+   tier heights, ceiling, bank size, whether 55 ms is generous, what p99.9 looks like — is
+   currently designed against a distribution nobody has looked at. **Cheapest experiment
+   available; do it first.**
+2. **Instrument a real bot's read pattern per frame.** Retires the one modelled number in §7 and
+   decides whether mandating a bulk path in every binding is a fairness property or
+   over-engineering.
+3. **Logical frames per second, headless, same machine, same map, same bot:** retail 1.16.1 under
+   Wine via `bwheadless` versus a user-supplied OpenBW `BWAPILauncher`; plus per-match startup
+   cost for each. No public benchmark exists. R12 assumes "~1 ms frames" with no citation, and
+   that number is load-bearing and unowned.
+4. **OpenBW as a differential oracle.** It reads real `.rep` files natively and ships
+   `std::array<int,0x100> random_counts` — per-call-site RNG draw counters designed for
+   frame-by-frame comparison. Run the SSCAIT/BASIL replay archive through both engines and diff.
+   This converts "OpenBW is 99.x% accurate" from an adjective into a number at zero licensing
+   exposure, and it is **the same harness G6's differential test needs** — so it is worth building
+   under either substrate decision.
+
+Also unverified and decision-relevant, recorded so it is not quoted as settled: the cross-instance
+shared-memory read was never demonstrated; the `units[10000]` overflow's mechanism is verified but
+its reachability was never counted; patching the tournament module's `onAction` from a module bot
+is asserted and never tried, and it is the sole basis for "module mode is honor-system by
+construction"; and the claim that a bot can bank a frame lead and crash to win **is wrong** — BW is
+lockstep, both instances execute the same frames. What exists there is a quantisation race on
+`gameState.txt`'s 360-frame write interval, a coin flip nobody can steer. BASIL's
+mutual-crash-is-a-draw incentive is genuine and survives.
+
+---
+
+## 9. Consequences
+
+**What this buys.** Every goal in §1 except G3's re-run caveat, against the ecosystem that exists,
+without touching a hardcoded offset. The supervision gap that neither BWAPI mode can close — a
+hang distinguishable from a crash, with a cause — closes. The background-thread hole closes for
+free. The unit-ID channel closes by construction.
+
+**What it costs.** A fork of `Server.cpp` and a new client, a referee, a patched Wine, an OS-level
+resource envelope, a match-record bundle, and a conformance suite — on top of the ABI already
+planned. That is a strictly larger maintained surface than BWAPI, which is why G7 is a goal and
+not a footnote.
+
+**What it breaks, and this should be said plainly.** Bots that thread work off the callback, that
+read global unit IDs, or that touch the filesystem outside `bwapi-data/` will behave differently
+or lose. That is not a defect in the migration path; it is G1 doing its job. **"As easy as
+possible" therefore means *bots compile and run*, not *bots score the same*** — and G6's
+differential test is what makes the difference measurable rather than arguable.
+
+**What survives from the existing plan.** The §4 ABI conventions, unchanged — they held across two
+libraries with different object models and nothing here disturbs them. The spec-driven generator
+and `api.json`, whose status as *the contract* should get louder: both greenfield systems in the
+prior art (`s2client-proto`, RLBot's `flatbuffers-schema`) separated schema from implementation
+into their own repositories and both got community bindings in five-plus languages their
+maintainers did not write. The static type data. The licensing analysis. And the synthetic-fixture
+test substrate (R7, R11.6), which is now the only substrate that needs neither Blizzard's MPQs,
+nor Wine, nor an unlicensed engine, nor a redistributed game image — **promoted from a testing
+convenience to a stated goal under G7.**
+
+**What it contradicts.** §1.3's identity-is-the-ID handle model (§4.2). And §2's non-goal 3, which
+makes Windows the v1 target on market grounds — the ground is now also that 1.16.1 under Wine on
+Linux is where the volume, the cgroups and the legal safety are.
