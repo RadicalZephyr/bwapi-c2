@@ -1,8 +1,10 @@
 # Implementation plan: the eight defects in ADR 0001 §2
 
-> **Status: draft. Stages A through H are implemented; the offsets smoke test is half done.**
-> Twenty-six commits on `RadicalZephyr/bwapi` `claude/bwapi-defect-fixes-gvul5m` close all eight
-> defects and both open questions in [§2.7](#27-still-open); [§6](#6-what-the-implementation-ran-into)
+> **Status: draft. Stages A through H are implemented and both tiers of the offsets smoke test
+> are green.** The work ships as two pull requests merged in order — the retarget and the test
+> suite first (PR 3, five commits), then the defect fixes (PR 2, seventeen commits) — for the
+> reasons in [§0](#0-where-the-work-happens). Together they close all eight defects and both open
+> questions in [§2.7](#27-still-open); [§6](#6-what-the-implementation-ran-into)
 > records the forks that came up on the way, including one the plan as written would have shipped
 > as a fault on every bot's first command. [§7](#7-the-offsets-smoke-test) is new: the retarget in
 > stage A cannot move a StarCraft address but could move a layout, so tier 1 pins what the compiler
@@ -46,11 +48,22 @@ existing module bot's event handlers port to a client bot unchanged.
 
 ## 0. Where the work happens
 
+**The work ships as two pull requests, merged in order.** Stage A's retarget and the offsets
+smoke test ([§7](#7-the-offsets-smoke-test)) are one concern — moving off a toolset nobody can
+install, and establishing that doing so changed nothing in StarCraft's memory. Stages B through H
+are another — changing what BWAPI does. They are reviewed for different things by different
+reasoning, so they are separated, and the test suite lands first because that is the order in
+which it is useful: PR 3 is what makes PR 2 safe to read.
+
 | What | Where |
 |---|---|
-| Every code change | `RadicalZephyr/bwapi`, branch `claude/bwapi-defect-fixes-gvul5m`, off `main` (`d727fed`) |
-| This plan and its revisions | `RadicalZephyr/bwapi-c2`, same branch name, beside the ADR it executes |
+| Stage A's retarget, and tiers 1 and 2 of the smoke test | `RadicalZephyr/bwapi` **PR 3**, branch `claude/bwapi-toolset-and-patch-tests-gvul5m`, off `main` (`d727fed`) |
+| Stages B through H — the eight defect fixes | `RadicalZephyr/bwapi` **PR 2**, branch `claude/bwapi-defect-fixes-gvul5m`, based on PR 3's branch |
+| This plan and its revisions | `RadicalZephyr/bwapi-c2`, branch `claude/bwapi-defect-fixes-gvul5m`, beside the ADR it executes |
 | Pin, layout baseline, fixture ripples | **Deferred**, to the pin bump after this series is released — see [§4](#4-ripples-into-bwapi-c2) |
+
+Stage A.2 — the validation header and its Linux test — goes with the defect fixes rather than
+with the retarget, because what it tests is defect 2.2 and not the toolset. Only A.1 is in PR 3.
 
 **Two lineages exist on the fork and this series only touches one.** `main` tracks upstream
 untouched; `bwapi-c2-pin` carries three commits on the same base (`revisionUpdate.sh`,
