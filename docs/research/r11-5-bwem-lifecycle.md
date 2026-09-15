@@ -1,6 +1,6 @@
 # R11.5 — Lifecycle, cost, and the frame loop
 
-Measured with [`r11/bwem_fixture.cpp`](r11/bwem_fixture.cpp) — BWEM's full analysis driven from a
+Measured with [`r11/bwem_fixture.cpp`](../decisions/experiments/r11/bwem_fixture.cpp) — BWEM's full analysis driven from a
 synthetic `GameData`, no StarCraft involved.
 
 **Headline: BWEM's analysis costs ~450 ms on a 128×128 map and is entirely a match-start

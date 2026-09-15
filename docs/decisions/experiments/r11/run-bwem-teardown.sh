@@ -1,9 +1,9 @@
 #!/bin/bash
 # R11.9: BWEM teardown under three protocols x two neutral layouts, against the submodules in
 # this repository, whose pins carry the two section-15.2 fixes and svnrev.h. Linux, clang++, g++.
-#   docs/research/r11/run-bwem-teardown.sh
+#   docs/decisions/experiments/r11/run-bwem-teardown.sh
 set -e
-D="$(cd "$(dirname "$0")" && pwd)"; R="$D/../../.."; B="$R/third_party/bwapi/bwapi"; BW="$R/third_party/bwem/BWEM"
+D="$(cd "$(dirname "$0")" && pwd)"; R="$D/../../../.."; B="$R/third_party/bwapi/bwapi"; BW="$R/third_party/bwem/BWEM"
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT; mkdir -p "$W/obj"
 GXXINC=$(g++ -E -x c++ - -v </dev/null 2>&1 | sed -n '/#include <...>/,/End of search/p' | grep '^ /' | sed 's/^ /-isystem /' | tr '\n' ' ')
 FL="-std=c++14 -O1 -g -w -fdelayed-template-parsing -nostdinc++ $GXXINC

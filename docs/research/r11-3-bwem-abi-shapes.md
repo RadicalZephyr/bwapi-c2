@@ -1,6 +1,6 @@
 # R11.3 — Mapping BWEM's shapes onto the §4 conventions
 
-Deliverable: [`r11/bwapi_c2_bwem.h.sketch`](r11/bwapi_c2_bwem.h.sketch) — **98 signatures, no
+Deliverable: [`r11/bwapi_c2_bwem.h.sketch`](../decisions/experiments/r11/bwapi_c2_bwem.h.sketch) — **98 signatures, no
 implementation.**
 
 **Headline: §4 covers BWEM with no amendments. Every shape maps, most of them more naturally

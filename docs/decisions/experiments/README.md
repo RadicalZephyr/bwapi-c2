@@ -108,3 +108,43 @@ trends toward empty. Accumulation is the signal to look for something
 miscategorised -- a benchmark that was never promoted, or an experiment whose
 ADR quietly landed months ago.
 
+
+## The imported research rounds
+
+`r5/` through `r11/` are the exception, and it is worth being plain that they
+are one rather than pretending they fit. They are the scripts, probes and
+fixtures behind research rounds R1-R11, which predate this convention. They
+moved here from `docs/research/rN/` when the template was adopted; the
+write-ups they produce numbers for stayed at
+[`docs/research/rN-*.md`](../../research/), and the plan goes on citing those as
+`RN`.
+
+Three ways they differ from everything else here:
+
+- **They are named after a research round, not a record.** A round is a unit of
+  work -- a question raised in the plan, answered empirically, filed. A record
+  is a decision. The two do not correspond one-to-one, and renaming them to
+  pretend otherwise would break every `RN` citation in a 2,000-line plan for
+  nothing.
+- **They back the plan, not a record.** `docs/c-abi-plan.md` is still the source
+  of truth for every decision inside its scope, and `§13`'s decisions log
+  indexes what these rounds settled. Nothing in `records/` cites them yet.
+- **They are not on a record's clock.** The retirement rule keys on a record
+  logging `Implemented` or `Deprecated`, and these have no record to key on. So
+  they do not trend toward empty on their own, and their presence is *not* the
+  accumulation signal the section above describes. Read that signal off the
+  `NNNN-` entry points only.
+
+That is an exception with an end, not a permanent carve-out. **The exit these
+take is the same one, reached differently**: when a decision inside the plan
+graduates into a record, the round that settled it becomes that record's
+evidence and rejoins the normal rule; when it does not, the round is promoted or
+deleted on its own merits.
+
+**Promotion has already happened here three times, before there was a word for
+it.** `tests/layout_dump` is R5 grown up, `tests/derive_closure` is R6, and
+`tests/fixture` -- the synthetic-`GameData` builder every suite now uses -- is
+R7's harness. Each stopped being a question and became something the project
+promises, which is exactly the promoted exit. What is left in `rN/` is the part
+that was only ever a question, so the honest expectation is that this directory
+shrinks as rounds are revisited, and never that it is tidied in one pass.

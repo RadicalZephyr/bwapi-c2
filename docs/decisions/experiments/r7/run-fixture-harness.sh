@@ -3,7 +3,7 @@
 # GameData -- no server, no shared memory, no pipe, no MPQs, no StarCraft.
 #   ./run-fixture-harness.sh /path/to/bwapi/bwapi
 set -e
-B="${1:-$(cd "$(dirname "$0")/../../../bwapi" && pwd)}"
+B="${1:-$(cd "$(dirname "$0")/../../../../third_party/bwapi/bwapi" && pwd)}"
 D="$(cd "$(dirname "$0")" && pwd)"; R6="$D/../r6"
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/obj" "$W/gen" "$W/patched"

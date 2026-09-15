@@ -1,6 +1,6 @@
 # R11.4 — Building and linking BWEM against the closure
 
-Reproducible via [`r11/link-bwem.sh`](r11/link-bwem.sh).
+Reproducible via [`r11/link-bwem.sh`](../decisions/experiments/r11/link-bwem.sh).
 
 **Headline: BWEM needs exactly ten BWAPI symbols, and all ten are already in R6's 44-TU client
 closure. Zero Storm, zero Util, zero Boost, zero injected-DLL side. All 14 BWEM translation units

@@ -52,7 +52,8 @@ from `api.json` by each binding's `gen.py` and are not committed.
   Historical; section numbers in it refer to revision 3.
 - `docs/research/rN-<topic>.md` — results of research round N (R1–R11; R11 has sub-rounds
   R11.1–R11.8 as `r11-K-<topic>.md`, with `r11-bwem-research-plan.md` as the plan for them).
-- `docs/research/rN/` — the scripts, fixtures and probe sources behind round N's results. Each
+- `docs/decisions/experiments/rN/` — the scripts, fixtures and probe sources behind round N's
+  results, moved here from `docs/research/rN/`. Each
   runnable script has its usage line in its header comment.
 - `docs/research/rev4-review.md` and `research-vs-rev4-review.md` — critical reviews whose
   findings have been folded into the plan. The decisions log in `§13` of the plan indexes them.
@@ -118,14 +119,17 @@ ctest --test-dir build --output-on-failure
 
 ## Running the research experiments
 
-The R1–R11.8 experiment scripts under `docs/research/rN/` predate the submodules and expect
-sibling checkouts that are **not** in this repo:
+The R1–R11.8 experiment scripts live under `docs/decisions/experiments/rN/` and predate the
+submodules:
 
-- `bwapi/bwapi` (the upstream BWAPI tree) — passed as the first argument, or found at
-  `../../../bwapi` relative to the script. `third_party/bwapi/bwapi` is the same tree and works.
-- `N00byEdge/BWEM-community` — passed as the second argument to the R11 scripts.
+- `bwapi/bwapi` (the upstream BWAPI tree) — passed as the first argument, or defaulted to
+  `third_party/bwapi/bwapi`, which is the same tree. The default used to name a sibling checkout
+  at `../../../bwapi` that has never existed in this layout, so every documented invocation passed
+  the path; it was pointed at the submodule when the scripts moved.
+- `N00byEdge/BWEM-community` — passed as the second argument to the R11 scripts, and still not
+  in this repo.
 
-R11.9's `docs/research/r11/run-bwem-teardown.sh` is the first to build from the submodules
+R11.9's `docs/decisions/experiments/r11/run-bwem-teardown.sh` is the first to build from the submodules
 directly and takes no arguments.
 
 They need `clang++` and `g++` on Linux, build into a `mktemp -d` scratch directory, and clean
@@ -133,16 +137,16 @@ up after themselves. Examples:
 
 ```sh
 # R6: derive BWAPI's client-mode link closure and link upstream's ExampleAIClient
-docs/research/r6/derive-closure.sh /path/to/bwapi/bwapi
+docs/decisions/experiments/r6/derive-closure.sh /path/to/bwapi/bwapi
 
 # R7: drive the real client against a synthetic GameData
-docs/research/r7/run-fixture-harness.sh /path/to/bwapi/bwapi
+docs/decisions/experiments/r7/run-fixture-harness.sh /path/to/bwapi/bwapi
 
 # R11.6: BWEM full analysis on synthetic terrain (flags: --exit-clean | --reinit)
-docs/research/r11/run-bwem-fixture.sh /path/to/bwapi/bwapi /path/to/BWEM-community/BWEM
+docs/decisions/experiments/r11/run-bwem-fixture.sh /path/to/bwapi/bwapi /path/to/BWEM-community/BWEM
 
 # R5: regenerate the GameData layout matrix across MSVC/GNU x86/x64 targets (clang only, no linking)
-docs/research/r5/run-layout-dump.sh
+docs/decisions/experiments/r5/run-layout-dump.sh
 ```
 
 The R6 `shim/` (a fake `Windows.h`) and `patched/Convenience.h` (a `va_list` by-value fix) are

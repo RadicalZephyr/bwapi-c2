@@ -4,7 +4,7 @@
 # ships a pre-generated parser), then runs every .i file in this directory.
 #   ./run-swig-experiment.sh /path/to/bwapi/bwapi
 set -e
-B="${1:-$(cd "$(dirname "$0")/../../../bwapi" && pwd)}"
+B="${1:-$(cd "$(dirname "$0")/../../../../third_party/bwapi/bwapi" && pwd)}"
 D="$(cd "$(dirname "$0")" && pwd)"
 W="${SWIG_WORK:-$(mktemp -d)}"
 if [ ! -x "$W/swig-4.5.1/swig" ]; then

@@ -1,7 +1,7 @@
 # R8. The `swig -c` experiment
 
 Built SWIG 4.5.1 from the release tarball and ran its C target against BWAPI's headers.
-Reproducible via [`r8/run-swig-experiment.sh`](r8/run-swig-experiment.sh) (fetches and builds
+Reproducible via [`r8/run-swig-experiment.sh`](../decisions/experiments/r8/run-swig-experiment.sh) (fetches and builds
 SWIG itself; the release tarball ships a pre-generated parser, so no bison is needed).
 
 **Headline: §1.6's rejection has to be rewritten, and the honest rewrite is a stronger rejection
