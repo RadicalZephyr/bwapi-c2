@@ -24,9 +24,11 @@ we need on top of upstream; the commits, what they carry and the pin-bump proced
 ## Working on bwapi-c2
 
 Start with [docs/implementation-plan.md](docs/implementation-plan.md); it says what the next
-step is and which plan section decides it. The toolchain is clang++ with CMake and Python 3 on
-Linux for everything that is not the DLL itself, and MSVC on Windows for the DLL. Not g++: one
-BWAPI header needs MSVC's template semantics, which only clang emulates, and configure says so.
+step is and which plan section decides it. [CONTRIBUTING.md](CONTRIBUTING.md) says how a decision
+gets recorded and where the evidence behind one has to live. The toolchain is clang++ with CMake
+and Python 3 on Linux for everything that is not the DLL itself, and MSVC on Windows for the DLL.
+Not g++: one BWAPI header needs MSVC's template semantics, which only clang emulates, and
+configure says so.
 
 ```sh
 CXX=clang++ cmake -B build -G Ninja
