@@ -22,6 +22,7 @@ endif()
 set(BWAPI_CUSTOM_COMPILE_FLAGS "" CACHE STRING "Extra compile options for the BWAPI/BWEM closure")
 
 option(BWAPI_C2_BUILD_TESTS "Build the test suite (section 11)" ${PROJECT_IS_TOP_LEVEL})
+option(BWAPI_C2_BUILD_EXPERIMENTS "Build the ADR experiments (docs/decisions/experiments)" ${PROJECT_IS_TOP_LEVEL})
 
 # BWEM's own assertions (section 8.3, R11.9). Upstream compiles bwem_assert to nothing unless
 # BWEM_ASSERTS is defined, and BWEM accepts a partially overlapping neutral silently in that
@@ -112,4 +113,12 @@ endif()
 if(BWAPI_C2_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
+endif()
+
+# The experiments backing docs/decisions/records/. Built by default alongside the tests, because
+# the check an experiment gets is that it still compiles against the code it measures -- and a
+# record's evidence rotting unnoticed is the failure docs/decisions/experiments/README.md's
+# retirement rule exists to catch. Not registered with CTest: evidence, not tests.
+if(BWAPI_C2_BUILD_EXPERIMENTS)
+  add_subdirectory(docs/decisions/experiments)
 endif()

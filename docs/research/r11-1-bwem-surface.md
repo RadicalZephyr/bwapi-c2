@@ -1,7 +1,7 @@
 # R11.1 — Sizing the real BWEM surface
 
 Same method as R2, on a corpus rebuilt for BWEM. Ranked list in
-[`r11/bwem-frequency-ranked.md`](r11/bwem-frequency-ranked.md).
+[`r11/bwem-frequency-ranked.md`](../decisions/experiments/r11/bwem-frequency-ranked.md).
 
 **Headline: BWEM's exportable surface is 91 functions — 84 read accessors plus 7 lifecycle
 entry points — and that is the whole v1 cut. Of the 279 declarations in the headers, 91 are

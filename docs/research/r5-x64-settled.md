@@ -1,7 +1,7 @@
 # R5. Settling x64 from existing implementations
 
 Two independent lines of evidence: a layout dump I ran across six targets
-(reproducible via [`r5/run-layout-dump.sh`](r5/run-layout-dump.sh)), and the hardcoded
+(reproducible via [`r5/run-layout-dump.sh`](../decisions/experiments/r5/run-layout-dump.sh)), and the hardcoded
 constants three shipping implementations rely on.
 
 **Headline: on Windows the shared-memory layout is byte-identical at 32 and 64 bits, and

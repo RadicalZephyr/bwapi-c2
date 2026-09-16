@@ -1346,7 +1346,7 @@ points, and 6 bulk grids. 42 mutators and internals and 49 declarations on non-b
 (`Graph`, `MapImpl`, `MapPrinter`, `MapDrawer`, `TempAreaInfo`, `GridMap`, `Markable`,
 `UserData`, `BreadthFirstSearch`) have **zero** call sites across 119,000 lines of bot code and
 are not merely unused but unnecessary, since no host runs the analysis. The eleven names all
-three ports agree on are all covered. Full signatures: [research/r11/bwapi_c2_bwem.h.sketch](research/r11/bwapi_c2_bwem.h.sketch).
+three ports agree on are all covered. Full signatures: [research/r11/bwapi_c2_bwem.h.sketch](decisions/experiments/r11/bwapi_c2_bwem.h.sketch).
 
 | BWEM shape | ABI shape |
 |---|---|

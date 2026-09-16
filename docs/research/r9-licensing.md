@@ -237,7 +237,7 @@ license. JBWAPI ships them inside an MIT repository; whether that is sound is ex
 question, and I have not resolved it.
 
 **The mitigation makes the question moot, and R7 already built it.** The
-[`r7/fixture_harness.cpp`](r7/fixture_harness.cpp) demonstration used a **fully synthetic**
+[`r7/fixture_harness.cpp`](../decisions/experiments/r7/fixture_harness.cpp) demonstration used a **fully synthetic**
 `GameData` — `calloc` plus a few dozen hand-set fields — and successfully exercised the read path,
 BWAPI's real rule engine, and the command write path. Synthetic fixtures have **no provenance
 problem at all**: no map, no Blizzard data, nothing derived from anything.

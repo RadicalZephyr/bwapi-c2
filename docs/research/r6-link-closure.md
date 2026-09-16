@@ -2,7 +2,7 @@
 
 Built the candidate source set as a static archive and linked upstream's own
 `ExampleAIClient` against it. Reproducible via
-[`r6/derive-closure.sh`](r6/derive-closure.sh).
+[`r6/derive-closure.sh`](../decisions/experiments/r6/derive-closure.sh).
 
 **§12 and §13 were added later on request**: an audit of the `awest813/OpenSnowstorm---Brood-War`
 fork, and an assessment of what adding client mode to OpenBW's BWAPI fork would take. §13 changes

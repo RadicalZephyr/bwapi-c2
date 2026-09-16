@@ -4,7 +4,7 @@
 # links a program that touches the BWEM singleton.
 #   ./link-bwem.sh /path/to/bwapi/bwapi /path/to/BWEM-community/BWEM
 set -e
-B="${1:-$(cd "$(dirname "$0")/../../../bwapi" && pwd)}"
+B="${1:-$(cd "$(dirname "$0")/../../../../third_party/bwapi/bwapi" && pwd)}"
 BW="${2:?usage: link-bwem.sh <bwapi/bwapi> <BWEM-community/BWEM>}"
 D="$(cd "$(dirname "$0")" && pwd)"; R6="$D/../r6"
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT

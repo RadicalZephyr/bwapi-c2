@@ -2,8 +2,8 @@
 
 Executed against the pinned submodules in this repository (BWAPI `d727fed`, BWEM `9a63141`)
 with the two §15.2 patches applied, on Linux with clang 18 and g++ 13, while landing
-implementation-plan step 0.3. Reproduction: [r11/run-bwem-teardown.sh](r11/run-bwem-teardown.sh),
-[r11/bwem_teardown.cpp](r11/bwem_teardown.cpp).
+implementation-plan step 0.3. Reproduction: [r11/run-bwem-teardown.sh](../decisions/experiments/r11/run-bwem-teardown.sh),
+[r11/bwem_teardown.cpp](../decisions/experiments/r11/bwem_teardown.cpp).
 
 **Headline: `Map::ResetInstance()` does not fix the crash R11.6 attributed to BWEM's in-place
 reset, because that crash is not caused by the in-place reset.** It is caused by the synthetic

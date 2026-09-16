@@ -2,7 +2,7 @@
 
 Built OpenBW headless from source, traced how every downstream project handles the MPQ problem,
 and built a working alternative. Reproducible via
-[`r7/run-fixture-harness.sh`](r7/run-fixture-harness.sh).
+[`r7/run-fixture-harness.sh`](../decisions/experiments/r7/run-fixture-harness.sh).
 
 **Headline: OpenBW still builds and still cannot be used in public CI, because it needs Blizzard's
 MPQ files and nobody in the ecosystem has solved that — JBWAPI wrote both end-to-end workflows and
@@ -184,7 +184,7 @@ deflates to ~70–80 KB because it is mostly zeros. Five test classes consume th
 
 ### I reproduced it in C++, against our closure
 
-[`r7/fixture_harness.cpp`](r7/fixture_harness.cpp) builds R6's 44-TU archive, `calloc`s a
+[`r7/fixture_harness.cpp`](../decisions/experiments/r7/fixture_harness.cpp) builds R6's 44-TU archive, `calloc`s a
 `GameData`, fills in a handful of fields by hand, constructs `GameImpl(data)` and drives the real
 API. No server, no shared memory, no pipe, no MPQs, no StarCraft:
 

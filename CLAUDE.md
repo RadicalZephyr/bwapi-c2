@@ -52,7 +52,14 @@ from `api.json` by each binding's `gen.py` and are not committed.
   Historical; section numbers in it refer to revision 3.
 - `docs/research/rN-<topic>.md` — results of research round N (R1–R11; R11 has sub-rounds
   R11.1–R11.8 as `r11-K-<topic>.md`, with `r11-bwem-research-plan.md` as the plan for them).
-- `docs/research/rN/` — the scripts, fixtures and probe sources behind round N's results. Each
+- `docs/decisions/records/` — architecture decision records, one per file, `NNNN-kebab-title.md`.
+  Living documents with a dated status log; the rules are in `docs/decisions/README.md` and
+  `0001` argues for them. The plan stays the source of truth for decisions *inside* the plan's
+  scope; records are for decisions that have no section to be revised into.
+- `docs/decisions/experiments/` — every runnable piece of evidence. Entry points named after the
+  record they back (`NNNN-some-decision.cpp`, built by the CMake build), plus `rN/` — the scripts,
+  fixtures and probe sources behind round N's results, which moved here from `docs/research/rN/`.
+  Each
   runnable script has its usage line in its header comment.
 - `docs/research/rev4-review.md` and `research-vs-rev4-review.md` — critical reviews whose
   findings have been folded into the plan. The decisions log in `§13` of the plan indexes them.
@@ -77,6 +84,131 @@ Key settled conclusions to not re-litigate (each has its section and research ro
 - SWIG's C target was tried and rejected; clang's AST dump drafts the generator spec (R8, `§9`).
 - Python and C# are the primary consumers; Rust is the proof-of-concept only (`§7`).
 - License is LGPL-3.0-only because the DLL embeds BWAPI's object code (R9, `§0`).
+
+## Conventions have an owner
+
+Every convention in this repository is owned by one document, and the rest are restatements. The
+ADR rules are owned by [`docs/decisions/README.md`](docs/decisions/README.md); what appears here
+and in [`CONTRIBUTING.md`](CONTRIBUTING.md) restates it. Change the owner first, then every
+restatement — a restatement that has fallen behind is worse than none, because it is read with the
+same confidence as the owner. The same holds for the plan: `docs/c-abi-plan.md` owns the design,
+and a `§N` reference elsewhere is a pointer, not a second copy.
+
+Anything normative has to reach `CONTRIBUTING.md`. Write it there for a human contributor and here
+for an agent where the register differs, but never introduce a rule here that a contributor reading
+only `CONTRIBUTING.md` would miss.
+
+## Decision records
+
+`docs/c-abi-plan.md` is still the source of truth for every decision inside its scope, revised in
+place with a revision note, with `§13` as the decisions log and `§15` as the divergence register.
+**That does not change.** Records exist for the decisions the plan has no section to hold — a
+question larger than the ABI, where growing a section for it would be the tail wagging the dog.
+[`docs/decisions/records/0001`](docs/decisions/records/0001-recording-important-decisions.md) has
+the argument and the boundary between the two.
+
+Records live in [`docs/decisions/records/`](docs/decisions/records/), one per file,
+`NNNN-kebab-case-title.md`. They are **living documents** — edited to stay current rather than
+frozen on acceptance, because git is the log and the document is the projection. New information
+goes in as a **dated addition marked as arriving after the decision**, never as a silent revision
+of the original reasoning. This is the same practice the plan already follows, given a smaller
+unit.
+
+A record's status is a **dated transition log** in a collapsed `<details>` block at the top, with
+the current state in the `<summary>` line:
+
+```markdown
+<details>
+<summary><strong>Status:</strong> Implemented 2026-11-03</summary>
+
+| Date | Transition |
+| --- | --- |
+| 2026-09-10 | Drafted |
+| 2026-09-24 | Accepted |
+| 2026-11-03 | Implemented |
+
+</details>
+```
+
+Transitions are `Drafted`, `Accepted` (a commit before the record's PR merges), `Implemented` (the
+PR that finishes the work), `Superseded by NNNN`, and `Deprecated`. The last row is the current
+state and the summary restates it. It is **not** an edit log and **not** a changelog: only state
+transitions go in it, and a change to what a record *says* is a dated addition in the body beside
+the reasoning it concerns. A row that wants a sentence of explanation means that sentence belongs
+in the body.
+
+Editing versus superseding: edit while the decision is still the decision; write a new record when
+someone following the old one would now do the wrong thing. Mechanically — if the change can be a
+dated addition it is an edit; if it means deleting a claim someone may have acted on, the old claim
+earns its own record.
+
+**Two ADRs are in flight on branches** (`docs/adr/0001-fork-and-invert.md`,
+`docs/adr/0002-launch-and-inject.md`) and predate this convention. Landing one means moving it to
+`docs/decisions/records/`, renumbering it past `0001`, replacing its hand-written
+`> **Status: Draft.**` paragraph with a status log, and opening the body with a dated note saying
+it was written under the old convention. `0001`'s *Numbering* section has the detail.
+
+## Evidence
+
+**Any code that produces concrete data used in the argumentation of a record must be committed
+somewhere a reader can run it** — a number quoted has to be re-derivable from a checkout, or the
+record is asserting rather than arguing. Two homes, by what the experiment needs:
+
+- **Needs this project's code** → [`docs/decisions/experiments/`](docs/decisions/experiments/), as
+  an entry point named after the record, declared with
+  `bwapi_c2_add_experiment(0001-some-decision)` and run with
+  `cmake --build build --target run-0001-some-decision`. It links `bwapi_c2_abi`, so it sees the
+  real ABI over the real closure. Not registered with CTest: evidence, not tests.
+- **Needs only the compiler and the standard library** → a
+  [Compiler Explorer](https://godbolt.org) share link recorded in the record. This is also the
+  only route for a case that must **fail** to compile, since a sub-project that does not build
+  breaks the build. Compiler Explorer carries every compiler CI does, which matters because an ABI
+  question is usually about the difference between two of them.
+
+**Develop the experiment locally and mint the link last.** Run it with the local toolchain against
+a file in your scratch directory until it produces the result the record will quote, and only then
+create the share link. Never mint one to find out what happens, and never rework an experiment
+after minting — the superseded links stay live and nobody can collect them. **At most one share
+link a minute**; if a record needs more, ask the user to mint them rather than minting them faster.
+
+A playground record is four parts in a fixed order: a bolded label saying what it demonstrates, the
+source in a code block, its output in a `text` block, and a provenance line as a blockquote beneath
+them —
+
+```text
+> TOOL VERSION (released DATE) - output checked DATE - [Compiler Explorer](URL)
+```
+
+Keep the fences bare. Both dates are load-bearing: the released date belongs to the compiler that
+produced the quoted output, the checked date is when the link was last confirmed to still produce
+it. **The version stamp is required and is checked in review.**
+
+An experiment leaves the moment the record it serves logs `Implemented` or `Deprecated`, by one of
+two exits — **deleted** (it measured internals the record replaced; an entry point that no longer
+builds is deleted, not repaired, and the record cites the commit that produced its numbers) or
+**promoted** (it still answers a live question, so it stopped being research). This project has
+already done the promoting exit three times without a name for it: `tests/layout_dump` is R5 grown
+up, `tests/derive_closure` is R6, and `tests/fixture` is R7's harness.
+
+The `rN/` directories are the exception, and
+[`docs/decisions/experiments/README.md`](docs/decisions/experiments/README.md#the-imported-research-rounds)
+says why: they back the plan rather than a record, are on no record's clock, and are not the
+accumulation signal the retirement rule watches for. Read that signal off the `NNNN-` entry points
+only.
+
+## Research is evidence, not a test
+
+**Do not write tests to motivate a record.** A test written against the structure a record exists
+to replace has to be rewritten when the change lands: it guarded nothing and only enlarged the
+diff. Support the argument with an experiment, and let `tests/` keep checking that behaviour did
+not change while the internals did.
+
+The exception is a record arguing that the implementation **diverges from something this project
+does not control** — BWAPI's or BWEM's actual behaviour, a layout a released client depends on, a
+C ABI guarantee the spec promises. That is a bug report rather than a design preference, and it
+does get a test: written against the external truth so it stays correct after the fix, and marked
+skipped with the record's number so the suite stays green while the reason stays visible. The
+divergence register (`§15`) is where the project already tracks this class of thing.
 
 ## Building and testing
 
@@ -118,14 +250,17 @@ ctest --test-dir build --output-on-failure
 
 ## Running the research experiments
 
-The R1–R11.8 experiment scripts under `docs/research/rN/` predate the submodules and expect
-sibling checkouts that are **not** in this repo:
+The R1–R11.8 experiment scripts live under `docs/decisions/experiments/rN/` and predate the
+submodules:
 
-- `bwapi/bwapi` (the upstream BWAPI tree) — passed as the first argument, or found at
-  `../../../bwapi` relative to the script. `third_party/bwapi/bwapi` is the same tree and works.
-- `N00byEdge/BWEM-community` — passed as the second argument to the R11 scripts.
+- `bwapi/bwapi` (the upstream BWAPI tree) — passed as the first argument, or defaulted to
+  `third_party/bwapi/bwapi`, which is the same tree. The default used to name a sibling checkout
+  at `../../../bwapi` that has never existed in this layout, so every documented invocation passed
+  the path; it was pointed at the submodule when the scripts moved.
+- `N00byEdge/BWEM-community` — passed as the second argument to the R11 scripts, and still not
+  in this repo.
 
-R11.9's `docs/research/r11/run-bwem-teardown.sh` is the first to build from the submodules
+R11.9's `docs/decisions/experiments/r11/run-bwem-teardown.sh` is the first to build from the submodules
 directly and takes no arguments.
 
 They need `clang++` and `g++` on Linux, build into a `mktemp -d` scratch directory, and clean
@@ -133,16 +268,16 @@ up after themselves. Examples:
 
 ```sh
 # R6: derive BWAPI's client-mode link closure and link upstream's ExampleAIClient
-docs/research/r6/derive-closure.sh /path/to/bwapi/bwapi
+docs/decisions/experiments/r6/derive-closure.sh /path/to/bwapi/bwapi
 
 # R7: drive the real client against a synthetic GameData
-docs/research/r7/run-fixture-harness.sh /path/to/bwapi/bwapi
+docs/decisions/experiments/r7/run-fixture-harness.sh /path/to/bwapi/bwapi
 
 # R11.6: BWEM full analysis on synthetic terrain (flags: --exit-clean | --reinit)
-docs/research/r11/run-bwem-fixture.sh /path/to/bwapi/bwapi /path/to/BWEM-community/BWEM
+docs/decisions/experiments/r11/run-bwem-fixture.sh /path/to/bwapi/bwapi /path/to/BWEM-community/BWEM
 
 # R5: regenerate the GameData layout matrix across MSVC/GNU x86/x64 targets (clang only, no linking)
-docs/research/r5/run-layout-dump.sh
+docs/decisions/experiments/r5/run-layout-dump.sh
 ```
 
 The R6 `shim/` (a fake `Windows.h`) and `patched/Convenience.h` (a `va_list` by-value fix) are

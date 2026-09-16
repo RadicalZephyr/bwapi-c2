@@ -7,8 +7,8 @@
 > the patch's rationale is restated in plan revision 4.3.
 
 
-Reproducible via [`r11/run-bwem-fixture.sh`](r11/run-bwem-fixture.sh) and
-[`r11/bwem_fixture.cpp`](r11/bwem_fixture.cpp).
+Reproducible via [`r11/run-bwem-fixture.sh`](../decisions/experiments/r11/run-bwem-fixture.sh) and
+[`r11/bwem_fixture.cpp`](../decisions/experiments/r11/bwem_fixture.cpp).
 
 **Headline: synthetic terrain works completely. BWEM's full analysis runs from a hand-built
 `GameData` — two areas, one chokepoint, two bases with four minerals each, a working `GetPath`
